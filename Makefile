@@ -1,4 +1,4 @@
-.PHONY: build migrate-up migrate-down install-migrate docker-prod docker-push-prod
+.PHONY: build migrate-up migrate-down install-migrate docker-prod docker-push-prod start-prod
 
 APP_NAME=myapp-linux-amd-64
 N ?= 1
@@ -11,6 +11,9 @@ docker-prod:
 
 docker-push-prod:
 	docker push eye1985/project-a:prod
+
+start-prod:
+	docker compose up --pull always --force-recreate -d
 
 install-migrate:
 	go install -tags 'pgx5' github.com/golang-migrate/migrate/v4/cmd/migrate@v4.18.2
