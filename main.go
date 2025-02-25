@@ -12,7 +12,7 @@ import (
 func main() {
 	pgUrl, ok := os.LookupEnv("POSTGRES_URL")
 	if !ok {
-		pgUrl = "postgres://admin:root@localhost:5432/project_a"
+		pgUrl = "postgres://admin:root@postgres:5432/project_a"
 	}
 
 	conn, err := pgx.Connect(context.Background(), pgUrl)
