@@ -8,11 +8,14 @@ services:
     environment:
       POSTGRES_USER: admin
       POSTGRES_PASSWORD: root
+#      POSTGRES_PASSWORD_FILE: /run/secrets/db/password
       POSTGRES_DB: project_a
     volumes:
       - pga_pg_data:/var/lib/postgresql/data
   backend:
-    build: .
+    build:
+      context: .
+      dockerfile: server.Dockerfile
     ports:
       - '8080:8080'
     depends_on:
