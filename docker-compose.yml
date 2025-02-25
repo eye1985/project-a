@@ -1,0 +1,22 @@
+services:
+  postgres:
+    image: postgres:16.7
+    container_name: pga-postgresql
+    ports:
+      - '5432:5432'
+    restart: always
+    environment:
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: root
+      POSTGRES_DB: project_a
+    volumes:
+      - pga_pg_data:/var/lib/postgresql/data
+  backend:
+    build: .
+    ports:
+      - '8080:8080'
+    depends_on:
+      - postgres
+
+volumes:
+  pga_pg_data:
