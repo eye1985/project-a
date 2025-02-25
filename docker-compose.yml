@@ -1,4 +1,12 @@
 services:
+  watchtower:
+    image: containrrr/watchtower
+    command:
+      - "--label-enable"
+      - "--interval"
+      - "30" # Check 30s Intervals
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock # Needs this to check for changes
   postgres:
     image: postgres:16.7
     container_name: pga-postgresql
@@ -8,18 +16,23 @@ services:
     environment:
       POSTGRES_USER: admin
       POSTGRES_PASSWORD: root
-#      POSTGRES_PASSWORD_FILE: /run/secrets/db/password
+      #      POSTGRES_PASSWORD_FILE: /run/secrets/db/password
       POSTGRES_DB: project_a
+    healthcheck:
+      test: [ "CMD", "pg_isready -U admin"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
     volumes:
       - pga_pg_data:/var/lib/postgresql/data
   backend:
-    build:
-      context: .
-      dockerfile: server.Dockerfile
+    image: eye1985/project-a:prod
+    labels:
+      - "com.centurylinklabs.watchtower.enable=true"
     ports:
       - '8080:8080'
     depends_on:
-      - postgres
-
+      postgres:
+        condition: service_healthy
 volumes:
   pga_pg_data:

@@ -1,10 +1,10 @@
 .PHONY: build migrate-up migrate-down install-migrate
 
-APP_NAME=myapp
+APP_NAME=myapp-linux-amd-64
 N ?= 1
 
 build:
-	go build -o $(APP_NAME)
+	GOOS=linux GOARCH=amd64 go build -o bin/$(APP_NAME)
 
 install-migrate:
 	go install -tags 'pgx5' github.com/golang-migrate/migrate/v4/cmd/migrate@v4.18.2

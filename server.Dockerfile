@@ -1,11 +1,12 @@
-FROM golang:1.24-alpine
+FROM alpine:latest
 
 WORKDIR /app
 
-COPY . .
+COPY bin/myapp-linux-amd-64 .
+
+# Ensure binary is executable
+RUN chmod +x /app/myapp-linux-amd-64
 
 EXPOSE 8080
-
-RUN go build -o myapp
 
 CMD ["./myapp"]

@@ -17,7 +17,7 @@ func Serve() error {
 
 	mux.HandleFunc("GET /", func(w http.ResponseWriter, r *http.Request) {
 		res := JSON{
-			Message: "Dette er en test",
+			Message: "Dette er en test 2",
 		}
 
 		w.Header().Set("Content-Type", "application/json")
