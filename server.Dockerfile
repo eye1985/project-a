@@ -9,4 +9,4 @@ RUN chmod +x /app/myapp-linux-amd-64
 
 EXPOSE 8080
 
-CMD ["./myapp"]
+CMD ["./myapp-linux-amd-64"]
