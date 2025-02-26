@@ -2,7 +2,7 @@ package server
 
 import (
 	"context"
-	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgxpool"
 	"html/template"
 	"net/http"
 )
@@ -18,27 +18,21 @@ type Person struct {
 	Email    string
 }
 
-func Serve(pgUrl *string) error {
+func Serve(pool *pgxpool.Pool) error {
+
 	mux := http.NewServeMux()
 
 	fs := http.FileServer(http.Dir("assets"))
 	mux.Handle("GET /assets/", http.StripPrefix("/assets/", fs))
 
 	mux.HandleFunc("GET /", func(w http.ResponseWriter, r *http.Request) {
-		tmpl, err := template.ParseFiles("templates/index.html")
+		tmpl, err := template.ParseFiles("templates/index.gohtml")
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
 
-		pgConn, err := pgx.Connect(context.Background(), *pgUrl)
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
-		defer pgConn.Close(context.Background())
-
-		rows, err := pgConn.Query(context.Background(), "SELECT username, email FROM users")
+		rows, err := pool.Query(context.Background(), "SELECT username, email FROM users")
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
@@ -68,14 +62,8 @@ func Serve(pgUrl *string) error {
 	})
 
 	mux.HandleFunc("GET /health", func(w http.ResponseWriter, r *http.Request) {
-		pgConn, err := pgx.Connect(context.Background(), *pgUrl)
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-		}
-		defer pgConn.Close(context.Background())
-
 		var status string
-		err = pgConn.Ping(context.Background())
+		err := pool.Ping(context.Background())
 		if err != nil {
 			status = "No database connection established"
 		}

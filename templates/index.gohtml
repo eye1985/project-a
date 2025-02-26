@@ -13,11 +13,13 @@
 
     <ul class="list-group">
         {{if not . }}
-        <li>No users found</li>
+            <li>No users found</li>
         {{ else }}
-        {{ range . }}
-        <li>{{ .Username }} - {{ .Email }}</li>
-        {{ end }}
+            {{ range . }}
+                <li>{{ .Username }} - {{ .Email }}</li>
+            {{ end }}
+
+
         {{ end }}
     </ul>
 </div>
