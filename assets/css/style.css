@@ -1,0 +1,16 @@
+body {
+    background: lightgray;
+}
+
+.container {
+    width: 1280px;
+    margin: 0 auto;
+}
+
+.list-group{
+    list-style: none;
+}
+
+.list-group li{
+    margin-bottom:10px;
+}

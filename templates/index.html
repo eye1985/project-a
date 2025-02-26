@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Project A</title>
+    <link rel="stylesheet" href="/assets/css/style.css"/>
+    <script src="/assets/js/index.js" type="module"></script>
+</head>
+<body>
+<div class="container">
+    Database users:
+
+    <ul class="list-group">
+        {{ range . }}
+        <li>{{ .Username }} - {{ .Email }}</li>
+        {{ end }}
+    </ul>
+
+</div>
+</body>
+</html>

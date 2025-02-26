@@ -1,8 +1,9 @@
 package server
 
 import (
-	"encoding/json"
-	"log"
+	"context"
+	"github.com/jackc/pgx/v5"
+	"html/template"
 	"net/http"
 )
 
@@ -12,19 +13,76 @@ type JSON struct {
 	Message string `json:"message"`
 }
 
-func Serve() error {
+type Person struct {
+	Username string
+	Email    string
+}
+
+func Serve(pgUrl *string) error {
 	mux := http.NewServeMux()
 
+	fs := http.FileServer(http.Dir("assets"))
+	mux.Handle("GET /assets/", http.StripPrefix("/assets/", fs))
+
 	mux.HandleFunc("GET /", func(w http.ResponseWriter, r *http.Request) {
-		res := JSON{
-			Message: "Dette er en test 2",
+		tmpl, err := template.ParseFiles("templates/index.html")
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
 		}
 
-		w.Header().Set("Content-Type", "application/json")
-		err := json.NewEncoder(w).Encode(res)
+		pgConn, err := pgx.Connect(context.Background(), *pgUrl)
 		if err != nil {
-			log.Println("Error encoding response:", err)
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
 		}
+		defer pgConn.Close(context.Background())
+
+		rows, err := pgConn.Query(context.Background(), "SELECT username, email FROM users")
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		defer rows.Close()
+
+		persons := []Person{}
+
+		for rows.Next() {
+			var username, email string
+
+			if err := rows.Scan(&username, &email); err != nil {
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+				return
+			}
+
+			persons = append(persons, Person{
+				username,
+				email,
+			})
+		}
+
+		if err := tmpl.Execute(w, persons); err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+	})
+
+	mux.HandleFunc("GET /health", func(w http.ResponseWriter, r *http.Request) {
+		pgConn, err := pgx.Connect(context.Background(), *pgUrl)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+		}
+		defer pgConn.Close(context.Background())
+
+		var status string
+		err = pgConn.Ping(context.Background())
+		if err != nil {
+			status = "No database connection established"
+		}
+
+		status = "Database: OK"
+
+		w.Write([]byte(status))
 	})
 
 	return http.ListenAndServe(PORT, mux)
