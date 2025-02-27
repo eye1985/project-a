@@ -20,6 +20,8 @@ func main() {
 		os.Exit(1)
 	}
 
+	database.Migrate()
+
 	defer pool.Close()
 
 	log.Printf("Connected to PostgreSQL")

@@ -7,6 +7,9 @@ build:
 	GOOS=linux GOARCH=amd64 go build -o bin/$(APP_NAME)
 
 docker-prod:
+	@echo "Bulding bin..."
+	GOOS=linux GOARCH=amd64 go build -o bin/$(APP_NAME)
+	@echo "Building docker img..."
 	docker build . --file server.Dockerfile -t eye1985/project-a:prod --no-cache --platform linux/amd64
 
 docker-push-prod:
