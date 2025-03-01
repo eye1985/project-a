@@ -19,7 +19,7 @@ services:
       #      POSTGRES_PASSWORD_FILE: /run/secrets/db/password
       POSTGRES_DB: project_a
     healthcheck:
-      test: [ "CMD", "pg_isready -U admin"]
+      test: [ "CMD", "pg_isready", "-U", "admin"]
       interval: 10s
       timeout: 5s
       retries: 5
