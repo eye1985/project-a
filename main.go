@@ -19,10 +19,8 @@ func main() {
 		fmt.Printf("Error connecting to pool: %v", dbErr)
 		os.Exit(1)
 	}
-
-	database.Migrate()
-
 	defer pool.Close()
+	database.Migrate()
 
 	log.Printf("Connected to PostgreSQL")
 	log.Printf("Starting server at port: %v \n", server.PORT)

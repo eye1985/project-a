@@ -5,6 +5,8 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 	"html/template"
 	"net/http"
+	"project-a/modules/health"
+	"project-a/modules/users"
 )
 
 const PORT = ":8080"
@@ -19,8 +21,15 @@ type Person struct {
 }
 
 func Serve(pool *pgxpool.Pool) error {
-
 	mux := http.NewServeMux()
+
+	// Modules
+	userModule := users.NewUserModule(pool, mux)
+
+	// Controllers
+	userModule.UserController.GetUsers()
+	userModule.UserController.RegisterUser()
+	health.NewHealthController(pool).GetHealth(mux)
 
 	fs := http.FileServer(http.Dir("assets"))
 	mux.Handle("GET /assets/", http.StripPrefix("/assets/", fs))
@@ -59,18 +68,6 @@ func Serve(pool *pgxpool.Pool) error {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
-	})
-
-	mux.HandleFunc("GET /health", func(w http.ResponseWriter, r *http.Request) {
-		var status string
-		err := pool.Ping(context.Background())
-		if err != nil {
-			status = "No database connection established"
-		}
-
-		status = "Database: OK"
-
-		w.Write([]byte(status))
 	})
 
 	return http.ListenAndServe(PORT, mux)

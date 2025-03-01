@@ -18,10 +18,16 @@
             {{ range . }}
                 <li>{{ .Username }} - {{ .Email }}</li>
             {{ end }}
-
-
         {{ end }}
     </ul>
+
+    <form action="/users" method="post">
+        <input type="text" placeholder="Username" name="username">
+        <input type="email" placeholder="email" name="email">
+        <button id="registerBtn" type="submit">
+            Register
+        </button>
+    </form>
 </div>
 </body>
 </html>
