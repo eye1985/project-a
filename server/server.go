@@ -31,9 +31,8 @@ func Serve(pool *pgxpool.Pool) error {
 	userModule.UserController.RegisterUser()
 	health.NewHealthController(pool).GetHealth(mux)
 
-	fs := http.FileServer(http.Dir("assets"))
-	mux.Handle("GET /assets/", http.StripPrefix("/assets/", fs))
-
+	mux.Handle("GET /assets/", http.StripPrefix("/assets/", http.FileServer(http.Dir("assets"))))
+	mux.HandleFunc("GET /ws", handleWebsocket)
 	mux.HandleFunc("GET /", func(w http.ResponseWriter, r *http.Request) {
 		tmpl, err := template.ParseFiles("templates/index.gohtml")
 		if err != nil {
