@@ -21,7 +21,7 @@
         {{ end }}
     </ul>
 
-    <form action="/users" method="post">
+    <form class="form" action="/users" method="post">
         <input type="text" placeholder="Username" name="username">
         <input type="email" placeholder="email" name="email">
         <button id="registerBtn" type="submit">
@@ -29,21 +29,25 @@
         </button>
     </form>
 
+    <div class="ws-buttons">
+        <button id="wsButton" type="button">
+            Connect to chat
+        </button>
 
-    <button id="wsButton" type="button">
-        Connect to chat
-    </button>
-
-    <button id="closeWs" type="button">
-        close
-    </button>
-
-    <button id="sendWs" type="button">
-        send hello
-    </button>
-
-    <div id="messages">
+        <button id="closeWs" type="button">
+            close
+        </button>
     </div>
+
+
+    <div class="messages" id="messages">
+    </div>
+
+    <input id="messageInput" type="text" />
+    <button id="sendWs" type="button">
+        Send
+    </button>
+
 </div>
 </body>
 </html>

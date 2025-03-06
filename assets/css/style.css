@@ -1,10 +1,16 @@
 body {
     background: lightgray;
+    padding:0;
+    margin:0;
 }
 
 .container {
     width: 1280px;
     margin: 0 auto;
+}
+
+.form{
+    margin-bottom:60px;
 }
 
 .list-group{
@@ -13,4 +19,26 @@ body {
 
 .list-group li{
     margin-bottom:10px;
+}
+
+.messages{
+    background:#fff;
+    margin-bottom:10px;
+    max-height: 200px;
+    overflow: auto;
+}
+
+.messages:has(p){
+    border: 1px solid;
+    padding:10px;
+}
+
+.messages p{
+    margin:0;
+}
+
+.ws-buttons{
+    display:flex;
+    margin-bottom:10px;
+    gap:5px;
 }

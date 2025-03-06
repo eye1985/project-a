@@ -23,6 +23,7 @@ async function registerUser() {
 }
 
 let ws;
+let messages = document.getElementById("messages");
 
 function testWs() {
   if (ws) {
@@ -33,13 +34,15 @@ function testWs() {
 
   ws.onopen = () => {
     console.log("Connected to WebSocket server");
-    ws.send("Hello, server!"); // Send a message to the server
   };
 
   ws.onmessage = (event) => {
-    const messages = document.getElementById("messages");
-    messages.innerText += event.data + "\n\n";
-    console.log("Received from server:", event.data);
+    messages = document.getElementById("messages");
+    const newMessage = document.createElement("p");
+    newMessage.innerText = event.data;
+
+    messages.appendChild(newMessage);
+    messages.scrollTo(0, messages.scrollHeight);
   };
 
   ws.onclose = (event) => {
@@ -72,6 +75,14 @@ document.getElementById("closeWs").addEventListener("click", async (e) => {
   ws.close();
 });
 
+const messageInput = document.getElementById("messageInput");
+messageInput.addEventListener("keypress", async (e) => {
+  if (ws && e.key === "Enter") {
+    ws.send(e.currentTarget.value);
+    e.currentTarget.value = "";
+  }
+});
 document.getElementById("sendWs").addEventListener("click", async (e) => {
-  ws.send("Hello");
+  const value = document.getElementById("messageInput").value;
+  ws.send(value);
 });
