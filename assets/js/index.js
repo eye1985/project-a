@@ -1,36 +1,16 @@
-async function registerUser() {
-  const username = document.querySelector("[name='username']");
-  const email = document.querySelector("[name='email']");
-
-  if (username.value.trim().length === 0 && email.value.trim().length === 0) {
-    alert("Please enter email or username");
-  }
-
-  try {
-    await fetch("/users", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        username: username.value + "",
-        email: email.value + "",
-      }),
-    });
-  } catch (err) {
-    console.error(err);
-  }
-}
+import { registerUser } from "./functions.js";
 
 let ws;
 let messages = document.getElementById("messages");
+const username = document.getElementById("username");
 
-function testWs() {
+function testWs(username) {
   if (ws) {
     console.log("connection already established");
     return;
   }
-  ws = new WebSocket("ws://localhost:8080/ws");
+
+  ws = new WebSocket(`ws://localhost:8080/ws?username=${username}`);
 
   ws.onopen = () => {
     console.log("Connected to WebSocket server");
@@ -59,10 +39,17 @@ document.getElementById("registerBtn").addEventListener("click", async (e) => {
   await registerUser();
 });
 
-document.getElementById("wsButton").addEventListener("click", async (e) => {
-  testWs();
-  e.currentTarget.setAttribute("disabled", "disabled");
-});
+document
+  .getElementById("connectToWsBtn")
+  .addEventListener("click", async (e) => {
+    if (username.value === "") {
+      console.log("username is required");
+      return;
+    }
+
+    testWs(username.value);
+    e.currentTarget.setAttribute("disabled", "disabled");
+  });
 
 document.getElementById("closeWs").addEventListener("click", async (e) => {
   if (!ws) {
@@ -70,9 +57,10 @@ document.getElementById("closeWs").addEventListener("click", async (e) => {
     return;
   }
 
-  document.getElementById("wsButton").removeAttribute("disabled");
+  document.getElementById("connectToWsBtn").removeAttribute("disabled");
 
   ws.close();
+  ws = null;
 });
 
 const messageInput = document.getElementById("messageInput");

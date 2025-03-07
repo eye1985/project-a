@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Project A</title>
+    <link rel="stylesheet" href="/assets/css/utility.css"/>
     <link rel="stylesheet" href="/assets/css/style.css"/>
     <script src="/assets/js/index.js" type="module"></script>
 </head>
@@ -29,8 +30,14 @@
         </button>
     </form>
 
+
+    <div class="mb-10">
+        <label for="username">Username</label>
+        <input type="text" id="username" placeholder="Username" name="username">
+    </div>
+
     <div class="ws-buttons">
-        <button id="wsButton" type="button">
+        <button id="connectToWsBtn" type="button">
             Connect to chat
         </button>
 
@@ -43,7 +50,7 @@
     <div class="messages" id="messages">
     </div>
 
-    <input id="messageInput" type="text" />
+    <input id="messageInput" type="text"/>
     <button id="sendWs" type="button">
         Send
     </button>

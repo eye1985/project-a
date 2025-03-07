@@ -1,46 +1,85 @@
 package server
 
 import (
+	"fmt"
 	"github.com/gorilla/websocket"
 	"log"
 	"net/http"
 	"sync"
+	"time"
 )
 
 type webSocket struct {
 	mutex   sync.Mutex
-	clients map[*websocket.Conn]bool
+	clients map[string]*wsConn
 }
 
-func (ws *webSocket) addClient(c *websocket.Conn) {
+func (ws *webSocket) usernameExists(username string) bool {
 	ws.mutex.Lock()
 	defer ws.mutex.Unlock()
 
-	log.Println("Adding client:", c.RemoteAddr().String())
-	ws.clients[c] = true
+	_, key := ws.clients[username]
+	return key
 }
 
-func (ws *webSocket) removeClient(c *websocket.Conn) {
+func (ws *webSocket) addClient(username string, wsConn *wsConn) {
 	ws.mutex.Lock()
 	defer ws.mutex.Unlock()
 
-	log.Printf("Removing client %s", c.RemoteAddr().String())
-	delete(ws.clients, c)
+	log.Println("Adding client:", wsConn.client.RemoteAddr().String())
+	ws.clients[username] = wsConn
+}
+
+func (ws *webSocket) removeClient(username string, wsConn *wsConn) error {
+	ws.mutex.Lock()
+	defer ws.mutex.Unlock()
+
+	log.Printf("Removing client %s", wsConn.client.RemoteAddr().String())
+
+	conn, exist := ws.clients[username]
+	if !exist {
+		return fmt.Errorf("user %s does not exist", username)
+	}
+
+	if conn != wsConn {
+		return fmt.Errorf("user %s has a different active connection", username)
+	}
+
+	err := conn.client.Close()
+	if err != nil {
+		return err
+	}
+
+	delete(ws.clients, username)
+	return nil
 }
 
 func (ws *webSocket) broadcast(msg []byte, messageType int) {
 	ws.mutex.Lock()
-	defer ws.mutex.Unlock()
-	for c := range ws.clients {
-		if err := c.WriteMessage(messageType, msg); err != nil {
+	clientsCopy := make(map[string]*wsConn, len(ws.clients))
+	for username, conn := range ws.clients {
+		clientsCopy[username] = conn
+	}
+	ws.mutex.Unlock()
+
+	var usernames []string
+	for username, conn := range clientsCopy {
+		if err := conn.client.WriteMessage(messageType, msg); err != nil {
 			log.Println("Cannot send message to client, closing client ", err)
-			err := c.Close()
-			if err != nil {
-				log.Println("Cannot close client ", err)
-			}
-			ws.removeClient(c)
+			_ = conn.client.Close()
+			usernames = append(usernames, username)
 		}
 	}
+
+	ws.mutex.Lock()
+	for _, username := range usernames {
+		delete(ws.clients, username)
+	}
+	ws.mutex.Unlock()
+}
+
+type wsConn struct {
+	client *websocket.Conn
 }
 
 var upgrader = websocket.Upgrader{
@@ -51,7 +90,7 @@ var upgrader = websocket.Upgrader{
 
 var ws = &webSocket{
 	mutex:   sync.Mutex{},
-	clients: make(map[*websocket.Conn]bool),
+	clients: make(map[string]*wsConn),
 }
 
 func handleWebsocket(w http.ResponseWriter, r *http.Request) {
@@ -61,24 +100,38 @@ func handleWebsocket(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	ws.addClient(conn)
+	username := r.URL.Query().Get("username")
+	if username == "" {
+		_ = conn.WriteControl(websocket.CloseMessage, websocket.FormatCloseMessage(websocket.CloseNormalClosure, "username does not exist"), time.Now().Add(time.Second))
+		_ = conn.Close()
+		return
+	}
+
+	if ws.usernameExists(username) {
+		_ = conn.WriteControl(websocket.CloseMessage, websocket.FormatCloseMessage(websocket.CloseNormalClosure, "username already exists"), time.Now().Add(time.Second))
+		_ = conn.Close()
+		return
+	}
+
+	newWsConn := &wsConn{
+		client: conn,
+	}
+
+	ws.addClient(username, newWsConn)
 
 	defer func() {
-		ws.removeClient(conn)
-		err := conn.Close()
+		err = ws.removeClient(username, newWsConn)
 		if err != nil {
-			log.Println("Websocket close failed: ", err)
+			log.Println("Cannot close client ", err)
 		}
-		log.Println("Websocket closed", r.Host)
 	}()
 
 	for {
-		messageType, message, err := conn.ReadMessage()
-		if err != nil {
+		messageType, message, connErr := conn.ReadMessage()
+		if connErr != nil {
 			log.Println("Websocket read message failed: ", err)
-			break
 		}
 
-		ws.broadcast(message, messageType)
+		ws.broadcast([]byte(username+": "+string(message)), messageType)
 	}
 }
