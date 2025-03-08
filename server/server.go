@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"project-a/modules/health"
 	"project-a/modules/users"
+	"project-a/socket"
 )
 
 const PORT = ":8080"
@@ -23,6 +24,9 @@ type Person struct {
 func Serve(pool *pgxpool.Pool) error {
 	mux := http.NewServeMux()
 
+	// Chat
+	wsHandler := socket.ServeWs()
+
 	// Modules
 	userModule := users.NewUserModule(pool, mux)
 
@@ -32,7 +36,7 @@ func Serve(pool *pgxpool.Pool) error {
 	health.NewHealthController(pool).GetHealth(mux)
 
 	mux.Handle("GET /assets/", http.StripPrefix("/assets/", http.FileServer(http.Dir("assets"))))
-	mux.HandleFunc("GET /ws", handleWebsocket)
+	mux.HandleFunc("GET /ws", wsHandler)
 	mux.HandleFunc("GET /", func(w http.ResponseWriter, r *http.Request) {
 		tmpl, err := template.ParseFiles("templates/index.gohtml")
 		if err != nil {
