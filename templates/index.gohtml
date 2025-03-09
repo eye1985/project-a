@@ -4,57 +4,35 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Project A</title>
-    <link rel="stylesheet" href="/assets/css/utility.css"/>
-    <link rel="stylesheet" href="/assets/css/style.css"/>
-    <script src="/assets/js/index.js" type="module"></script>
+    <link rel="stylesheet" href="/assets/css/utility.css" />
+    <link rel="stylesheet" href="/assets/css/style.css" />
+    <script src="/assets/dist/index.js" type="module"></script>
 </head>
 <body>
 <div class="container">
-    Database users:
 
-    <ul class="list-group">
-        {{if not . }}
-            <li>No users found</li>
-        {{ else }}
-            {{ range . }}
-                <li>{{ .Username }} - {{ .Email }}</li>
-            {{ end }}
-        {{ end }}
-    </ul>
-
-    <form class="form" action="/users" method="post">
-        <input type="text" placeholder="Username" name="username">
-        <input type="email" placeholder="email" name="email">
-        <button id="registerBtn" type="submit">
-            Register
-        </button>
-    </form>
-
+    <h1>Chat</h1>
 
     <div class="mb-10">
         <label for="username">Username</label>
-        <input type="text" id="username" placeholder="Username" name="username">
+        <input type="text" id="username" placeholder="Username" name="username" data-cid="usernameInput">
     </div>
 
     <div class="ws-buttons">
-        <button id="connectToWsBtn" type="button">
+        <button type="button" data-cid="connectToChatBtn">
             Connect to chat
         </button>
 
-        <button id="closeWs" type="button">
+        <button id="closeWs" type="button" data-cid="closeChatBtn">
             close
         </button>
     </div>
 
 
-    <div class="messages" id="messages">
+    <div class="messages" data-cid="messages">
     </div>
 
-    <input id="messageInput" type="text"/>
-    <button id="sendWs" type="button">
-        Send
-    </button>
-
+    <input type="text" placeholder="Type your message" data-cid="messageInput" disabled />
 </div>
 </body>
 </html>
