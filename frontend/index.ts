@@ -35,7 +35,8 @@ elements.forEach((element) => {
           return;
         }
 
-        socket = initSocket(userNameInput.value, {
+        socket = initSocket();
+        socket.connect(userNameInput.value, {
           onMessage: (event) => {
             const messages = elements.find(
               (element) => element.getAttribute('data-cid') === 'messages',
@@ -51,8 +52,6 @@ elements.forEach((element) => {
             messages.scrollTo(0, messages.scrollHeight);
           },
         });
-
-        socket.connect();
         connectButton.setAttribute('disabled', 'disabled');
         messageInput.removeAttribute('disabled');
       });

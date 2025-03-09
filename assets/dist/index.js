@@ -22,7 +22,8 @@ elements.forEach((element) => {
                     console.error('No username');
                     return;
                 }
-                socket = initSocket(userNameInput.value, {
+                socket = initSocket();
+                socket.connect(userNameInput.value, {
                     onMessage: (event) => {
                         const messages = elements.find((element) => element.getAttribute('data-cid') === 'messages');
                         if (!messages) {
@@ -34,7 +35,6 @@ elements.forEach((element) => {
                         messages.scrollTo(0, messages.scrollHeight);
                     },
                 });
-                socket.connect();
                 connectButton.setAttribute('disabled', 'disabled');
                 messageInput.removeAttribute('disabled');
             });
