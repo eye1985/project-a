@@ -46,7 +46,6 @@ func (h *Hub) Run() {
 		case message := <-h.broadcast:
 			for username, clients := range h.clients {
 				for _, client := range clients {
-
 					// TODO figure out batch sending, using NextWriter and chan for sending. With channels you can check queue
 					if err := client.conn.WriteMessage(websocket.TextMessage, message); err != nil {
 						_ = client.conn.Close()

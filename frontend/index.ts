@@ -16,6 +16,12 @@ const getElement = (id: string) => {
   return element;
 };
 
+type SocketMessage = {
+  message: string;
+  username: string;
+  createdAt: Date;
+};
+
 elements.forEach((element) => {
   switch (element.getAttribute('data-cid')) {
     case 'connectToChatBtn':
@@ -37,7 +43,10 @@ elements.forEach((element) => {
 
         socket = initSocket();
         socket.connect(userNameInput.value, {
-          onMessage: (event) => {
+          onOpen(evt) {
+            console.log(evt, 'event');
+          },
+          onMessage(event) {
             const messages = elements.find(
               (element) => element.getAttribute('data-cid') === 'messages',
             ) as HTMLDivElement | undefined;
@@ -46,7 +55,13 @@ elements.forEach((element) => {
               throw new Error('Div not found');
             }
             const newMessage = document.createElement('p');
-            newMessage.innerText = event.data;
+            const { message, username, createdAt } = JSON.parse(
+              event.data,
+            ) as SocketMessage;
+
+            const time = new Date(createdAt);
+            const timeStamp = `${time.getDate() < 10 ? '0' + time.getDate() : time.getDate()}/${time.getMonth()}/${time.getFullYear()} ${time.getHours()}:${time.getMinutes()}:${time.getSeconds()}`;
+            newMessage.innerText = `${timeStamp} - ${username}: ${message}`;
 
             messages.appendChild(newMessage);
             messages.scrollTo(0, messages.scrollHeight);

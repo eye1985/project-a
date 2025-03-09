@@ -7,7 +7,7 @@ export type SocketController = {
       onOpen,
       onMessage,
     }: {
-      onOpen?: () => void;
+      onOpen?: (e: Event) => void;
       onMessage?: (message: MessageEvent) => void;
       onClose?: (e: CloseEvent) => void;
       onError?: (e: Event) => void;
@@ -29,7 +29,7 @@ export const initSocket = (): SocketController => {
         onOpen,
         onMessage,
       }: {
-        onOpen?: () => void;
+        onOpen?: (e: Event) => void;
         onMessage?: (message: MessageEvent) => void;
         onClose?: (e: CloseEvent) => void;
         onError?: (e: Event) => void;
@@ -37,8 +37,8 @@ export const initSocket = (): SocketController => {
     ) {
       ws = new WebSocket(`ws://localhost:8080/ws?username=${username}`);
 
-      ws.onopen = () => {
-        onOpen && onOpen();
+      ws.onopen = (evt) => {
+        onOpen && onOpen(evt);
       };
 
       ws.onmessage = (event) => {

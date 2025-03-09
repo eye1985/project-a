@@ -31,7 +31,8 @@ func ServeWs() func(http.ResponseWriter, *http.Request) {
 			return
 		}
 
-		client := &Client{conn: conn, username: username, hub: hub}
+		// TODO finish usage of channels
+		client := &Client{conn: conn, username: username, hub: hub, send: make(chan []byte, 256)}
 		hub.register <- client
 		go client.read()
 	}

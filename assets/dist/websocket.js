@@ -3,8 +3,8 @@ export const initSocket = () => {
     return {
         connect(username, { onClose, onError, onOpen, onMessage, }) {
             ws = new WebSocket(`ws://localhost:8080/ws?username=${username}`);
-            ws.onopen = () => {
-                onOpen && onOpen();
+            ws.onopen = (evt) => {
+                onOpen && onOpen(evt);
             };
             ws.onmessage = (event) => {
                 onMessage && onMessage(event);
