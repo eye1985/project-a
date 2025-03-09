@@ -4,6 +4,7 @@ import (
 	"context"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"net/http"
+	"project-a/server/middleware"
 )
 
 type IHealthController interface {
@@ -18,7 +19,7 @@ func NewHealthController(pool *pgxpool.Pool) *HealthController {
 	return &HealthController{pool}
 }
 
-func (h *HealthController) GetHealth(mux *http.ServeMux) {
+func (h *HealthController) GetHealth(mux middleware.RouteHandler) {
 	mux.HandleFunc("GET /health", func(w http.ResponseWriter, r *http.Request) {
 		var status string
 		err := h.pool.Ping(context.Background())
