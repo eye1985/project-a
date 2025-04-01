@@ -1,7 +1,6 @@
 package socket
 
 import (
-	"github.com/gorilla/websocket"
 	"log"
 	"slices"
 )
@@ -46,17 +45,8 @@ func (h *Hub) Run() {
 		case message := <-h.broadcast:
 			for username, clients := range h.clients {
 				for _, client := range clients {
-					// TODO figure out batch sending, using NextWriter and chan for sending. With channels you can check queue
-					if err := client.conn.WriteMessage(websocket.TextMessage, message); err != nil {
-						_ = client.conn.Close()
-						h.clients[username] = slices.DeleteFunc(h.clients[username], func(c *Client) bool {
-							return c == client
-						})
-
-						log.Printf("Cant write %s %s", username, err)
-					}
+					client.send <- message
 				}
-
 				if len(h.clients[username]) == 0 {
 					delete(h.clients, username)
 				}

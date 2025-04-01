@@ -40,6 +40,9 @@ elements.forEach((element) => {
                         messages.appendChild(newMessage);
                         messages.scrollTo(0, messages.scrollHeight);
                     },
+                    onClose() {
+                        connectButton.removeAttribute('disabled');
+                    },
                 });
                 connectButton.setAttribute('disabled', 'disabled');
                 messageInput.removeAttribute('disabled');

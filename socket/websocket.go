@@ -13,10 +13,11 @@ var upgrader = websocket.Upgrader{
 	},
 }
 
-func ServeWs() func(http.ResponseWriter, *http.Request) {
-	hub := NewHub()
-	go hub.Run()
+const (
+	UsernameDoesNotExist = "username does not exist"
+)
 
+func ServeWs(hub *Hub, cf ClientFactory) func(http.ResponseWriter, *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		conn, err := upgrader.Upgrade(w, r, nil)
 		if err != nil {
@@ -26,14 +27,15 @@ func ServeWs() func(http.ResponseWriter, *http.Request) {
 
 		username := r.URL.Query().Get("username")
 		if username == "" {
-			_ = conn.WriteControl(websocket.CloseMessage, websocket.FormatCloseMessage(websocket.CloseNormalClosure, "username does not exist"), time.Now().Add(time.Second))
+			_ = conn.WriteControl(websocket.CloseMessage, websocket.FormatCloseMessage(websocket.CloseNormalClosure, UsernameDoesNotExist), time.Now().Add(time.Second))
 			_ = conn.Close()
 			return
 		}
 
-		// TODO finish usage of channels
-		client := &Client{conn: conn, username: username, hub: hub, send: make(chan []byte, 256)}
+		log.Println("Websocket connected: ", username)
+		client := cf(conn, hub, username)
 		hub.register <- client
 		go client.read()
+		go client.write()
 	}
 }

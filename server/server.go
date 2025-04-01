@@ -35,8 +35,11 @@ func Serve(pool *pgxpool.Pool) error {
 	mux := midWare.Mux
 	midWare.Add(LoggerMiddleware)
 
+	hub := socket.NewHub()
+	go hub.Run()
+
 	// Chat
-	wsHandler := socket.ServeWs()
+	wsHandler := socket.ServeWs(hub, socket.NewClient)
 
 	// Modules
 	userModule := users.NewUserModule(pool, mux)
