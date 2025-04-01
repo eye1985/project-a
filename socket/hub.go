@@ -1,6 +1,7 @@
 package socket
 
 import (
+	"encoding/json"
 	"log"
 	"slices"
 )
@@ -43,8 +44,20 @@ func (h *Hub) Run() {
 
 			log.Printf("Client unregistered %s", client.username)
 		case message := <-h.broadcast:
+			var messageJSON MessageJSON
+			err := json.Unmarshal(message, &messageJSON)
+			if err != nil {
+				log.Printf("Error unmarshalling message: %s", err)
+				continue
+			}
+
+			ignoreSelf := messageJSON.Type == messageTypeJoin || messageJSON.Type == messageTypeQuit
+
 			for username, clients := range h.clients {
 				for _, client := range clients {
+					if ignoreSelf && client.username == messageJSON.Username {
+						continue
+					}
 					client.send <- message
 				}
 				if len(h.clients[username]) == 0 {

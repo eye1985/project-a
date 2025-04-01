@@ -19,6 +19,12 @@ type Client struct {
 	channel    []string // TODO implement later
 }
 
+const (
+	messageTypeMessage = "message"
+	messageTypeJoin    = "join"
+	messageTypeQuit    = "quit"
+)
+
 type ClientFactory func(conn *websocket.Conn, hub *Hub, username string) *Client
 
 func NewClient(conn *websocket.Conn, hub *Hub, username string) *Client {
@@ -42,7 +48,20 @@ type MessageJSON struct {
 
 func (c *Client) read() {
 	defer func() {
-		c.hub.unregister <- c
+		quitMsg := MessageJSON{
+			Message:   c.username + " quit",
+			Type:      messageTypeQuit,
+			Username:  c.username,
+			CreatedAt: time.Now(),
+		}
+
+		msg, err := json.Marshal(quitMsg)
+		if err != nil {
+			c.hub.unregister <- c
+		} else {
+			c.hub.unregister <- c
+			c.hub.broadcast <- msg
+		}
 	}()
 
 	dErr := c.conn.SetReadDeadline(time.Now().Add(c.pongWait))
@@ -52,7 +71,6 @@ func (c *Client) read() {
 
 	c.conn.SetPongHandler(func(string) error {
 		dErr := c.conn.SetReadDeadline(time.Now().Add(c.pongWait))
-		log.Printf("Pong")
 		if dErr != nil {
 			return dErr
 		}
@@ -73,7 +91,7 @@ func (c *Client) read() {
 			Message:   string(message),
 			Username:  c.username,
 			CreatedAt: time.Now().UTC(),
-			Type:      "",
+			Type:      messageTypeMessage,
 		}
 
 		message, err = json.Marshal(msg)
@@ -120,7 +138,6 @@ func (c *Client) write() {
 			if err := c.conn.WriteMessage(websocket.PingMessage, []byte{}); err != nil {
 				return
 			}
-			log.Println("Tick writer")
 		}
 	}
 }

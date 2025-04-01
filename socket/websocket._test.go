@@ -152,6 +152,7 @@ func TestMessageSendAndReceive(t *testing.T) {
 		t.Errorf("client write error: %v", err)
 	}
 
+	_, _, _ = client.ReadMessage() // Join message from user2
 	_, client1ReadMsg, err := client.ReadMessage()
 	if err != nil {
 		t.Errorf("client1 read error: %v", err)
@@ -223,5 +224,49 @@ func TestIdleUsersShouldDisconnect(t *testing.T) {
 
 	if len(testStruct.hub.clients[username]) != 0 {
 		t.Errorf("Should have 0 client, but got %v", len(testStruct.hub.clients[username]))
+	}
+}
+
+func TestShouldBroadCastJoinAndQuitEvent(t *testing.T) {
+	testStruct := testStruct(true, NewClient)
+	defer testStruct.server.Close()
+	username := "erik"
+	username2 := "arne"
+
+	url := "ws" + testStruct.server.URL[len("http"):] + fmt.Sprintf("?username=%v", username)
+	url2 := "ws" + testStruct.server.URL[len("http"):] + fmt.Sprintf("?username=%v", username2)
+
+	client, _, err := websocket.DefaultDialer.Dial(url, nil)
+	if err != nil {
+		t.Errorf("websocket dial error: %v", err)
+	}
+	defer client.Close()
+
+	client2, _, err := websocket.DefaultDialer.Dial(url2, nil)
+	if err != nil {
+		t.Errorf("websocket dial error: %v", err)
+	}
+	defer client2.Close()
+
+	_, msg, _ := client.ReadMessage()
+	var jsonStructJoin MessageJSON
+	json.Unmarshal(msg, &jsonStructJoin)
+
+	if jsonStructJoin.Type != messageTypeJoin {
+		t.Errorf("Should have type %v, but got %v", messageTypeJoin, jsonStructJoin.Type)
+	}
+
+	client2.Close()
+
+	var jsonStructQuit MessageJSON
+	_, msg, _ = client.ReadMessage()
+	json.Unmarshal(msg, &jsonStructQuit)
+
+	if jsonStructQuit.Type != messageTypeQuit {
+		t.Errorf("Should have type %v, but got %v", messageTypeQuit, jsonStructQuit.Type)
+	}
+
+	if len(testStruct.hub.clients[username2]) != 0 {
+		t.Errorf("Should have 0 client, but got %v", len(testStruct.hub.clients[username2]))
 	}
 }

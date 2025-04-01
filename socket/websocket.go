@@ -1,6 +1,7 @@
 package socket
 
 import (
+	"encoding/json"
 	"github.com/gorilla/websocket"
 	"log"
 	"net/http"
@@ -35,6 +36,21 @@ func ServeWs(hub *Hub, cf ClientFactory) func(http.ResponseWriter, *http.Request
 		log.Println("Websocket connected: ", username)
 		client := cf(conn, hub, username)
 		hub.register <- client
+
+		joinMessage := MessageJSON{
+			Message:   client.username + " joined",
+			Type:      messageTypeJoin,
+			Username:  client.username,
+			CreatedAt: time.Now(),
+		}
+
+		joinedMsgByte, err := json.Marshal(joinMessage)
+		if err != nil {
+			log.Println("Websocket marshal failed: ", err)
+		}
+
+		hub.broadcast <- joinedMsgByte
+
 		go client.read()
 		go client.write()
 	}
