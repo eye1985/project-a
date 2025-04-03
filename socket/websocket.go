@@ -15,7 +15,8 @@ var upgrader = websocket.Upgrader{
 }
 
 const (
-	UsernameDoesNotExist = "username does not exist"
+	usernameDoesNotExist    = "username does not exist"
+	channelNameDoesNotExist = "channels does not exist"
 )
 
 func ServeWs(hub *Hub, cf ClientFactory) func(http.ResponseWriter, *http.Request) {
@@ -28,23 +29,34 @@ func ServeWs(hub *Hub, cf ClientFactory) func(http.ResponseWriter, *http.Request
 
 		username := r.URL.Query().Get("username")
 		if username == "" {
-			_ = conn.WriteControl(websocket.CloseMessage, websocket.FormatCloseMessage(websocket.CloseNormalClosure, UsernameDoesNotExist), time.Now().Add(time.Second))
+			_ = conn.WriteControl(websocket.CloseMessage, websocket.FormatCloseMessage(websocket.ClosePolicyViolation, usernameDoesNotExist), time.Now().Add(time.Second))
+			_ = conn.Close()
+			return
+		}
+
+		channel := r.URL.Query().Get("channels")
+		if channel == "" {
+			_ = conn.WriteControl(websocket.CloseMessage, websocket.FormatCloseMessage(websocket.ClosePolicyViolation, channelNameDoesNotExist), time.Now().Add(time.Second))
 			_ = conn.Close()
 			return
 		}
 
 		log.Println("Websocket connected: ", username)
-		client := cf(conn, hub, username)
+		client := cf(conn, hub, username, channel)
 		hub.register <- client
 
-		joinMessage := MessageJSON{
-			Message:   client.username + " joined",
-			Type:      messageTypeJoin,
-			Username:  client.username,
-			CreatedAt: time.Now(),
+		joinMsg := sendMessage{
+			ClientId:   client.id,
+			ToChannels: client.channels,
+			Message: &MessageJSON{
+				Message:   client.username + " joined",
+				Event:     messageTypeJoin,
+				Username:  client.username,
+				CreatedAt: time.Now(),
+			},
 		}
 
-		joinedMsgByte, err := json.Marshal(joinMessage)
+		joinedMsgByte, err := json.Marshal(joinMsg)
 		if err != nil {
 			log.Println("Websocket marshal failed: ", err)
 		}

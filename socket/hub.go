@@ -2,70 +2,72 @@ package socket
 
 import (
 	"encoding/json"
+	"github.com/gorilla/websocket"
 	"log"
 	"slices"
 )
 
 type Hub struct {
-	clients    map[string][]*Client
 	broadcast  chan []byte
-	register   chan *Client
-	unregister chan *Client
+	register   chan *client
+	unregister chan *client
+	channels   map[string][]*client
 }
 
 func NewHub() *Hub {
 	return &Hub{
 		broadcast:  make(chan []byte),
-		register:   make(chan *Client),
-		unregister: make(chan *Client),
-		clients:    make(map[string][]*Client),
+		register:   make(chan *client),
+		unregister: make(chan *client),
+		channels:   make(map[string][]*client),
 	}
 }
 
 func (h *Hub) Run() {
 	for {
 		select {
-		case client := <-h.register:
-			h.clients[client.username] = append(h.clients[client.username], client)
-			log.Printf("Client registered %s", client.username)
-		case client := <-h.unregister:
-			for _, c := range h.clients[client.username] {
-				if c == client {
-					_ = c.conn.Close()
-					h.clients[client.username] = slices.DeleteFunc(h.clients[client.username], func(cSlice *Client) bool {
-						return cSlice == c
-					})
-				}
+		case userClient := <-h.register:
+			for _, ch := range userClient.channels {
+				h.channels[ch] = append(h.channels[ch], userClient)
+				log.Printf("client registered %s and join %s channel", userClient.username, ch)
+			}
+		case userClient := <-h.unregister:
+			_ = userClient.conn.WriteMessage(websocket.CloseMessage, websocket.FormatCloseMessage(websocket.CloseNormalClosure, "closing"))
+			_ = userClient.conn.Close()
+
+			for _, ch := range userClient.channels {
+				h.channels[ch] = slices.DeleteFunc(h.channels[ch], func(c *client) bool {
+					return c.id == userClient.id
+				})
+				log.Printf("Channel %s length: %d", ch, len(h.channels[ch]))
 			}
 
-			if len(h.clients[client.username]) == 0 {
-				delete(h.clients, client.username)
-			}
-
-			log.Printf("Client unregistered %s", client.username)
+			log.Printf("client unregistered %s", userClient.username)
 		case message := <-h.broadcast:
-			var messageJSON MessageJSON
-			err := json.Unmarshal(message, &messageJSON)
+			var msg sendMessage
+			err := json.Unmarshal(message, &msg)
 			if err != nil {
-				log.Printf("Error unmarshalling message: %s", err)
+				log.Printf("Error unmarshalling Message: %s", err)
 				continue
 			}
 
-			ignoreSelf := messageJSON.Type == messageTypeJoin || messageJSON.Type == messageTypeQuit
-
-			for username, clients := range h.clients {
-				for _, client := range clients {
-					if ignoreSelf && client.username == messageJSON.Username {
+			for _, ch := range msg.ToChannels {
+				for _, c := range h.channels[ch] {
+					jsonMsg, err := json.Marshal(msg.Message)
+					if err != nil {
+						log.Printf("Error marshalling Message: %s", err)
 						continue
 					}
-					client.send <- message
-				}
-				if len(h.clients[username]) == 0 {
-					delete(h.clients, username)
+					ignoreSelf := msg.Message.Event == messageTypeJoin || msg.Message.Event == messageTypeQuit
+					// TODO update this later to id after auth is ready
+					if ignoreSelf && c.username == msg.Message.Username {
+						continue
+					}
+
+					c.send <- jsonMsg
+					log.Printf("client broadcast: %s", string(jsonMsg))
 				}
 			}
-
-			log.Printf("Client broadcast: %s", string(message))
 		}
 	}
 }

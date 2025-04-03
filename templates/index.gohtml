@@ -8,17 +8,22 @@
     <link rel="stylesheet" href="/assets/css/style.css" />
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap"
+          rel="stylesheet">
     <script src="/assets/dist/index.js" type="module"></script>
 </head>
 <body>
 <div class="container">
-
     <h1>Chat</h1>
 
     <div class="mb-10">
         <label for="username">Username</label>
         <input type="text" id="username" placeholder="Username" name="username" data-cid="usernameInput">
+    </div>
+
+    <div class="mb-10">
+        <label for="channel">Channel</label>
+        <input type="text" id="channel" placeholder="Channel" name="channel" data-cid="channelInput">
     </div>
 
     <div class="ws-buttons">
@@ -36,6 +41,15 @@
     </div>
 
     <input type="text" placeholder="Type your message" data-cid="messageInput" disabled />
+
+
+{{/*    <input type="text" placeholder="event your message" data-cidx="messageInput"*/}}
+{{/*           data-handler="keypress:keypressHandler" />*/}}
+{{/*    <script>*/}}
+{{/*      globalThis.keypressHandler = () => {*/}}
+{{/*        console.log('keypress handler');*/}}
+{{/*      };*/}}
+{{/*    </script>*/}}
 </div>
 </body>
 </html>

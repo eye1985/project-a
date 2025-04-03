@@ -4,55 +4,69 @@ import (
 	"bytes"
 	"encoding/json"
 	"errors"
+	"github.com/google/uuid"
 	"github.com/gorilla/websocket"
 	"log"
 	"time"
 )
 
-type Client struct {
+type MessageJSON struct {
+	Message   string    `json:"message"`
+	Event     string    `json:"Event"`
+	Username  string    `json:"username"`
+	CreatedAt time.Time `json:"createdAt"`
+}
+
+type sendMessage struct {
+	ClientId   string
+	ToChannels []string
+	Message    *MessageJSON
+}
+
+type client struct {
+	id         string
 	conn       *websocket.Conn
+	email      string
 	username   string
 	hub        *Hub
 	send       chan []byte
 	tickerWait time.Duration
 	pongWait   time.Duration
-	channel    []string // TODO implement later
+	channels   []string
 }
 
 const (
-	messageTypeMessage = "message"
+	messageTypeMessage = "Message"
 	messageTypeJoin    = "join"
 	messageTypeQuit    = "quit"
 )
 
-type ClientFactory func(conn *websocket.Conn, hub *Hub, username string) *Client
+type ClientFactory func(conn *websocket.Conn, hub *Hub, username string, channel string) *client
 
-func NewClient(conn *websocket.Conn, hub *Hub, username string) *Client {
-	return &Client{
+func NewClient(conn *websocket.Conn, hub *Hub, username string, channel string) *client {
+	return &client{
+		id:         uuid.NewString(),
 		conn:       conn,
 		username:   username,
 		hub:        hub,
 		send:       make(chan []byte, 256),
 		tickerWait: 10 * time.Second,
 		pongWait:   15 * time.Second,
-		channel:    []string{},
+		channels:   []string{channel},
 	}
 }
 
-type MessageJSON struct {
-	Message   string    `json:"message"`
-	Type      string    `json:"type"`
-	Username  string    `json:"username"`
-	CreatedAt time.Time `json:"createdAt"`
-}
-
-func (c *Client) read() {
+func (c *client) read() {
 	defer func() {
-		quitMsg := MessageJSON{
-			Message:   c.username + " quit",
-			Type:      messageTypeQuit,
-			Username:  c.username,
-			CreatedAt: time.Now(),
+		quitMsg := &sendMessage{
+			ClientId:   c.id,
+			ToChannels: c.channels,
+			Message: &MessageJSON{
+				Message:   c.username + " quit",
+				Event:     messageTypeQuit,
+				Username:  c.username,
+				CreatedAt: time.Now(),
+			},
 		}
 
 		msg, err := json.Marshal(quitMsg)
@@ -82,16 +96,20 @@ func (c *Client) read() {
 		if err != nil {
 			var closeErr *websocket.CloseError
 			if !errors.As(err, &closeErr) {
-				log.Println("Websocket read message failed: ", err)
+				log.Println("Websocket read Message failed: ", err)
 			}
 			break
 		}
 
-		msg := &MessageJSON{
-			Message:   string(message),
-			Username:  c.username,
-			CreatedAt: time.Now().UTC(),
-			Type:      messageTypeMessage,
+		msg := &sendMessage{
+			ClientId:   c.id,
+			ToChannels: c.channels,
+			Message: &MessageJSON{
+				Message:   string(message),
+				Username:  c.username,
+				CreatedAt: time.Now().UTC(),
+				Event:     messageTypeMessage,
+			},
 		}
 
 		message, err = json.Marshal(msg)
@@ -104,22 +122,22 @@ func (c *Client) read() {
 	}
 }
 
-func (c *Client) write() {
+func (c *client) write() {
 	ticker := time.NewTicker(c.tickerWait)
 
 	for {
 		select {
 		case msg, ok := <-c.send:
 			if !ok {
-				c.conn.WriteMessage(websocket.CloseMessage, []byte("Closing connection"))
-				c.conn.Close()
+				_ = c.conn.WriteMessage(websocket.CloseMessage, []byte("Closing connection"))
+				_ = c.conn.Close()
 				return
 			}
 
 			w, err := c.conn.NextWriter(websocket.TextMessage)
 			if err != nil {
-				c.conn.WriteMessage(websocket.CloseMessage, []byte{})
-				c.conn.Close()
+				_ = c.conn.WriteMessage(websocket.CloseMessage, []byte{})
+				_ = c.conn.Close()
 				return
 			}
 			newline := []byte{'\n'}
