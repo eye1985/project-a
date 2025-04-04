@@ -10,16 +10,17 @@ services:
   postgres:
     image: postgres:16.7
     container_name: pga-postgresql
+    secrets:
+      - db-password
     ports:
       - '5432:5432'
     restart: always
     environment:
       POSTGRES_USER: admin
-      POSTGRES_PASSWORD: root
-      #      POSTGRES_PASSWORD_FILE: /run/secrets/db/password
+      POSTGRES_PASSWORD_FILE: /run/secrets/db-password
       POSTGRES_DB: project_a
     healthcheck:
-      test: [ "CMD", "pg_isready", "-U", "admin"]
+      test: [ "CMD", "pg_isready", "-U", "admin" ]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -35,3 +36,6 @@ services:
       - postgres
 volumes:
   pga_pg_data:
+secrets:
+  db-password:
+    file: ./secret/password.txt
