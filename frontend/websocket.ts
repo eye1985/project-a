@@ -44,7 +44,7 @@ export const initSocket = (): SocketController => {
       },
     ) {
       ws = new WebSocket(
-        `ws://backend:8080/ws?username=${username}&channels=${channel}`,
+        `ws://localhost:8080/ws?username=${username}&channels=${channel}`,
       );
 
       ws.onopen = (evt) => {
