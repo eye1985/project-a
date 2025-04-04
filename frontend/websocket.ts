@@ -1,3 +1,9 @@
+export type SocketMessage = {
+  message: string;
+  username: string;
+  createdAt: Date;
+};
+
 export type SocketController = {
   connect: (
     username: string,
@@ -38,7 +44,7 @@ export const initSocket = (): SocketController => {
       },
     ) {
       ws = new WebSocket(
-        `ws://localhost:8080/ws?username=${username}&channel=${channel}`,
+        `ws://localhost:8080/ws?username=${username}&channels=${channel}`,
       );
 
       ws.onopen = (evt) => {

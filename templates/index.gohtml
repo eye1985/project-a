@@ -1,55 +1,46 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Project A</title>
-    <link rel="stylesheet" href="/assets/css/utility.css" />
-    <link rel="stylesheet" href="/assets/css/style.css" />
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap"
-          rel="stylesheet">
-    <script src="/assets/dist/index.js" type="module"></script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Project A</title>
+  <link rel="stylesheet" href="/assets/css/utility.css" />
+  <link rel="stylesheet" href="/assets/css/style.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap"
+        rel="stylesheet">
+  <script src="/assets/dist/index.js" type="module"></script>
 </head>
 <body>
 <div class="container">
-    <h1>Chat</h1>
+  <h1>Chat</h1>
 
-    <div class="mb-10">
-        <label for="username">Username</label>
-        <input type="text" id="username" placeholder="Username" name="username" data-cid="usernameInput">
-    </div>
+  <div class="mb-10">
+    <label for="username">Username</label>
+    <input type="text" id="username" placeholder="Username" name="username" data-cid="usernameInput">
+  </div>
 
-    <div class="mb-10">
-        <label for="channel">Channel</label>
-        <input type="text" id="channel" placeholder="Channel" name="channel" data-cid="channelInput">
-    </div>
+  <div class="mb-10">
+    <label for="channel">Channel</label>
+    <input type="text" id="channel" placeholder="Channel" name="channel" data-cid="channelInput">
+  </div>
 
-    <div class="ws-buttons">
-        <button type="button" data-cid="connectToChatBtn">
-            Connect to chat
-        </button>
+  <div class="ws-buttons">
+    <button type="button" data-cid="connectToChatBtn" data-handler="click:connectWS"
+            data-bind="usernameInput:>3,channelInput:>3" data-bind-action="disabled" disabled>
+      Connect to chat
+    </button>
 
-        <button id="closeWs" type="button" data-cid="closeChatBtn">
-            close
-        </button>
-    </div>
+    <button id="closeWs" type="button" data-cid="closeChatBtn" data-handler="click:closeWS" disabled>
+      close
+    </button>
+  </div>
 
+  <div class="messages" data-cid="messages">
+  </div>
 
-    <div class="messages" data-cid="messages">
-    </div>
-
-    <input type="text" placeholder="Type your message" data-cid="messageInput" disabled />
-
-
-{{/*    <input type="text" placeholder="event your message" data-cidx="messageInput"*/}}
-{{/*           data-handler="keypress:keypressHandler" />*/}}
-{{/*    <script>*/}}
-{{/*      globalThis.keypressHandler = () => {*/}}
-{{/*        console.log('keypress handler');*/}}
-{{/*      };*/}}
-{{/*    </script>*/}}
+  <input type="text" placeholder="Type your message" data-cid="messageInput" data-handler="keyup:handleInput" disabled />
 </div>
 </body>
 </html>
