@@ -13,7 +13,7 @@ import (
 func postgresUrl() string {
 	pgUrl, ok := os.LookupEnv("POSTGRES_URL")
 	if !ok {
-		pgUrl = "postgres://admin:root@postgres:5432/project_a"
+		log.Fatalf("POSTGRES_URL environment variable not set")
 	}
 
 	return pgUrl
