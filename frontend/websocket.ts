@@ -8,6 +8,7 @@ export type SocketController = {
   connect: (
     username: string,
     channel: string,
+    url: string,
     {
       onClose,
       onError,
@@ -31,6 +32,7 @@ export const initSocket = (): SocketController => {
     connect(
       username: string,
       channel: string,
+      url,
       {
         onClose,
         onError,
@@ -44,7 +46,7 @@ export const initSocket = (): SocketController => {
       },
     ) {
       ws = new WebSocket(
-        `ws://localhost:8080/ws?username=${username}&channels=${channel}`,
+        `ws://${url}/ws?username=${username}&channels=${channel}`,
       );
 
       ws.onopen = (evt) => {

@@ -2,66 +2,77 @@ import type { SocketMessage } from './websocket.js';
 import { initSocket, SocketController } from './websocket.js';
 import { shortcut } from './shortcut.js';
 
-let socket: SocketController;
-const sc = shortcut();
+export const init = (domain: string) => {
+  if (!domain) {
+    throw new Error('Invalid domain');
+  }
 
-const userNameInput = sc.getElement('usernameInput') as HTMLInputElement;
-const channelInput = sc.getElement('channelInput') as HTMLInputElement;
-const connectButton = sc.getElement('connectToChatBtn') as HTMLButtonElement;
-const closeButton = sc.getElement('closeChatBtn') as HTMLButtonElement;
-const messageInput = sc.getElement('messageInput') as HTMLInputElement;
-const messages = sc.getElement('messages');
+  let socket: SocketController;
+  const sc = shortcut();
 
-sc.addHandler({
-  connectWS: () => {
-    socket = initSocket();
-    socket.connect(userNameInput.value.trim(), channelInput.value.trim(), {
-      onOpen(evt) {
-        console.log(evt, 'event');
-        closeButton.removeAttribute('disabled');
-      },
-      onMessage(event) {
-        if (!messages) {
-          throw new Error('Div not found');
-        }
-        const newMessage = document.createElement('p');
-        const { message, username, createdAt } = JSON.parse(
-          event.data,
-        ) as SocketMessage;
+  const userNameInput = sc.getElement('usernameInput') as HTMLInputElement;
+  const channelInput = sc.getElement('channelInput') as HTMLInputElement;
+  const connectButton = sc.getElement('connectToChatBtn') as HTMLButtonElement;
+  const closeButton = sc.getElement('closeChatBtn') as HTMLButtonElement;
+  const messageInput = sc.getElement('messageInput') as HTMLInputElement;
+  const messages = sc.getElement('messages');
 
-        const time = new Date(createdAt);
-        const timeStamp = `${time.getDate() < 10 ? '0' + time.getDate() : time.getDate()}/${time.getMonth()}/${time.getFullYear()} ${time.getHours()}:${time.getMinutes()}:${time.getSeconds()}`;
-        newMessage.innerText = `${timeStamp} - ${username}: ${message}`;
+  sc.addHandler({
+    connectWS: () => {
+      socket = initSocket();
+      socket.connect(
+        userNameInput.value.trim(),
+        channelInput.value.trim(),
+        domain,
+        {
+          onOpen(evt) {
+            console.log(evt, 'event');
+            closeButton.removeAttribute('disabled');
+          },
+          onMessage(event) {
+            if (!messages) {
+              throw new Error('Div not found');
+            }
+            const newMessage = document.createElement('p');
+            const { message, username, createdAt } = JSON.parse(
+              event.data,
+            ) as SocketMessage;
 
-        messages.appendChild(newMessage);
-        messages.scrollTo(0, messages.scrollHeight);
-      },
+            const time = new Date(createdAt);
+            const timeStamp = `${time.getDate() < 10 ? '0' + time.getDate() : time.getDate()}/${time.getMonth()}/${time.getFullYear()} ${time.getHours()}:${time.getMinutes()}:${time.getSeconds()}`;
+            newMessage.innerText = `${timeStamp} - ${username}: ${message}`;
 
-      onClose(evt) {
-        if (evt.code === 1008) {
-          alert(evt.reason);
-        }
+            messages.appendChild(newMessage);
+            messages.scrollTo(0, messages.scrollHeight);
+          },
 
-        connectButton.removeAttribute('disabled');
-        closeButton.setAttribute('disabled', 'disabled');
-        messageInput.setAttribute('disabled', 'disabled');
-      },
-    });
-    connectButton.setAttribute('disabled', 'disabled');
-    messageInput.removeAttribute('disabled');
-  },
-  closeWS: () => {
-    const connectButton = sc.getElement(
-      'connectToChatBtn',
-    ) as HTMLButtonElement;
-    socket.disconnect();
-    connectButton.removeAttribute('disabled');
-  },
-  handleInput(e) {
-    if ((e as KeyboardEvent).key === 'Enter') {
-      socket.send(messageInput.value);
-      messageInput.value = '';
-    }
-  },
-});
-sc.init();
+          onClose(evt) {
+            if (evt.code === 1008) {
+              alert(evt.reason);
+            }
+
+            connectButton.removeAttribute('disabled');
+            closeButton.setAttribute('disabled', 'disabled');
+            messageInput.setAttribute('disabled', 'disabled');
+          },
+        },
+      );
+      connectButton.setAttribute('disabled', 'disabled');
+      messageInput.removeAttribute('disabled');
+    },
+    closeWS: () => {
+      const connectButton = sc.getElement(
+        'connectToChatBtn',
+      ) as HTMLButtonElement;
+      socket.disconnect();
+      connectButton.removeAttribute('disabled');
+    },
+    handleInput(e) {
+      if ((e as KeyboardEvent).key === 'Enter') {
+        socket.send(messageInput.value);
+        messageInput.value = '';
+      }
+    },
+  });
+  sc.init();
+};

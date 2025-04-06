@@ -26,18 +26,43 @@ services:
       retries: 5
     volumes:
       - pga_pg_data:/var/lib/postgresql/data
+  reverse-proxy:
+    image: traefik:v3.3
+    command:
+      - "--api.insecure=true"
+      - "--providers.docker"
+      - "--providers.docker.exposedbydefault=false"
+      - "--entryPoints.websecure.address=:443"
+      - "--certificateresolvers.myresolver.acme.tlschallenge=true"
+      - "--certificateresolvers.myresolver.acme.email=eye1985@gmail.com"
+      - "--certificateresolvers.myresolver.acme.storage=/letsencrypt/acme.json"
+      - "--entryPoints.web.address=:80"
+      - "--entryPoints.web.http.redirections.entrypoint.to=websecure"
+      - "--entryPoints.web.http.redirections.entrypoint.scheme=https"
+    ports:
+      - "80:80"
+      - "443:443"
+      - "8080:8080"
+    volumes:
+      - letsencrypt:/letsencrypt
+      - /var/run/docker.sock:/var/run/docker.sock
   backend:
     image: eye1985/project-a:prod
     env_file:
       - .env
     labels:
       - "com.centurylinklabs.watchtower.enable=true"
+      - "traefik.http.routers.backend.rule=Host(`1teration.dev`)"
+      - "traefik.http.routers.backend.entrypoints=websecure"
+      - "traefik.http.routers.backend.tls.certresolver=myresolver"
+      - "traefik.enable=true"
     ports:
-      - '8080:8080'
+      - '3000:3000'
     depends_on:
       - postgres
 volumes:
   pga_pg_data:
+  letsencrypt:
 secrets:
   db-password:
     file: ./secret/password.txt
