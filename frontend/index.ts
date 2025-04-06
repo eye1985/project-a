@@ -2,8 +2,8 @@ import type { SocketMessage } from './websocket.js';
 import { initSocket, SocketController } from './websocket.js';
 import { shortcut } from './shortcut.js';
 
-export const init = (domain: string) => {
-  if (!domain) {
+export const init = (wsUrl: string) => {
+  if (!wsUrl) {
     throw new Error('Invalid domain');
   }
 
@@ -23,7 +23,7 @@ export const init = (domain: string) => {
       socket.connect(
         userNameInput.value.trim(),
         channelInput.value.trim(),
-        domain,
+        wsUrl,
         {
           onOpen(evt) {
             console.log(evt, 'event');

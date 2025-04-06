@@ -2,7 +2,6 @@ package server
 
 import (
 	"context"
-	"fmt"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"html/template"
 	"log"
@@ -25,13 +24,9 @@ type Person struct {
 	Email    string
 }
 
-type WsUrl struct {
-	Url string `json:"wsUrl"`
-}
-
 type PageData struct {
 	Person []Person
-	Domain string
+	WsUrl  string
 }
 
 func LoggerMiddleware(next http.HandlerFunc) http.HandlerFunc {
@@ -42,9 +37,9 @@ func LoggerMiddleware(next http.HandlerFunc) http.HandlerFunc {
 }
 
 func Serve(pool *pgxpool.Pool) error {
-	domain, ok := os.LookupEnv("DOMAIN")
+	wsUrl, ok := os.LookupEnv("WS_URL")
 	if !ok {
-		log.Fatalf("DOMAIN environment variable not set")
+		log.Fatalf("WS_URL environment variable not set")
 	}
 
 	midWare := middleware.NewMiddlewareMux()
@@ -101,11 +96,6 @@ func Serve(pool *pgxpool.Pool) error {
 			})
 		}
 
-		domainString := fmt.Sprintf("localhost%s", PORT)
-		if len(domain) > 0 {
-			domainString = domain
-		}
-
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
 			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
@@ -114,7 +104,7 @@ func Serve(pool *pgxpool.Pool) error {
 
 		if err := tmpl.Execute(w, &PageData{
 			Person: persons,
-			Domain: domainString,
+			WsUrl:  wsUrl,
 		}); err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return

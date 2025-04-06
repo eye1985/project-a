@@ -1,7 +1,7 @@
 import { initSocket } from './websocket.js';
 import { shortcut } from './shortcut.js';
-export const init = (domain) => {
-    if (!domain) {
+export const init = (wsUrl) => {
+    if (!wsUrl) {
         throw new Error('Invalid domain');
     }
     let socket;
@@ -15,7 +15,7 @@ export const init = (domain) => {
     sc.addHandler({
         connectWS: () => {
             socket = initSocket();
-            socket.connect(userNameInput.value.trim(), channelInput.value.trim(), domain, {
+            socket.connect(userNameInput.value.trim(), channelInput.value.trim(), wsUrl, {
                 onOpen(evt) {
                     console.log(evt, 'event');
                     closeButton.removeAttribute('disabled');
