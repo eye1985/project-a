@@ -8,6 +8,7 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 	"log"
 	"os"
+	"path/filepath"
 )
 
 func postgresUrl() string {
@@ -19,8 +20,18 @@ func postgresUrl() string {
 	return pgUrl
 }
 
+func migrationPath() string {
+	dir, err := os.Getwd()
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	return "file://" + filepath.Join(dir, "migrations")
+}
+
 func Migrate() {
-	m, err := migrate.New("file://migrations", postgresUrl()+"?sslmode=disable")
+
+	m, err := migrate.New(migrationPath(), postgresUrl()+"?sslmode=disable")
 	if err != nil {
 		log.Printf("Error running migration: %v", err)
 	}

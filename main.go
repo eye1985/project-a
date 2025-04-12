@@ -5,8 +5,8 @@ import (
 	"github.com/joho/godotenv"
 	"log"
 	"os"
-	"project-a/database"
-	"project-a/server"
+	"project-a/internal/database"
+	"project-a/internal/server"
 )
 
 func main() {

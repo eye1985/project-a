@@ -1,4 +1,4 @@
-package users
+package user
 
 import (
 	"context"
@@ -7,41 +7,35 @@ import (
 	"time"
 )
 
-type UserRepo struct {
+type userRepository struct {
 	pool *pgxpool.Pool
 }
 
-type IUserRepo interface {
-	GetUser(email string) (User, error)
-	GetUsers() ([]User, error)
-	InsertUser(user User) error
+type Repository interface {
+	GetUser(email string) (*User, error)
+	GetUsers() ([]*User, error)
+	InsertUser(user *User) error
 	DeleteUser(email string) error
 }
 
-type User struct {
-	Username  string    `json:"username"`
-	Email     string    `json:"email"`
-	CreatedAt time.Time `json:"created_at"`
-}
-
-func (r *UserRepo) GetUser(email string) (User, error) {
+func (r *userRepository) GetUser(email string) (*User, error) {
 	ctx := context.Background()
 	var username, userEmail string
 	var createdAt time.Time
 	row := r.pool.QueryRow(ctx, "select username, email, created_at from users where email=$1", email)
 	err := row.Scan(&username, &userEmail, &createdAt)
 	if err != nil {
-		return User{}, err
+		return &User{}, err
 	}
 
-	return User{
+	return &User{
 		Username:  username,
 		Email:     userEmail,
 		CreatedAt: createdAt,
 	}, nil
 }
 
-func (r *UserRepo) GetUsers() ([]User, error) {
+func (r *userRepository) GetUsers() ([]*User, error) {
 	ctx := context.Background()
 
 	rows, err := r.pool.Query(ctx, "select username, email, created_at from users")
@@ -50,20 +44,20 @@ func (r *UserRepo) GetUsers() ([]User, error) {
 	}
 	defer rows.Close()
 
-	users := []User{}
+	users := []*User{}
 	for rows.Next() {
 		var user User
 		err = rows.Scan(&user.Username, &user.Email, &user.CreatedAt)
 		if err != nil {
 			return nil, err
 		}
-		users = append(users, user)
+		users = append(users, &user)
 	}
 
 	return users, nil
 }
 
-func (r *UserRepo) InsertUser(user User) error {
+func (r *userRepository) InsertUser(user *User) error {
 	ctx := context.Background()
 	result, err := r.pool.Exec(ctx, "insert into users(username, email) values($1, $2) ", user.Username, user.Email)
 	if err != nil {
@@ -77,7 +71,7 @@ func (r *UserRepo) InsertUser(user User) error {
 	return nil
 }
 
-func (r *UserRepo) DeleteUser(email string) error {
+func (r *userRepository) DeleteUser(email string) error {
 	ctx := context.Background()
 	result, err := r.pool.Exec(ctx, "delete from users where email=$1", email)
 	if err != nil {
@@ -91,9 +85,6 @@ func (r *UserRepo) DeleteUser(email string) error {
 	return nil
 }
 
-func NewUserRepo(pool *pgxpool.Pool) *UserRepo {
-	return &UserRepo{pool}
+func NewUserRepo(pool *pgxpool.Pool) Repository {
+	return &userRepository{pool}
 }
-
-// Convention to ensure UserRepo implements the interface
-var _ IUserRepo = (*UserRepo)(nil)

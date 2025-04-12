@@ -2,7 +2,7 @@ FROM alpine:latest
 
 WORKDIR /app
 
-COPY migrations/ /app/migrations
+COPY internal/database/migrations/ /app/migrations
 COPY assets/ /app/assets
 COPY templates/ /app/templates
 COPY bin/myapp-linux-amd-64 .
