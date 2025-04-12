@@ -6,9 +6,22 @@ import (
 	"net/http"
 )
 
+func RenderRegisterUser(w http.ResponseWriter, r *http.Request) {
+	tmpl, err := template.ParseFiles("web/register.gohtml")
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	if err := tmpl.Execute(w, nil); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+}
+
 func RenderChat(props *RenderChatArgs) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		tmpl, err := template.ParseFiles("web/index.gohtml")
+		tmpl, err := template.ParseFiles("web/chat.gohtml")
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return

@@ -5,6 +5,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"project-a/internal/auth"
 	"project-a/internal/health"
 	"project-a/internal/middleware"
 	"project-a/internal/socket"
@@ -33,13 +34,18 @@ func Serve(pool *pgxpool.Pool) error {
 		w.WriteHeader(http.StatusNoContent)
 	})
 
+	userService := user.NewUserService(pool)
+	authService := auth.NewAuthService(pool)
+
 	healthHandler := health.NewHealthHandler(pool)
 	userHandler := user.NewUserHandler(pool)
+	authHandler := auth.NewAuthHandler(authService, userService)
 
 	health.RegisterRoutes(midWare, healthHandler)
+	auth.RegisterRoutes(midWare, authHandler)
 	user.RegisterRoutes(midWare, userHandler)
 	socket.RegisterRoutes(midWare, hub)
-	templates.RegisterRoutes(midWare, pool, wsUrl)
+	templates.RegisterRoutes(midWare, pool, wsUrl, authService)
 
 	return http.ListenAndServe(PORT, mux)
 }

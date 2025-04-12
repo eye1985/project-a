@@ -7,22 +7,27 @@ type userService struct {
 }
 
 type Service interface {
-	RegisterUser(user *User) error
+	RegisterUser(user *User) (*User, error)
 	GetUsers() ([]*User, error)
+	GetUser(email string) (*User, error)
 }
 
-func (u *userService) RegisterUser(user *User) error {
-	err := u.Repository.InsertUser(user)
+func (u *userService) RegisterUser(user *User) (*User, error) {
+	newUser, err := u.Repository.InsertUser(user)
 
 	if err != nil {
-		return err
+		return &User{}, err
 	}
 
-	return nil
+	return newUser, nil
 }
 
 func (u *userService) GetUsers() ([]*User, error) {
 	return u.Repository.GetUsers()
+}
+
+func (u *userService) GetUser(email string) (*User, error) {
+	return u.Repository.GetUser(email)
 }
 
 func NewUserService(pool *pgxpool.Pool) Service {

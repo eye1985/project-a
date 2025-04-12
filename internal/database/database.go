@@ -30,18 +30,18 @@ func migrationPath() string {
 }
 
 func Migrate() {
-
 	m, err := migrate.New(migrationPath(), postgresUrl()+"?sslmode=disable")
 	if err != nil {
-		log.Printf("Error running migration: %v", err)
+		log.Fatalf("Error running migration: %v", err)
 	}
 
 	if err := m.Up(); err != nil {
 		if err != migrate.ErrNoChange {
-			log.Printf("Error running migration: %v", err)
+			log.Fatalf("Error running migration: %v", err)
 		}
 
-		log.Println("No migrations found")
+		log.Println("No new migrations found")
+		return
 	}
 
 	log.Println("Migrations applied")
