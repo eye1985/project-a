@@ -1,12 +1,11 @@
 import { initSocket } from './websocket.js';
 import { shortcut } from './shortcut.js';
-export const init = (wsUrl) => {
+export const init = (wsUrl, username) => {
     if (!wsUrl) {
         throw new Error('Invalid domain');
     }
     let socket;
     const sc = shortcut();
-    const userNameInput = sc.getElement('usernameInput');
     const channelInput = sc.getElement('channelInput');
     const connectButton = sc.getElement('connectToChatBtn');
     const closeButton = sc.getElement('closeChatBtn');
@@ -15,7 +14,7 @@ export const init = (wsUrl) => {
     sc.addHandler({
         connectWS: () => {
             socket = initSocket();
-            socket.connect(userNameInput.value.trim(), channelInput.value.trim(), wsUrl, {
+            socket.connect(username, channelInput.value.trim(), wsUrl, {
                 onOpen(evt) {
                     console.log(evt, 'event');
                     closeButton.removeAttribute('disabled');
@@ -39,7 +38,7 @@ export const init = (wsUrl) => {
                     connectButton.removeAttribute('disabled');
                     closeButton.setAttribute('disabled', 'disabled');
                     messageInput.setAttribute('disabled', 'disabled');
-                },
+                }
             });
             connectButton.setAttribute('disabled', 'disabled');
             messageInput.removeAttribute('disabled');
@@ -54,7 +53,7 @@ export const init = (wsUrl) => {
                 socket.send(messageInput.value);
                 messageInput.value = '';
             }
-        },
+        }
     });
     sc.init();
 };

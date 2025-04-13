@@ -2,7 +2,7 @@ import type { SocketMessage } from './websocket.js';
 import { initSocket, SocketController } from './websocket.js';
 import { shortcut } from './shortcut.js';
 
-export const init = (wsUrl: string) => {
+export const init = (wsUrl: string, username: string) => {
   if (!wsUrl) {
     throw new Error('Invalid domain');
   }
@@ -10,7 +10,6 @@ export const init = (wsUrl: string) => {
   let socket: SocketController;
   const sc = shortcut();
 
-  const userNameInput = sc.getElement('usernameInput') as HTMLInputElement;
   const channelInput = sc.getElement('channelInput') as HTMLInputElement;
   const connectButton = sc.getElement('connectToChatBtn') as HTMLButtonElement;
   const closeButton = sc.getElement('closeChatBtn') as HTMLButtonElement;
@@ -21,7 +20,7 @@ export const init = (wsUrl: string) => {
     connectWS: () => {
       socket = initSocket();
       socket.connect(
-        userNameInput.value.trim(),
+        username,
         channelInput.value.trim(),
         wsUrl,
         {
@@ -35,7 +34,7 @@ export const init = (wsUrl: string) => {
             }
             const newMessage = document.createElement('p');
             const { message, username, createdAt } = JSON.parse(
-              event.data,
+              event.data
             ) as SocketMessage;
 
             const time = new Date(createdAt);
@@ -54,15 +53,15 @@ export const init = (wsUrl: string) => {
             connectButton.removeAttribute('disabled');
             closeButton.setAttribute('disabled', 'disabled');
             messageInput.setAttribute('disabled', 'disabled');
-          },
-        },
+          }
+        }
       );
       connectButton.setAttribute('disabled', 'disabled');
       messageInput.removeAttribute('disabled');
     },
     closeWS: () => {
       const connectButton = sc.getElement(
-        'connectToChatBtn',
+        'connectToChatBtn'
       ) as HTMLButtonElement;
       socket.disconnect();
       connectButton.removeAttribute('disabled');
@@ -72,7 +71,7 @@ export const init = (wsUrl: string) => {
         socket.send(messageInput.value);
         messageInput.value = '';
       }
-    },
+    }
   });
   sc.init();
 };

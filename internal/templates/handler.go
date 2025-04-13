@@ -1,13 +1,20 @@
 package templates
 
 import (
-	"context"
+	"fmt"
 	"html/template"
 	"net/http"
+	"project-a/internal/shared"
+)
+
+const (
+	path     = "web/templates"
+	register = "register.gohtml"
+	chat     = "chat.gohtml"
 )
 
 func RenderRegisterUser(w http.ResponseWriter, r *http.Request) {
-	tmpl, err := template.ParseFiles("web/register.gohtml")
+	tmpl, err := template.ParseFiles(fmt.Sprintf("%s/%s", path, register))
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -21,38 +28,22 @@ func RenderRegisterUser(w http.ResponseWriter, r *http.Request) {
 
 func RenderChat(props *RenderChatArgs) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		tmpl, err := template.ParseFiles("web/chat.gohtml")
+		tmpl, err := template.ParseFiles(fmt.Sprintf("%s/%s", path, chat))
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
 
-		rows, err := props.Pool.Query(context.Background(), "SELECT username, email FROM users")
+		sessionID := r.Context().Value(shared.SessionCtxKey).([]byte)
+		user, err := props.us.GetUserFromSessionId(string(sessionID))
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
-		}
-		defer rows.Close()
-
-		persons := []Person{}
-
-		for rows.Next() {
-			var username, email string
-
-			if err := rows.Scan(&username, &email); err != nil {
-				http.Error(w, err.Error(), http.StatusInternalServerError)
-				return
-			}
-
-			persons = append(persons, Person{
-				username,
-				email,
-			})
 		}
 
 		if err := tmpl.Execute(w, &PageData{
-			Person: persons,
-			WsUrl:  props.WsUrl,
+			WsUrl:    props.wsUrl,
+			Username: user.Username,
 		}); err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return

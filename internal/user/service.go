@@ -10,6 +10,7 @@ type Service interface {
 	RegisterUser(user *User) (*User, error)
 	GetUsers() ([]*User, error)
 	GetUser(email string) (*User, error)
+	GetUserFromSessionId(sessionId string) (*User, error)
 }
 
 func (u *userService) RegisterUser(user *User) (*User, error) {
@@ -28,6 +29,10 @@ func (u *userService) GetUsers() ([]*User, error) {
 
 func (u *userService) GetUser(email string) (*User, error) {
 	return u.Repository.GetUser(email)
+}
+
+func (u *userService) GetUserFromSessionId(sessionId string) (*User, error) {
+	return u.Repository.GetUserFromSessionId(sessionId)
 }
 
 func NewUserService(pool *pgxpool.Pool) Service {

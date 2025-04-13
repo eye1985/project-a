@@ -53,7 +53,12 @@ func Serve(pool *pgxpool.Pool) error {
 	auth.RegisterRoutes(midWare, authHandler)
 	user.RegisterRoutes(midWare, userHandler)
 	socket.RegisterRoutes(midWare, hub)
-	templates.RegisterRoutes(midWare, pool, wsUrl, authService)
+	templates.RegisterRoutes(&templates.RegisterRoutesArgs{
+		Middleware:  midWare,
+		WsUrl:       wsUrl,
+		Session:     authService,
+		UserService: userService,
+	})
 
 	return http.ListenAndServe(PORT, mux)
 }

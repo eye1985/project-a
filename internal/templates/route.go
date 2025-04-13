@@ -1,15 +1,28 @@
 package templates
 
 import (
-	"github.com/jackc/pgx/v5/pgxpool"
 	"project-a/internal/middleware"
 	"project-a/internal/shared"
+	"project-a/internal/user"
 )
 
-func RegisterRoutes(m *middleware.Middleware, pool *pgxpool.Pool, wsUrl string, session shared.Session) {
+type RegisterRoutesArgs struct {
+	Middleware  *middleware.Middleware
+	WsUrl       string
+	Session     shared.Session
+	UserService user.Service
+}
+
+func RegisterRoutes(args *RegisterRoutesArgs) {
+	m := args.Middleware
+	wsUrl := args.WsUrl
+	session := args.Session
+	us := args.UserService
+
 	m.HandleFuncWithMiddleWare("GET /chat", RenderChat(&RenderChatArgs{
-		WsUrl: wsUrl,
-		Pool:  pool,
+		wsUrl:       wsUrl,
+		us:          us,
+		authService: session,
 	}), middleware.Guard(session))
 	m.HandleFunc("GET /", RenderRegisterUser)
 }

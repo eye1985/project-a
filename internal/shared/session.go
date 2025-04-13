@@ -7,3 +7,7 @@ type Session interface {
 	SignCookie(cookieName string, value []byte) (string, error)
 	VerifyCookie(cookie *http.Cookie) ([]byte, error)
 }
+
+type ctxKey string
+
+const SessionCtxKey = ctxKey("sid")

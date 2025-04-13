@@ -3,8 +3,8 @@ FROM alpine:latest
 WORKDIR /app
 
 COPY migrations/ /app/migrations
-COPY web/assets /app/assets
-COPY templates/ /app/templates
+COPY web/assets /app/web/assets
+COPY web/templates/ /app/web/templates
 COPY bin/myapp-linux-amd-64 .
 
 # Ensure binary is executable

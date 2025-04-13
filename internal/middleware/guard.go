@@ -1,6 +1,7 @@
 package middleware
 
 import (
+	"context"
 	"net/http"
 	"project-a/internal/shared"
 )
@@ -28,6 +29,7 @@ func Guard(session shared.Session) func(handlerFunc http.HandlerFunc) http.Handl
 				return
 			}
 
+			r = r.WithContext(context.WithValue(r.Context(), shared.SessionCtxKey, cookieValue))
 			next.ServeHTTP(w, r)
 		}
 	}

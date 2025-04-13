@@ -1,6 +1,9 @@
 package templates
 
-import "github.com/jackc/pgx/v5/pgxpool"
+import (
+	"project-a/internal/shared"
+	"project-a/internal/user"
+)
 
 type Person struct {
 	Username string
@@ -8,11 +11,12 @@ type Person struct {
 }
 
 type PageData struct {
-	Person []Person
-	WsUrl  string
+	WsUrl    string
+	Username string
 }
 
 type RenderChatArgs struct {
-	Pool  *pgxpool.Pool
-	WsUrl string
+	us          user.Service
+	authService shared.Session
+	wsUrl       string
 }

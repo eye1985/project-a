@@ -15,10 +15,9 @@
 <div class="container">
   <h1>Chat</h1>
 
-
   <div class="mb-10">
-    <label for="username">Username</label>
-    <input type="text" id="username" placeholder="Username" name="username" data-cid="usernameInput">
+    <label for="username">Welcome:</label>
+      {{.Username}}
   </div>
 
   <div class="mb-10">
@@ -28,7 +27,7 @@
 
   <div class="ws-buttons">
     <button type="button" data-cid="connectToChatBtn" data-handler="click:connectWS"
-            data-bind="usernameInput:>3,channelInput:>3" data-bind-action="disabled" disabled>
+            data-bind="channelInput:>3" data-bind-action="disabled" disabled>
       Connect to chat
     </button>
 
@@ -48,7 +47,8 @@
   import { init } from '/assets/dist/index.js';
 
   const wsUrl = "{{.WsUrl}}";
-  init(wsUrl);
+  const username = "{{.Username}}";
+  init(wsUrl, username);
 </script>
 </body>
 </html>
