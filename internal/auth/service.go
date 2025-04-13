@@ -2,6 +2,7 @@ package auth
 
 import (
 	"encoding/base64"
+	"github.com/google/uuid"
 	"github.com/gorilla/securecookie"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"log"
@@ -19,12 +20,13 @@ type Service interface {
 	IsSessionActive(sessionId string) bool
 	SignCookie(cookieName string, value []byte) (string, error)
 	VerifyCookie(cookie *http.Cookie) ([]byte, error)
+	CreateMagicLink(email string) (string, error)
+	ActivateMagicLink(code string) (string, error)
 }
 
 func (a *authService) CreateOrGetSession(userId int64) (*Session, error) {
 	s, err := a.Repository.GetSession(userId)
-	log.Printf("create or get session:  %s", s.SessionID)
-	log.Printf("error %s", err)
+
 	if err != nil {
 		// TODO check if its actually an not found error
 		sessionID, err := createSessionID()
@@ -70,6 +72,34 @@ func (a *authService) VerifyCookie(cookie *http.Cookie) ([]byte, error) {
 		return nil, err
 	}
 	return decoded, nil
+}
+
+func (a *authService) CreateMagicLink(email string) (string, error) {
+	tenMinFromNow := time.Now().Add(10 * time.Minute)
+	u := uuid.New()
+	encoding := base64.URLEncoding.WithPadding(base64.NoPadding)
+	encoded := encoding.EncodeToString(u[:])
+
+	err := a.Repository.CreateMagicLink(&CreateMagicLinkArgs{
+		code:     encoded,
+		expiryAt: tenMinFromNow,
+		email:    email,
+	})
+
+	if err != nil {
+		return "", err
+	}
+
+	return encoded, nil
+}
+
+func (a *authService) ActivateMagicLink(code string) (string, error) {
+	ml, err := a.Repository.ActivateMagicLink(code)
+	if err != nil {
+		return "", err
+	}
+
+	return ml.Email, nil
 }
 
 func NewAuthService(pool *pgxpool.Pool, hashKey string, blockKey string) Service {

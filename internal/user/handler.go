@@ -49,7 +49,7 @@ func (h *Handler) RegisterUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	_, err = h.Service.RegisterUser(user)
+	_, err = h.Service.RegisterUser(user.Username, user.Email)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return

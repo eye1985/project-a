@@ -3,7 +3,7 @@ CREATE TABLE users
     id         SERIAL PRIMARY KEY,
     username   TEXT        NOT NULL,
     email      TEXT UNIQUE NOT NULL,
-    created_at TIMESTAMPTZ default NOW()
+    created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
 CREATE INDEX idx_email on users (email);
@@ -13,7 +13,7 @@ CREATE TABLE user_connections
     id         SERIAL PRIMARY KEY,
     user1_id   integer NOT NULL,
     user2_id   integer NOT NULL,
-    created_at TIMESTAMPTZ default NOW(),
+    created_at TIMESTAMPTZ DEFAULT NOW(),
     CONSTRAINT fk_user1 FOREIGN KEY (user1_id) REFERENCES users (id) ON DELETE CASCADE,
     CONSTRAINT fk_user2 FOREIGN KEY (user2_id) REFERENCES users (id) ON DELETE CASCADE,
     CHECK (user1_id <> user2_id)
@@ -29,7 +29,17 @@ CREATE TABLE user_sessions
 (
     id         SERIAL PRIMARY KEY,
     session_id TEXT UNIQUE NOT NULL,
-    created_at TIMESTAMPTZ default NOW(),
+    created_at TIMESTAMPTZ DEFAULT NOW(),
     expires_at TIMESTAMPTZ NOT NULL,
     user_id    integer     NOT NULL REFERENCES users (id) ON DELETE CASCADE
 );
+
+CREATE TABLE magic_links
+(
+    id           SERIAL PRIMARY KEY,
+    created_at   TIMESTAMPTZ DEFAULT NOW(),
+    expires_at   TIMESTAMPTZ NOT NULL,
+    email        TEXT        NOT NULL,
+    public_id    TEXT        NOT NULL UNIQUE,
+    is_activated BOOL        DEFAULT false
+)

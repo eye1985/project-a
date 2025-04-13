@@ -7,3 +7,7 @@ type Session struct {
 	SessionID string
 	ExpiresAt time.Time
 }
+
+type MagicLink struct {
+	Email string
+}

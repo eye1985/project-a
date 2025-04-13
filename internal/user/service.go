@@ -7,14 +7,14 @@ type userService struct {
 }
 
 type Service interface {
-	RegisterUser(user *User) (*User, error)
+	RegisterUser(username string, email string) (*User, error)
 	GetUsers() ([]*User, error)
 	GetUser(email string) (*User, error)
 	GetUserFromSessionId(sessionId string) (*User, error)
 }
 
-func (u *userService) RegisterUser(user *User) (*User, error) {
-	newUser, err := u.Repository.InsertUser(user)
+func (u *userService) RegisterUser(username string, email string) (*User, error) {
+	newUser, err := u.Repository.InsertUser(username, email)
 
 	if err != nil {
 		return &User{}, err

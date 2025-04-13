@@ -1,8 +1,10 @@
 package auth
 
 import (
+	"log"
 	"net/http"
 	"net/mail"
+	"project-a/internal/shared"
 	"project-a/internal/user"
 )
 
@@ -11,20 +13,68 @@ type Handler struct {
 	UserService user.Service
 }
 
-func registerIfUserNotExists(email string, username string, h *Handler) (*user.User, error) {
+func createMagicLinkIfNotExist(email string, h *Handler) (*user.User, string, error) {
 	u, err := h.UserService.GetUser(email)
 	if err != nil {
-		newUser, err := h.UserService.RegisterUser(&user.User{
-			Username: username,
-			Email:    email,
-		})
+		code, err := h.Service.CreateMagicLink(email)
 		if err != nil {
-			return nil, err
+			return nil, "", err
 		}
 
-		return newUser, nil
+		return nil, code, nil
 	}
-	return u, nil
+	return u, "", nil
+}
+
+func (h *Handler) RegisterUser(w http.ResponseWriter, r *http.Request) {
+	code := r.PathValue("code")
+	if code == "" {
+		http.Error(w, "code is required", http.StatusBadRequest)
+		return
+	}
+
+	email, err := h.Service.ActivateMagicLink(code)
+	if err != nil {
+		http.Error(w, "invalid magic link", http.StatusBadRequest)
+		return
+	}
+
+	username, err := preExtractEmail(email)
+	if err != nil {
+		http.Error(w, "invalid email", http.StatusBadRequest)
+		return
+	}
+
+	u, err := h.UserService.RegisterUser(username, email)
+	if err != nil {
+		log.Printf("failed to register user: %v", err)
+		http.Error(w, "User registration failed", http.StatusInternalServerError)
+		return
+	}
+
+	session, err := h.Service.CreateOrGetSession(u.Id)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	encoded, err := h.Service.SignCookie(string(shared.SessionCtxKey), []byte(session.SessionID))
+	if err != nil {
+		http.Error(w, "Session error", http.StatusInternalServerError)
+		return
+	}
+
+	http.SetCookie(w, &http.Cookie{
+		Name:     string(shared.SessionCtxKey),
+		Value:    encoded,
+		Path:     "/",
+		Expires:  session.ExpiresAt,
+		Secure:   true,
+		HttpOnly: true,
+		SameSite: http.SameSiteStrictMode,
+	})
+
+	http.Redirect(w, r, "/chat", http.StatusSeeOther)
 }
 
 func (h *Handler) Login(w http.ResponseWriter, r *http.Request) {
@@ -46,33 +96,32 @@ func (h *Handler) Login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	username, err := preExtractEmail(email)
-	if err != nil {
-		http.Error(w, "Invalid email", http.StatusBadRequest)
-		return
-	}
-
-	newUser, err := registerIfUserNotExists(email, username, h)
+	existingUser, magicCode, err := createMagicLinkIfNotExist(email, h)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	session, err := h.Service.CreateOrGetSession(newUser.Id)
+	if magicCode != "" {
+		// TODO Send email here
+		http.Redirect(w, r, "/?magicLinkCode="+magicCode, http.StatusSeeOther)
+		return
+	}
+
+	session, err := h.Service.CreateOrGetSession(existingUser.Id)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	cookieName := "sid"
-	encoded, err := h.Service.SignCookie(cookieName, []byte(session.SessionID))
+	encoded, err := h.Service.SignCookie(string(shared.SessionCtxKey), []byte(session.SessionID))
 	if err != nil {
 		http.Error(w, "Session error", http.StatusInternalServerError)
 		return
 	}
 
 	http.SetCookie(w, &http.Cookie{
-		Name:     cookieName,
+		Name:     string(shared.SessionCtxKey),
 		Value:    encoded,
 		Path:     "/",
 		Expires:  session.ExpiresAt,

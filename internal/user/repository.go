@@ -30,7 +30,7 @@ type Repository interface {
 	GetUser(email string) (*User, error)
 	GetUsers() ([]*User, error)
 	GetUserFromSessionId(sessionId string) (*User, error)
-	InsertUser(user *User) (*User, error)
+	InsertUser(username string, email string) (*User, error)
 	DeleteUser(email string) error
 }
 
@@ -81,9 +81,9 @@ func (r *userRepository) GetUsers() ([]*User, error) {
 	return users, nil
 }
 
-func (r *userRepository) InsertUser(user *User) (*User, error) {
+func (r *userRepository) InsertUser(username string, email string) (*User, error) {
 	ctx := context.Background()
-	row := r.pool.QueryRow(ctx, insertUser, user.Username, user.Email)
+	row := r.pool.QueryRow(ctx, insertUser, username, email)
 
 	u := &User{}
 	err := row.Scan(&u.Id, &u.Email, &u.Username, &u.CreatedAt)
