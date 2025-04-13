@@ -41,13 +41,10 @@ func (a *authRepository) SetSession(args *SetSessionArgs) (*Session, error) {
 
 func (a *authRepository) GetSession(userId int64) (*Session, error) {
 	ctx := context.Background()
-	row, err := a.pool.Query(ctx, "SELECT user_id, session_id, expires_at FROM user_sessions WHERE user_id = $1", userId)
-	if err != nil {
-		return nil, err
-	}
+	row := a.pool.QueryRow(ctx, "SELECT user_id, session_id, expires_at FROM user_sessions WHERE user_id = $1", userId)
 
 	session := &Session{}
-	err = row.Scan(&session.UserId, &session.SessionID, &session.ExpiresAt)
+	err := row.Scan(&session.UserId, &session.SessionID, &session.ExpiresAt)
 	if err != nil {
 		return &Session{}, err
 	}

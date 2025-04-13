@@ -64,9 +64,17 @@ func (h *Handler) Login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	cookieName := "sid"
+	encoded, err := h.Service.SignCookie(cookieName, []byte(session.SessionID))
+	if err != nil {
+		http.Error(w, "Session error", http.StatusInternalServerError)
+		return
+	}
+
 	http.SetCookie(w, &http.Cookie{
-		Name:     "sid",
-		Value:    session.SessionID,
+		Name:     cookieName,
+		Value:    encoded,
+		Path:     "/",
 		Expires:  session.ExpiresAt,
 		Secure:   true,
 		HttpOnly: true,

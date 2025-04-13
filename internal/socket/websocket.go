@@ -21,6 +21,12 @@ const (
 
 func ServeWs(hub *Hub, cf ClientFactory) func(http.ResponseWriter, *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
+		upgrader.CheckOrigin = func(r *http.Request) bool {
+			origin := r.Header.Get("Origin")
+			log.Printf("origin %s", origin)
+			// TODO add origin check here
+			return true
+		}
 		conn, err := upgrader.Upgrade(w, r, nil)
 		if err != nil {
 			log.Println("Websocket upgrade failed: ", err)

@@ -20,6 +20,14 @@ func Serve(pool *pgxpool.Pool) error {
 	if !ok {
 		log.Fatalf("WS_URL environment variable not set")
 	}
+	hashKey, ok := os.LookupEnv("HASH_KEY")
+	if !ok {
+		log.Fatalf("HASH_KEY environment variable not set")
+	}
+	blockKey, ok := os.LookupEnv("BLOCK_KEY")
+	if !ok {
+		log.Fatalf("BLOCK_KEY environment variable not set")
+	}
 
 	midWare := middleware.NewMiddlewareMux()
 	midWare.Add(middleware.Logger)
@@ -35,7 +43,7 @@ func Serve(pool *pgxpool.Pool) error {
 	})
 
 	userService := user.NewUserService(pool)
-	authService := auth.NewAuthService(pool)
+	authService := auth.NewAuthService(pool, hashKey, blockKey)
 
 	healthHandler := health.NewHealthHandler(pool)
 	userHandler := user.NewUserHandler(pool)
