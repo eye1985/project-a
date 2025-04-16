@@ -22,6 +22,9 @@ var insertMagicLinkSql string
 //go:embed sql/set_active_magic_link.sql
 var setActiveMagicLinkSql string
 
+//go:embed sql/delete_session.sql
+var deleteSessionSql string
+
 type authRepository struct {
 	pool *pgxpool.Pool
 }
@@ -31,7 +34,8 @@ type Repository interface {
 	SetSession(args *SetSessionArgs) (*Session, error)
 	IsSessionActive(sessionId string) bool
 	CreateMagicLink(args *CreateMagicLinkArgs) error
-	ActivateMagicLink(code string) (*MagicLink, error)
+	ActivateNonExpiredMagicLink(code string) (*MagicLink, error)
+	DeleteSession(sessionId string) error
 }
 
 type SetSessionArgs struct {
@@ -102,7 +106,7 @@ func (a *authRepository) CreateMagicLink(args *CreateMagicLinkArgs) error {
 	return nil
 }
 
-func (a *authRepository) ActivateMagicLink(code string) (*MagicLink, error) {
+func (a *authRepository) ActivateNonExpiredMagicLink(code string) (*MagicLink, error) {
 	ctx := context.Background()
 	row := a.pool.QueryRow(ctx, setActiveMagicLinkSql, code, time.Now())
 	magicLink := &MagicLink{}
@@ -112,6 +116,20 @@ func (a *authRepository) ActivateMagicLink(code string) (*MagicLink, error) {
 	}
 
 	return magicLink, nil
+}
+
+func (a *authRepository) DeleteSession(sessionId string) error {
+	ctx := context.Background()
+	conn, err := a.pool.Exec(ctx, deleteSessionSql, sessionId)
+	if err != nil {
+		return err
+	}
+
+	if conn.RowsAffected() == 0 {
+		return errSessionNotFound
+	}
+
+	return nil
 }
 
 func NewAuthRepo(pool *pgxpool.Pool) Repository {

@@ -47,12 +47,7 @@ func (m *Middleware) Add(mw Handler) {
 	m.composedHandle = compose(m.middlewares...)
 }
 
-func (m *Middleware) HandleFunc(route string, h http.HandlerFunc) {
-	m.Mux.HandleFunc(route, m.composedHandle(h))
-}
-
-// HandleFuncWithMiddleWare Adds custom middleware specific to a handler
-func (m *Middleware) HandleFuncWithMiddleWare(route string, h http.HandlerFunc, middlewareHandlers ...Handler) {
+func (m *Middleware) HandleFunc(route string, h http.HandlerFunc, middlewareHandlers ...Handler) {
 	middlewares := append(m.middlewares, middlewareHandlers...)
 	composed := compose(middlewares...)
 	m.Mux.HandleFunc(route, composed(h))

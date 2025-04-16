@@ -4,7 +4,6 @@ import (
 	"encoding/base64"
 	"github.com/google/uuid"
 	"github.com/gorilla/securecookie"
-	"github.com/jackc/pgx/v5/pgxpool"
 	"log"
 	"net/http"
 	"time"
@@ -21,7 +20,6 @@ type Service interface {
 	SignCookie(cookieName string, value []byte) (string, error)
 	VerifyCookie(cookie *http.Cookie) ([]byte, error)
 	CreateMagicLink(email string) (string, error)
-	ActivateMagicLink(code string) (string, error)
 }
 
 func (a *authService) CreateOrGetSession(userId int64) (*Session, error) {
@@ -51,6 +49,7 @@ func (a *authService) CreateOrGetSession(userId int64) (*Session, error) {
 	return s, nil
 }
 
+// IsSessionActive Used in guard
 func (a *authService) IsSessionActive(sessionId string) bool {
 	return a.Repository.IsSessionActive(sessionId)
 }
@@ -93,16 +92,7 @@ func (a *authService) CreateMagicLink(email string) (string, error) {
 	return encoded, nil
 }
 
-func (a *authService) ActivateMagicLink(code string) (string, error) {
-	ml, err := a.Repository.ActivateMagicLink(code)
-	if err != nil {
-		return "", err
-	}
-
-	return ml.Email, nil
-}
-
-func NewAuthService(pool *pgxpool.Pool, hashKey string, blockKey string) Service {
+func NewAuthService(repo Repository, hashKey string, blockKey string) Service {
 	hk, err := base64.StdEncoding.DecodeString(hashKey)
 	if err != nil {
 		log.Fatalf("Failed to decode hash key: %s", err)
@@ -114,7 +104,7 @@ func NewAuthService(pool *pgxpool.Pool, hashKey string, blockKey string) Service
 	}
 
 	return &authService{
-		Repository:   NewAuthRepo(pool),
+		Repository:   repo,
 		SecureCookie: securecookie.New(hk, bk),
 	}
 }

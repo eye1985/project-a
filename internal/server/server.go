@@ -36,21 +36,27 @@ func Serve(pool *pgxpool.Pool) error {
 	hub := socket.NewHub()
 	go hub.Run()
 
+	// repos
+	authRepo := auth.NewAuthRepo(pool)
+
+	// services
+	userService := user.NewUserService(pool)
+	authService := auth.NewAuthService(authRepo, hashKey, blockKey)
+
+	// handlers
+	healthHandler := health.NewHealthHandler(pool)
+	userHandler := user.NewUserHandler(pool)
+	authHandler := auth.NewAuthHandler(authService, authRepo, userService)
+
+	// routes
 	midWare.Handle("GET /assets/", http.StripPrefix("/assets/", http.FileServer(http.Dir("web/assets"))))
 	midWare.Handle("GET /styles/", http.StripPrefix("/styles/", http.FileServer(http.Dir("web/styles"))))
 	midWare.HandleFunc("GET /favicon.ico", func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusNoContent)
 	})
 
-	userService := user.NewUserService(pool)
-	authService := auth.NewAuthService(pool, hashKey, blockKey)
-
-	healthHandler := health.NewHealthHandler(pool)
-	userHandler := user.NewUserHandler(pool)
-	authHandler := auth.NewAuthHandler(authService, userService)
-
 	health.RegisterRoutes(midWare, healthHandler)
-	auth.RegisterRoutes(midWare, authHandler)
+	auth.RegisterRoutes(midWare, authHandler, authService)
 	user.RegisterRoutes(midWare, userHandler)
 	socket.RegisterRoutes(midWare, hub)
 	templates.RegisterRoutes(&templates.RegisterRoutesArgs{

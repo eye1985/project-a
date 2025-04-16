@@ -9,7 +9,8 @@ import (
 )
 
 type Handler struct {
-	Service
+	Repo        Repository
+	Service     Service
 	UserService user.Service
 }
 
@@ -33,19 +34,19 @@ func (h *Handler) RegisterUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	email, err := h.Service.ActivateMagicLink(code)
+	ml, err := h.Repo.ActivateNonExpiredMagicLink(code)
 	if err != nil {
 		http.Error(w, "invalid magic link", http.StatusBadRequest)
 		return
 	}
 
-	username, err := preExtractEmail(email)
+	username, err := preExtractEmail(ml.Email)
 	if err != nil {
 		http.Error(w, "invalid email", http.StatusBadRequest)
 		return
 	}
 
-	u, err := h.UserService.RegisterUser(username, email)
+	u, err := h.UserService.RegisterUser(username, ml.Email)
 	if err != nil {
 		log.Printf("failed to register user: %v", err)
 		http.Error(w, "User registration failed", http.StatusInternalServerError)
@@ -133,8 +134,21 @@ func (h *Handler) Login(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, "/chat", http.StatusSeeOther)
 }
 
-func NewAuthHandler(as Service, us user.Service) *Handler {
+func (h *Handler) Logout(w http.ResponseWriter, r *http.Request) {
+	if r.Method != "POST" {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	sessionID := r.Context().Value(shared.SessionCtxKey).([]byte)
+	_ = h.Repo.DeleteSession(string(sessionID))
+
+	http.Redirect(w, r, "/", http.StatusSeeOther)
+}
+
+func NewAuthHandler(as Service, repo Repository, us user.Service) *Handler {
 	return &Handler{
+		Repo:        repo,
 		Service:     as,
 		UserService: us,
 	}

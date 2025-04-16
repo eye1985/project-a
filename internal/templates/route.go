@@ -19,7 +19,7 @@ func RegisterRoutes(args *RegisterRoutesArgs) {
 	session := args.Session
 	us := args.UserService
 
-	m.HandleFuncWithMiddleWare("GET /chat", RenderChat(&RenderChatArgs{
+	m.HandleFunc("GET /chat", RenderChat(&RenderChatArgs{
 		wsUrl:       wsUrl,
 		us:          us,
 		authService: session,
