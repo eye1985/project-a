@@ -7,6 +7,7 @@ import (
 	"log"
 	"net/http"
 	"net/http/httptest"
+	"project-a/internal/user"
 	"time"
 )
 
@@ -15,8 +16,46 @@ type HubAndTestServer struct {
 	hub    *Hub
 }
 
+type MockSession struct{}
+
+func (m *MockSession) VerifyCookie(cookie *http.Cookie) ([]byte, error) {
+	return []byte("1234567890"), nil
+}
+
+func (m *MockSession) IsSessionActive(sessionId string) bool {
+	return true
+}
+
+func (m *MockSession) SignCookie(cookieName string, value []byte) (string, error) {
+	return "1234567890", nil
+}
+
 func (h *HubAndTestServer) wsUrl(username string, channel string) string {
 	return "ws" + h.server.URL[len("http"):] + "?username=" + username + "&channels=" + channel
+}
+
+type MockUserRepo struct {
+	user *user.User
+}
+
+func (r *MockUserRepo) GetUser(email string) (*user.User, error) {
+	return &user.User{}, nil
+}
+
+func (r *MockUserRepo) GetUserFromSessionId(sessionId string) (*user.User, error) {
+	return &user.User{}, nil
+}
+
+func (r *MockUserRepo) GetUsers() ([]*user.User, error) {
+	return []*user.User{}, nil
+}
+
+func (r *MockUserRepo) InsertUser(username string, email string) (*user.User, error) {
+	return &user.User{}, nil
+}
+
+func (r *MockUserRepo) DeleteUser(email string) error {
+	return nil
 }
 
 func newTestClient(conn *websocket.Conn, hub *Hub, username string, channel string) *client {
@@ -38,7 +77,12 @@ func testServerHub(silence bool, cf ClientFactory) HubAndTestServer {
 	hub := NewHub()
 	go hub.Run()
 
-	wsHandler := ServeWs(hub, cf)
+	mockSession := &MockSession{}
+	mockUserRepo := &MockUserRepo{
+		user: &user.User{},
+	}
+
+	wsHandler := ServeWs(hub, cf, mockSession, mockUserRepo)
 	return HubAndTestServer{
 		server: httptest.NewServer(http.HandlerFunc(wsHandler)),
 		hub:    hub,
