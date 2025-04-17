@@ -35,7 +35,7 @@ func RenderChat(props *RenderChatArgs) http.HandlerFunc {
 		}
 
 		sessionID := r.Context().Value(shared.SessionCtxKey).([]byte)
-		user, err := props.us.GetUserFromSessionId(string(sessionID))
+		user, err := props.ur.GetUserFromSessionId(string(sessionID))
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return

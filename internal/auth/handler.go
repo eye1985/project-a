@@ -9,13 +9,13 @@ import (
 )
 
 type Handler struct {
-	Repo        Repository
-	Service     Service
-	UserService user.Service
+	Repo     Repository
+	Service  Service
+	UserRepo user.Repository
 }
 
 func createMagicLinkIfNotExist(email string, h *Handler) (*user.User, string, error) {
-	u, err := h.UserService.GetUser(email)
+	u, err := h.UserRepo.GetUser(email)
 	if err != nil {
 		code, err := h.Service.CreateMagicLink(email)
 		if err != nil {
@@ -46,7 +46,7 @@ func (h *Handler) RegisterUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	u, err := h.UserService.RegisterUser(username, ml.Email)
+	u, err := h.UserRepo.InsertUser(username, ml.Email)
 	if err != nil {
 		log.Printf("failed to register user: %v", err)
 		http.Error(w, "User registration failed", http.StatusInternalServerError)
@@ -146,10 +146,10 @@ func (h *Handler) Logout(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, "/", http.StatusSeeOther)
 }
 
-func NewAuthHandler(as Service, repo Repository, us user.Service) *Handler {
+func NewAuthHandler(as Service, repo Repository, ur user.Repository) *Handler {
 	return &Handler{
-		Repo:        repo,
-		Service:     as,
-		UserService: us,
+		Repo:     repo,
+		Service:  as,
+		UserRepo: ur,
 	}
 }

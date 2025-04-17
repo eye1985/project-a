@@ -53,6 +53,10 @@ export const init = (wsUrl: string, username: string) => {
             connectButton.removeAttribute('disabled');
             closeButton.setAttribute('disabled', 'disabled');
             messageInput.setAttribute('disabled', 'disabled');
+          },
+
+          onError(evt) {
+            console.error(evt);
           }
         }
       );

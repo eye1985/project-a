@@ -7,21 +7,21 @@ import (
 )
 
 type RegisterRoutesArgs struct {
-	Middleware  *middleware.Middleware
-	WsUrl       string
-	Session     shared.Session
-	UserService user.Service
+	Middleware *middleware.Middleware
+	WsUrl      string
+	Session    shared.Session
+	UserRepo   user.Repository
 }
 
 func RegisterRoutes(args *RegisterRoutesArgs) {
 	m := args.Middleware
 	wsUrl := args.WsUrl
 	session := args.Session
-	us := args.UserService
+	ur := args.UserRepo
 
 	m.HandleFunc("GET /chat", RenderChat(&RenderChatArgs{
 		wsUrl:       wsUrl,
-		us:          us,
+		ur:          ur,
 		authService: session,
 	}), middleware.Guard(session))
 	m.HandleFunc("GET /", RenderRegisterUser)

@@ -5,6 +5,8 @@ import (
 	"github.com/gorilla/websocket"
 	"log"
 	"net/http"
+	"project-a/internal/shared"
+	"project-a/internal/user"
 	"time"
 )
 
@@ -19,7 +21,7 @@ const (
 	channelNameDoesNotExist = "channels does not exist"
 )
 
-func ServeWs(hub *Hub, cf ClientFactory) func(http.ResponseWriter, *http.Request) {
+func ServeWs(hub *Hub, cf ClientFactory, session shared.Session, ur user.Repository) func(http.ResponseWriter, *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		upgrader.CheckOrigin = func(r *http.Request) bool {
 			origin := r.Header.Get("Origin")
@@ -33,9 +35,22 @@ func ServeWs(hub *Hub, cf ClientFactory) func(http.ResponseWriter, *http.Request
 			return
 		}
 
-		username := r.URL.Query().Get("username")
-		if username == "" {
-			_ = conn.WriteControl(websocket.CloseMessage, websocket.FormatCloseMessage(websocket.ClosePolicyViolation, usernameDoesNotExist), time.Now().Add(time.Second))
+		cookie, err := r.Cookie(string(shared.SessionCtxKey))
+		if err != nil {
+			_ = conn.WriteControl(websocket.CloseMessage, websocket.FormatCloseMessage(websocket.ClosePolicyViolation, "unauthorized"), time.Now().Add(time.Second))
+			_ = conn.Close()
+			return
+		}
+
+		cookieValue, err := session.VerifyCookie(cookie)
+		if err != nil {
+			_ = conn.WriteControl(websocket.CloseMessage, websocket.FormatCloseMessage(websocket.ClosePolicyViolation, "unauthorized"), time.Now().Add(time.Second))
+			_ = conn.Close()
+			return
+		}
+
+		if !session.IsSessionActive(string(cookieValue)) {
+			_ = conn.WriteControl(websocket.CloseMessage, websocket.FormatCloseMessage(websocket.ClosePolicyViolation, "unauthorized"), time.Now().Add(time.Second))
 			_ = conn.Close()
 			return
 		}
@@ -47,8 +62,14 @@ func ServeWs(hub *Hub, cf ClientFactory) func(http.ResponseWriter, *http.Request
 			return
 		}
 
-		log.Println("Websocket connected: ", username)
-		client := cf(conn, hub, username, channel)
+		u, err := ur.GetUserFromSessionId(string(cookieValue))
+		if err != nil {
+			_ = conn.WriteControl(websocket.CloseMessage, websocket.FormatCloseMessage(websocket.ClosePolicyViolation, channelNameDoesNotExist), time.Now().Add(time.Second))
+			_ = conn.Close()
+			return
+		}
+
+		client := cf(conn, hub, u.Username, channel)
 		hub.register <- client
 
 		joinMsg := sendMessage{

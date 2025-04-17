@@ -13,13 +13,13 @@ export type SocketController = {
       onClose,
       onError,
       onOpen,
-      onMessage,
+      onMessage
     }: {
       onOpen?: (e: Event) => void;
       onMessage?: (message: MessageEvent) => void;
       onClose?: (e: CloseEvent) => void;
       onError?: (e: Event) => void;
-    },
+    }
   ) => void;
   disconnect: () => void;
   send: (message: string) => void;
@@ -37,33 +37,39 @@ export const initSocket = (): SocketController => {
         onClose,
         onError,
         onOpen,
-        onMessage,
+        onMessage
       }: {
         onOpen?: (e: Event) => void;
         onMessage?: (message: MessageEvent) => void;
         onClose?: (e: CloseEvent) => void;
         onError?: (e: Event) => void;
-      },
+      }
     ) {
-      ws = new WebSocket(
-        `${wsUrl}/ws?username=${username}&channels=${channel}`,
-      );
 
-      ws.onopen = (evt) => {
-        onOpen && onOpen(evt);
-      };
+      try {
+        ws = new WebSocket(
+          `${wsUrl}/ws?username=${username}&channels=${channel}`
+        );
 
-      ws.onmessage = (event) => {
-        onMessage && onMessage(event);
-      };
+        ws.onopen = (evt) => {
+          onOpen && onOpen(evt);
+        };
 
-      ws.onclose = (event) => {
-        onClose && onClose(event);
-      };
+        ws.onmessage = (event) => {
+          onMessage && onMessage(event);
+        };
 
-      ws.onerror = (error) => {
-        onError && onError(error);
-      };
+        ws.onclose = (event) => {
+          onClose && onClose(event);
+        };
+
+        ws.onerror = (error) => {
+          onError && onError(error);
+        };
+      } catch (error) {
+        const err = error as Error;
+        throw new Error(err.message);
+      }
     },
 
     disconnect() {
@@ -78,6 +84,6 @@ export const initSocket = (): SocketController => {
         return;
       }
       ws.send(message);
-    },
+    }
   };
 };

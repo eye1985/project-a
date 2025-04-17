@@ -38,15 +38,15 @@ func Serve(pool *pgxpool.Pool) error {
 
 	// repos
 	authRepo := auth.NewAuthRepo(pool)
+	userRepo := user.NewUserRepo(pool)
 
 	// services
-	userService := user.NewUserService(pool)
 	authService := auth.NewAuthService(authRepo, hashKey, blockKey)
 
 	// handlers
 	healthHandler := health.NewHealthHandler(pool)
-	userHandler := user.NewUserHandler(pool)
-	authHandler := auth.NewAuthHandler(authService, authRepo, userService)
+	userHandler := user.NewUserHandler(userRepo)
+	authHandler := auth.NewAuthHandler(authService, authRepo, userRepo)
 
 	// routes
 	midWare.Handle("GET /assets/", http.StripPrefix("/assets/", http.FileServer(http.Dir("web/assets"))))
@@ -58,12 +58,12 @@ func Serve(pool *pgxpool.Pool) error {
 	health.RegisterRoutes(midWare, healthHandler)
 	auth.RegisterRoutes(midWare, authHandler, authService)
 	user.RegisterRoutes(midWare, userHandler)
-	socket.RegisterRoutes(midWare, hub)
+	socket.RegisterRoutes(midWare, hub, authService, userRepo)
 	templates.RegisterRoutes(&templates.RegisterRoutesArgs{
-		Middleware:  midWare,
-		WsUrl:       wsUrl,
-		Session:     authService,
-		UserService: userService,
+		Middleware: midWare,
+		WsUrl:      wsUrl,
+		Session:    authService,
+		UserRepo:   userRepo,
 	})
 
 	return http.ListenAndServe(PORT, mux)

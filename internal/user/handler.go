@@ -2,17 +2,16 @@ package user
 
 import (
 	"encoding/json"
-	"github.com/jackc/pgx/v5/pgxpool"
 	"net/http"
 )
 
 type Handler struct {
-	Service
+	Repo Repository
 }
 
 func (h *Handler) GetUsers(w http.ResponseWriter, _ *http.Request) {
 	w.Header().Add("Content-Type", "application/json")
-	users, err := h.Service.GetUsers()
+	users, err := h.Repo.GetUsers()
 
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -49,7 +48,7 @@ func (h *Handler) RegisterUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	_, err = h.Service.RegisterUser(user.Username, user.Email)
+	_, err = h.Repo.InsertUser(user.Username, user.Email)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -63,8 +62,8 @@ func (h *Handler) RegisterUser(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func NewUserHandler(pool *pgxpool.Pool) *Handler {
+func NewUserHandler(repo Repository) *Handler {
 	return &Handler{
-		Service: NewUserService(pool),
+		Repo: repo,
 	}
 }

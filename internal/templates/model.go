@@ -16,7 +16,7 @@ type PageData struct {
 }
 
 type RenderChatArgs struct {
-	us          user.Service
+	ur          user.Repository
 	authService shared.Session
 	wsUrl       string
 }

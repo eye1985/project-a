@@ -9,7 +9,7 @@ import (
 func Guard(session shared.Session) func(handlerFunc http.HandlerFunc) http.HandlerFunc {
 	return func(next http.HandlerFunc) http.HandlerFunc {
 		return func(w http.ResponseWriter, r *http.Request) {
-			cookie, err := r.Cookie("sid")
+			cookie, err := r.Cookie(string(shared.SessionCtxKey))
 
 			if err != nil {
 				// TODO add flashcookie
