@@ -15,7 +15,7 @@ func fromByte(b []byte) (*MessageJSON, error) {
 }
 
 //func TestMessageSendAndReceiveWhenOnJoinAndLeave(t *testing.T) {
-//	serverHub := testServerHub(true, NewClient)
+//	serverHub := testServerHub(true, newClient)
 //	defer serverHub.server.Close()
 //
 //	username := "erik"

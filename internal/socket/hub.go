@@ -59,8 +59,7 @@ func (h *Hub) Run() {
 						continue
 					}
 					ignoreSelf := msg.Message.Event == messageTypeJoin || msg.Message.Event == messageTypeQuit
-					// TODO update this later to id after auth is ready
-					if ignoreSelf && c.username == msg.Message.Username {
+					if ignoreSelf && c.id == msg.ClientId {
 						continue
 					}
 

@@ -1,7 +1,7 @@
 package socket
 
 //func TestConnectionWithNoUserName(t *testing.T) {
-//	testStruct := testServerHub(true, NewClient)
+//	testStruct := testServerHub(true, newClient)
 //	defer testStruct.server.Close()
 //
 //	url := "ws" + testStruct.server.URL[len("http"):]
@@ -29,7 +29,7 @@ package socket
 //}
 //
 //func TestConnectionWithNoChannelName(t *testing.T) {
-//	testStruct := testServerHub(true, NewClient)
+//	testStruct := testServerHub(true, newClient)
 //	defer testStruct.server.Close()
 //
 //	url := "ws" + testStruct.server.URL[len("http"):] + "?username=erik"

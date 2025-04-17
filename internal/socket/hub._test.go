@@ -1,7 +1,7 @@
 package socket
 
 //func TestUpdateCorrectClientOnJoinLeave(t *testing.T) {
-//	serverHub := testServerHub(false, NewClient)
+//	serverHub := testServerHub(false, newClient)
 //	defer serverHub.server.Close()
 //	channel := "testChannel"
 //	username := "erik"

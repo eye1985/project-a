@@ -17,7 +17,6 @@ var upgrader = websocket.Upgrader{
 }
 
 const (
-	usernameDoesNotExist    = "username does not exist"
 	channelNameDoesNotExist = "channels does not exist"
 )
 
@@ -69,7 +68,7 @@ func ServeWs(hub *Hub, cf ClientFactory, session shared.Session, ur user.Reposit
 			return
 		}
 
-		client := cf(conn, hub, u.Username, channel)
+		client := cf(conn, hub, u.Id, u.Username, channel)
 		hub.register <- client
 
 		joinMsg := sendMessage{

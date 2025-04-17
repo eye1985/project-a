@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"encoding/json"
 	"errors"
-	"github.com/google/uuid"
 	"github.com/gorilla/websocket"
 	"log"
 	"time"
@@ -18,13 +17,13 @@ type MessageJSON struct {
 }
 
 type sendMessage struct {
-	ClientId   string
+	ClientId   int64
 	ToChannels []string
 	Message    *MessageJSON
 }
 
 type client struct {
-	id         string
+	id         int64
 	conn       *websocket.Conn
 	email      string
 	username   string
@@ -41,11 +40,11 @@ const (
 	messageTypeQuit    = "quit"
 )
 
-type ClientFactory func(conn *websocket.Conn, hub *Hub, username string, channel string) *client
+type ClientFactory func(conn *websocket.Conn, hub *Hub, id int64, username string, channel string) *client
 
-func NewClient(conn *websocket.Conn, hub *Hub, username string, channel string) *client {
+func newClient(conn *websocket.Conn, hub *Hub, id int64, username string, channel string) *client {
 	return &client{
-		id:         uuid.NewString(),
+		id:         id,
 		conn:       conn,
 		username:   username,
 		hub:        hub,
