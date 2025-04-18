@@ -3,8 +3,8 @@ package user
 import (
 	"context"
 	_ "embed"
-	"fmt"
 	"github.com/jackc/pgx/v5/pgxpool"
+	"project-a/internal/shared"
 )
 
 type userRepository struct {
@@ -12,33 +12,28 @@ type userRepository struct {
 }
 
 //go:embed sql/get_user_by_session_id.sql
-var getUserBySessionId string
+var getUserBySessionIdSql string
 
 //go:embed sql/get_user_by_email.sql
-var getUserByEmail string
+var getUserByEmailSql string
 
 //go:embed sql/get_all_users.sql
-var getAllUsers string
+var getAllUsersSql string
 
 //go:embed sql/insert_user.sql
-var insertUser string
+var insertUserSql string
 
 //go:embed sql/delete_user_by_email.sql
-var deleteUserByEmail string
+var deleteUserByEmailSql string
 
-type Repository interface {
-	GetUser(email string) (*User, error)
-	GetUsers() ([]*User, error)
-	GetUserFromSessionId(sessionId string) (*User, error)
-	InsertUser(username string, email string) (*User, error)
-	DeleteUser(email string) error
-}
+//go:embed sql/update_username.sql
+var updateUsernameSql string
 
-func (r *userRepository) GetUser(email string) (*User, error) {
+func (r *userRepository) GetUser(email string) (*shared.User, error) {
 	ctx := context.Background()
-	user := &User{}
+	user := &shared.User{}
 
-	row := r.pool.QueryRow(ctx, getUserByEmail, email)
+	row := r.pool.QueryRow(ctx, getUserByEmailSql, email)
 	err := row.Scan(&user.Id, &user.Username, &user.Email, &user.CreatedAt)
 	if err != nil {
 		return nil, err
@@ -47,10 +42,10 @@ func (r *userRepository) GetUser(email string) (*User, error) {
 	return user, nil
 }
 
-func (r *userRepository) GetUserFromSessionId(sessionId string) (*User, error) {
+func (r *userRepository) GetUserFromSessionId(sessionId string) (*shared.User, error) {
 	ctx := context.Background()
-	user := &User{}
-	row := r.pool.QueryRow(ctx, getUserBySessionId, sessionId)
+	user := &shared.User{}
+	row := r.pool.QueryRow(ctx, getUserBySessionIdSql, sessionId)
 	err := row.Scan(&user.Id, &user.Username, &user.Email, &user.CreatedAt)
 	if err != nil {
 		return nil, err
@@ -59,18 +54,18 @@ func (r *userRepository) GetUserFromSessionId(sessionId string) (*User, error) {
 	return user, nil
 }
 
-func (r *userRepository) GetUsers() ([]*User, error) {
+func (r *userRepository) GetUsers() ([]*shared.User, error) {
 	ctx := context.Background()
 
-	rows, err := r.pool.Query(ctx, getAllUsers)
+	rows, err := r.pool.Query(ctx, getAllUsersSql)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
 
-	var users []*User
+	var users []*shared.User
 	for rows.Next() {
-		var user User
+		var user shared.User
 		err = rows.Scan(&user.Id, &user.Username, &user.Email, &user.CreatedAt)
 		if err != nil {
 			return nil, err
@@ -81,14 +76,14 @@ func (r *userRepository) GetUsers() ([]*User, error) {
 	return users, nil
 }
 
-func (r *userRepository) InsertUser(username string, email string) (*User, error) {
+func (r *userRepository) InsertUser(username string, email string) (*shared.User, error) {
 	ctx := context.Background()
-	row := r.pool.QueryRow(ctx, insertUser, username, email)
+	row := r.pool.QueryRow(ctx, insertUserSql, username, email)
 
-	u := &User{}
+	u := &shared.User{}
 	err := row.Scan(&u.Id, &u.Email, &u.Username, &u.CreatedAt)
 	if err != nil {
-		return &User{}, err
+		return &shared.User{}, err
 	}
 
 	return u, nil
@@ -96,18 +91,32 @@ func (r *userRepository) InsertUser(username string, email string) (*User, error
 
 func (r *userRepository) DeleteUser(email string) error {
 	ctx := context.Background()
-	result, err := r.pool.Exec(ctx, deleteUserByEmail, email)
+	result, err := r.pool.Exec(ctx, deleteUserByEmailSql, email)
 	if err != nil {
 		return err
 	}
 
 	if result.RowsAffected() == 0 {
-		return fmt.Errorf("No user deleted")
+		return ErrNoUserDeleted
 	}
 
 	return nil
 }
 
-func NewUserRepo(pool *pgxpool.Pool) Repository {
+func (r *userRepository) UpdateUserName(newUsername string, userId int64) error {
+	ctx := context.Background()
+	result, err := r.pool.Exec(ctx, updateUsernameSql, newUsername, userId)
+	if err != nil {
+		return err
+	}
+
+	if result.RowsAffected() == 0 {
+		return ErrNoUsernameUpdated
+	}
+
+	return nil
+}
+
+func NewUserRepo(pool *pgxpool.Pool) shared.UserRepository {
 	return &userRepository{pool}
 }

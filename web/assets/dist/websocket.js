@@ -14,7 +14,6 @@ export const initSocket = () => {
                     onClose && onClose(event);
                 };
                 ws.onerror = (error) => {
-                    console.log(error, "what is error", error.reason);
                     onError && onError(error);
                 };
             }

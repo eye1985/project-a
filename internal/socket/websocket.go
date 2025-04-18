@@ -6,7 +6,6 @@ import (
 	"log"
 	"net/http"
 	"project-a/internal/shared"
-	"project-a/internal/user"
 	"time"
 )
 
@@ -20,7 +19,7 @@ const (
 	channelNameDoesNotExist = "channels does not exist"
 )
 
-func ServeWs(hub *Hub, cf ClientFactory, session shared.Session, ur user.Repository) func(http.ResponseWriter, *http.Request) {
+func ServeWs(hub *Hub, cf ClientFactory, session shared.Session, ur shared.UserRepository) func(http.ResponseWriter, *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		upgrader.CheckOrigin = func(r *http.Request) bool {
 			origin := r.Header.Get("Origin")

@@ -5,16 +5,15 @@ import (
 	"net/http"
 	"net/mail"
 	"project-a/internal/shared"
-	"project-a/internal/user"
 )
 
 type Handler struct {
 	Repo     Repository
 	Service  Service
-	UserRepo user.Repository
+	UserRepo shared.UserRepository
 }
 
-func createMagicLinkIfNotExist(email string, h *Handler) (*user.User, string, error) {
+func createMagicLinkIfNotExist(email string, h *Handler) (*shared.User, string, error) {
 	u, err := h.UserRepo.GetUser(email)
 	if err != nil {
 		code, err := h.Service.CreateMagicLink(email)
@@ -146,7 +145,7 @@ func (h *Handler) Logout(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, "/", http.StatusSeeOther)
 }
 
-func NewAuthHandler(as Service, repo Repository, ur user.Repository) *Handler {
+func NewAuthHandler(as Service, repo Repository, ur shared.UserRepository) *Handler {
 	return &Handler{
 		Repo:     repo,
 		Service:  as,

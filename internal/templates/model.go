@@ -2,7 +2,6 @@ package templates
 
 import (
 	"project-a/internal/shared"
-	"project-a/internal/user"
 )
 
 type Person struct {
@@ -16,7 +15,7 @@ type PageData struct {
 }
 
 type RenderChatArgs struct {
-	ur          user.Repository
+	ur          shared.UserRepository
 	authService shared.Session
 	wsUrl       string
 }

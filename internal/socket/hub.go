@@ -7,11 +7,17 @@ import (
 	"slices"
 )
 
+type ClientNameUpdateRequest struct {
+	ClientId int64
+	Username string
+}
+
 type Hub struct {
 	broadcast  chan []byte
 	register   chan *client
 	unregister chan *client
 	channels   map[string][]*client
+	updateName chan ClientNameUpdateRequest
 }
 
 func NewHub() *Hub {
@@ -20,6 +26,14 @@ func NewHub() *Hub {
 		register:   make(chan *client),
 		unregister: make(chan *client),
 		channels:   make(map[string][]*client),
+		updateName: make(chan ClientNameUpdateRequest),
+	}
+}
+
+func (h *Hub) UpdateNameChannel(clientId int64, username string) {
+	h.updateName <- ClientNameUpdateRequest{
+		ClientId: clientId,
+		Username: username,
 	}
 }
 
@@ -65,6 +79,19 @@ func (h *Hub) Run() {
 
 					c.send <- jsonMsg
 					log.Printf("client broadcast: %s", string(jsonMsg))
+				}
+			}
+		case clientReq := <-h.updateName:
+			for _, clientList := range h.channels {
+				for _, client := range clientList {
+					if client.id == clientReq.ClientId {
+						if client.username == clientReq.Username {
+							continue
+						}
+
+						client.username = clientReq.Username
+						log.Printf("client update name: %d %s", clientReq.ClientId, clientReq.Username)
+					}
 				}
 			}
 		}

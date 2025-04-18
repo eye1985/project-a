@@ -9,7 +9,8 @@ const addHandler = (el: Element, handlers: Record<string, EventListener>) => {
     return;
   }
 
-  const handler = handlers[handlerName] ? handlers[handlerName] : () => {};
+  const handler = handlers[handlerName] ? handlers[handlerName] : () => {
+  };
   el.addEventListener(event, handler);
 };
 
@@ -54,7 +55,7 @@ const addBindElements = (currentElement: Element) => {
     state[cid] = {
       elm,
       exprExec,
-      bindAction,
+      bindAction
     };
   }
 
@@ -76,7 +77,7 @@ const addBindElements = (currentElement: Element) => {
 export const shortcut = () => {
   const elements = Array.from(document.querySelectorAll('[data-cid]'));
   const handlerNames = elements.map(
-    (e) => e.getAttribute('data-handler')?.split(':')[1],
+    (e) => e.getAttribute('data-handler')?.split(':')[1]
   );
 
   let handlers: Record<string, EventListener> | null = null;
@@ -84,11 +85,11 @@ export const shortcut = () => {
   return {
     addHandler(handlersArg: Record<string, EventListener>) {
       const isAllHandlersPresent = Object.keys(handlersArg).every(
-        (handlerName) => handlerNames.includes(handlerName),
+        (handlerName) => handlerNames.includes(handlerName)
       );
 
       if (!isAllHandlersPresent) {
-        throw new Error('Not all handlers present');
+        throw new Error('Not all handlers present, did you remember to add data-handler attribute to your elements?');
       }
 
       handlers = handlersArg;
@@ -102,14 +103,67 @@ export const shortcut = () => {
       return elm;
     },
     init() {
-      if (!handlers) {
-        throw new Error('No handlers present');
-      }
-
       for (const el of elements) {
-        addHandler(el, handlers);
+        if (el instanceof HTMLFormElement) {
+          el.addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const action = el.getAttribute('action');
+            const method = el.getAttribute('data-method');
+            const successMessage = el.getAttribute('data-success-message');
+            if (!method || !action) {
+              return;
+            }
+
+            const methods = ['POST', 'PUT', 'DELETE', 'PATCH'];
+            const upperCasedMethod = method.toUpperCase();
+            if (!methods.includes(upperCasedMethod)) {
+              return;
+            }
+
+            let body: Record<string, any> = {};
+            for (const elm of el.querySelectorAll('[name]')) {
+              if (elm instanceof HTMLInputElement) {
+                body[elm.name] = elm.value;
+              }
+            }
+
+            const res = await fetch(action, {
+              method: upperCasedMethod,
+              body: JSON.stringify(body),
+              credentials: 'include',
+              headers: {
+                'Content-Type': 'application/json'
+              }
+            });
+
+            if (!res.ok) {
+              const message = await res.text();
+              console.error('error: ' + message);
+              return;
+            }
+
+            const contentType = res.headers.get('Content-Type');
+            if (contentType && contentType?.length > 0) {
+              location.href = '/';
+            }
+
+            if (successMessage) {
+              const successElm = document.createElement('p');
+              successElm.innerText = successMessage;
+              el.appendChild(successElm);
+              setTimeout(() => {
+                successElm.remove();
+              }, 2000);
+            }
+          });
+        }
+
+        if (handlers) {
+          addHandler(el, handlers);
+        }
         addBindElements(el);
       }
-    },
+    }
   };
 };
