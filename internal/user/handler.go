@@ -99,7 +99,7 @@ func (h *Handler) UpdateUserName(w http.ResponseWriter, r *http.Request) {
 
 	err = h.Repo.UpdateUserName(newUser.Username, u.Id)
 	if err != nil {
-		log.Printf(err.Error())
+		log.Printf("%s", err.Error())
 		http.Error(w, "could not update username", http.StatusInternalServerError)
 		return
 	}
