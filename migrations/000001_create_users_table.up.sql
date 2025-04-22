@@ -6,24 +6,29 @@ CREATE TABLE users
     created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
-CREATE INDEX idx_email on users (email);
-
-CREATE TABLE user_connections
+CREATE TABLE user_lists
 (
     id         SERIAL PRIMARY KEY,
-    user1_id   integer NOT NULL,
-    user2_id   integer NOT NULL,
-    created_at TIMESTAMPTZ DEFAULT NOW(),
-    CONSTRAINT fk_user1 FOREIGN KEY (user1_id) REFERENCES users (id) ON DELETE CASCADE,
-    CONSTRAINT fk_user2 FOREIGN KEY (user2_id) REFERENCES users (id) ON DELETE CASCADE,
-    CHECK (user1_id <> user2_id)
+    name       TEXT    NOT NULL,
+    created_at timestamptz DEFAULT now(),
+    user_id    integer not null references users (id) on delete cascade,
+    UNIQUE (user_id, name)
 );
 
-CREATE UNIQUE INDEX unique_user_connection
-    ON user_connections (LEAST(user1_id, user2_id), GREATEST(user1_id, user2_id));
-
-CREATE INDEX idx_user1 ON user_connections (user1_id);
-CREATE INDEX idx_user2 ON user_connections (user2_id);
+create table user_list_record
+(
+    id           SERIAL PRIMARY KEY,
+    user_id      INTEGER NOT NULL REFERENCES users (id) ON DELETE CASCADE,
+    invited_by   INTEGER NOT NULL REFERENCES users (id) ON DELETE CASCADE,
+    display_name TEXT    NOT NULL,
+    has_accepted bool        DEFAULT false,
+    invited_at   timestamptz DEFAULT now(),
+    accepted_at  timestamptz,
+    removed_at   timestamptz,
+    list_id      integer not null references user_lists (id) on DELETE CASCADE,
+    UNIQUE (user_id, invited_by),
+    CHECK (user_id IS DISTINCT FROM invited_by)
+);
 
 CREATE TABLE user_sessions
 (
