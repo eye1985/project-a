@@ -1,0 +1,57 @@
+.main-content {
+  display: grid;
+  grid-template-rows: max-content auto max-content;
+  gap: 20px;
+  height: 100%;
+}
+
+.form {
+  margin-bottom: 60px;
+}
+
+.list-group {
+  list-style: none;
+}
+
+.list-group li {
+  margin-bottom: 10px;
+}
+
+.messages {
+  background: #fff;
+  margin-bottom: 10px;
+  height: 100%;
+  overflow: auto;
+  border-radius: 8px;
+  contain: content;
+}
+
+.messages:has(p) {
+  padding: 10px;
+}
+
+.messages p {
+  margin: 0;
+}
+
+.ws-buttons {
+  display: flex;
+  margin-bottom: 10px;
+  gap: 5px;
+}
+
+.chat-input {
+  width: 100%;
+  padding: 8px;
+  border-radius: 8px;
+  border: 1px solid #ccc;
+  font-size: 18px;
+}
+
+.mb-0 {
+  margin-bottom: 0 !important;
+}
+
+.mb-10 {
+  margin-bottom: 10px !important;
+}

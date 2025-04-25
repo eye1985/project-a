@@ -1,28 +1,20 @@
-<!doctype html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport"
-        content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
-  <meta http-equiv="X-UA-Compatible" content="ie=edge">
-  <title>Profile</title>
-</head>
-<body>
+{{define "main-content"}}
+  <form action="/user" data-method="patch" data-cid="updateUsername" data-success-message="Username updated">
+    <label for="username">
+      Username:
+    </label>
+    <input id="username" type="text" name="username" placeholder="type your new username" value="{{.Username}}">
+    <button type="submit">
+      Change username
+    </button>
+  </form>
+{{end}}
 
-<form action="/user" data-method="patch" data-cid="updateUsername" data-success-message="Username updated">
-  <label for="username">
-    Username:
-  </label>
-  <input id="username" type="text" name="username" placeholder="type your new username" value="{{.Username}}">
-  <button type="submit">
-    Change username
-  </button>
-</form>
-<script type="module">
-  import { shortcut } from '/assets/dist/shortcut.js';
+{{define "inline-js"}}
+  <script type="module">
+    import { shortcut } from '/assets/dist/shortcut.js';
 
-  const sc = shortcut();
-  sc.init();
-</script>
-</body>
-</html>
+    const sc = shortcut();
+    sc.init();
+  </script>
+{{end}}

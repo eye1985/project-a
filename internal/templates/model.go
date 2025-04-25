@@ -12,6 +12,8 @@ type Person struct {
 type PageData struct {
 	WsUrl    string
 	Username string
+	Title    string
+	Css      string
 }
 
 type RenderChatArgs struct {

@@ -3,15 +3,17 @@ package templates
 import (
 	"fmt"
 	"html/template"
+	"log"
 	"net/http"
 	"project-a/internal/shared"
 )
 
 const (
-	path     = "web/templates"
-	register = "register.gohtml"
-	chat     = "chat.gohtml"
-	profile  = "profile.gohtml"
+	path       = "web/templates"
+	baseLayout = "base-layout.gohtml"
+	register   = "register.gohtml"
+	chat       = "chat.gohtml"
+	profile    = "profile.gohtml"
 )
 
 type Handler struct {
@@ -21,7 +23,10 @@ type Handler struct {
 }
 
 func (h *Handler) RenderRegisterUser(w http.ResponseWriter, r *http.Request) {
-	tmpl, err := template.ParseFiles(fmt.Sprintf("%s/%s", path, register))
+	tmpl, err := template.ParseFiles(
+		fmt.Sprintf("%s/%s", path, register),
+	)
+
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -34,7 +39,11 @@ func (h *Handler) RenderRegisterUser(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) RenderChat(w http.ResponseWriter, r *http.Request) {
-	tmpl, err := template.ParseFiles(fmt.Sprintf("%s/%s", path, chat))
+	tmpl, err := template.ParseFiles(
+		fmt.Sprintf("%s/%s", path, baseLayout),
+		fmt.Sprintf("%s/%s", path, chat),
+	)
+
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -47,9 +56,14 @@ func (h *Handler) RenderChat(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	log.Printf("wsUrl: %v", h.wsUrl)
+	log.Printf("username: %v", u.Username)
+
 	if err := tmpl.Execute(w, &PageData{
 		WsUrl:    h.wsUrl,
 		Username: u.Username,
+		Title:    "Chat",
+		Css:      "chat.css",
 	}); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -57,7 +71,10 @@ func (h *Handler) RenderChat(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) RenderProfile(w http.ResponseWriter, r *http.Request) {
-	tmpl, err := template.ParseFiles(fmt.Sprintf("%s/%s", path, profile))
+	tmpl, err := template.ParseFiles(
+		fmt.Sprintf("%s/%s", path, baseLayout),
+		fmt.Sprintf("%s/%s", path, profile),
+	)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -71,6 +88,7 @@ func (h *Handler) RenderProfile(w http.ResponseWriter, r *http.Request) {
 
 	if err := tmpl.Execute(w, &PageData{
 		Username: u.Username,
+		Title:    "Profile",
 	}); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
