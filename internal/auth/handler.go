@@ -74,7 +74,7 @@ func (h *Handler) RegisterUser(w http.ResponseWriter, r *http.Request) {
 		SameSite: http.SameSiteStrictMode,
 	})
 
-	http.Redirect(w, r, "/chat", http.StatusSeeOther)
+	http.Redirect(w, r, shared.HomeRoute, http.StatusSeeOther)
 }
 
 func (h *Handler) Login(w http.ResponseWriter, r *http.Request) {
@@ -114,6 +114,7 @@ func (h *Handler) Login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// TODO create link for login
 	encoded, err := h.Service.SignCookie(string(shared.SessionCtxKey), []byte(session.SessionID))
 	if err != nil {
 		http.Error(w, "Session error", http.StatusInternalServerError)
@@ -130,7 +131,7 @@ func (h *Handler) Login(w http.ResponseWriter, r *http.Request) {
 		SameSite: http.SameSiteStrictMode,
 	})
 
-	http.Redirect(w, r, "/chat", http.StatusSeeOther)
+	http.Redirect(w, r, shared.HomeRoute, http.StatusSeeOther)
 }
 
 func (h *Handler) Logout(w http.ResponseWriter, r *http.Request) {

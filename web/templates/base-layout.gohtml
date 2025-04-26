@@ -11,67 +11,80 @@
         rel="stylesheet">
   <title>{{.Title}}</title>
   <style>
-      :root {
-          --main-bg-color: #F8DF07;
-      }
+    :root {
+      --main-bg-color: #F8DF07;
+    }
 
-      *, *::before, *::after {
-          box-sizing: border-box;
-      }
+    *, *::before, *::after {
+      box-sizing: border-box;
+    }
 
-      html, body {
-          margin: 0;
-          padding: 0;
-          width: 100%;
-          height: 100%;
-      }
+    html, body {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      height: 100%;
+    }
 
-      body {
-          background-color: var(--main-bg-color);
-          font-family: "Raleway", sans-serif;
-          font-optical-sizing: auto;
-      }
+    body {
+      background-color: var(--main-bg-color);
+      font-family: "Raleway", sans-serif;
+      font-optical-sizing: auto;
+    }
 
-      .layout {
-          display: grid;
-          grid-template-columns: 20px 1fr 20px;
-          grid-template-rows: max-content 1fr 10px;
-          height: 100%;
-          gap: 20px;
-      }
+    .layout {
+      display: grid;
+      grid-template-columns: 20px 1fr 20px;
+      grid-template-rows: max-content 1fr 10px;
+      height: 100%;
+      gap: 20px;
+    }
 
-      .header {
-          grid-column-start: 1;
-          grid-column-end: -1;
-          background: #251405;
-          color: white;
-          padding: 10px;
-      }
+    .header {
+      grid-column-start: 1;
+      grid-column-end: -1;
+      background: #251405;
+      color: white;
+      padding: 10px;
+    }
 
-      .header-content {
-          justify-self: center;
-          display: grid;
-          grid-template-columns: 1fr auto auto;
-          gap: 30px;
-          align-items: center;
-          max-width: 768px;
-          width: 100%;
-      }
+    .header-content {
+      justify-self: center;
+      display: grid;
+      grid-template-columns: 1fr auto auto;
+      gap: 30px;
+      align-items: center;
+      max-width: 768px;
+      width: 100%;
+    }
 
-      .header-title {
-          margin: 0;
-      }
+    .header-title {
+      margin: 0;
+    }
 
-      .header-link {
-          color: white;
-      }
+    .logout-button,
+    .header-link {
+      background: none;
+      color: white;
+      border: none;
+      text-decoration: underline;
+      font-size: 1rem;
+      font-weight: normal;
+      font-family: inherit;
+    }
 
-      .main {
-          grid-column: 2 / 3;
-          max-width: 768px;
-          width: 100%;
-          justify-self: center;
-      }
+    .logout-button:hover,
+    .header-link:hover {
+      cursor: pointer;
+      text-decoration: none;
+    }
+
+    .main {
+      grid-column: 2 / 3;
+      max-width: 768px;
+      width: 100%;
+      justify-self: center;
+    }
   </style>
     {{if .Css}}
       <link rel="stylesheet" href="styles/{{.Css}}" />
@@ -84,9 +97,8 @@
       <h1 class="header-title">Chat</h1>
 
       <a class="header-link" href="/profile">Profile</a>
-
       <form method="POST" action="/logout">
-        <button type="submit">
+        <button class="logout-button" type="submit">
           Logout
         </button>
       </form>

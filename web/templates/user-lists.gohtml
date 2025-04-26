@@ -1,0 +1,15 @@
+{{define "main-content"}}
+  <div class="main-content">
+    My list here
+
+  </div>
+{{end}}
+
+{{define "inline-js"}}
+  <script type="module">
+    import { shortcut } from '/assets/dist/shortcut.js';
+
+    const sc = shortcut();
+    sc.init();
+  </script>
+{{end}}

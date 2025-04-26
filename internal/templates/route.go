@@ -16,4 +16,5 @@ func RegisterRoutes(m *middleware.Middleware, h *Handler, authService shared.Ses
 	m.HandleFunc("GET /", h.RenderRegisterUser)
 	m.HandleFunc("GET /chat", h.RenderChat, middleware.Guard(authService))
 	m.HandleFunc("GET /profile", h.RenderProfile, middleware.Guard(authService))
+	m.HandleFunc("GET /userlists", h.RenderUserList, middleware.Guard(authService))
 }

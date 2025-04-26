@@ -14,6 +14,7 @@ const (
 	register   = "register.gohtml"
 	chat       = "chat.gohtml"
 	profile    = "profile.gohtml"
+	userList   = "user-lists.gohtml"
 )
 
 type Handler struct {
@@ -23,6 +24,15 @@ type Handler struct {
 }
 
 func (h *Handler) RenderRegisterUser(w http.ResponseWriter, r *http.Request) {
+	cookie, err := r.Cookie(string(shared.SessionCtxKey))
+	if err == nil {
+		cookieValue, _ := h.authService.VerifyCookie(cookie)
+		if h.authService.IsSessionActive(string(cookieValue)) {
+			http.Redirect(w, r, shared.HomeRoute, http.StatusSeeOther)
+			return
+		}
+	}
+
 	tmpl, err := template.ParseFiles(
 		fmt.Sprintf("%s/%s", path, register),
 	)
@@ -89,6 +99,24 @@ func (h *Handler) RenderProfile(w http.ResponseWriter, r *http.Request) {
 	if err := tmpl.Execute(w, &PageData{
 		Username: u.Username,
 		Title:    "Profile",
+	}); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+}
+
+func (h *Handler) RenderUserList(w http.ResponseWriter, r *http.Request) {
+	tmpl, err := template.ParseFiles(
+		fmt.Sprintf("%s/%s", path, baseLayout),
+		fmt.Sprintf("%s/%s", path, userList),
+	)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	if err := tmpl.Execute(w, &PageData{
+		Title: "My lists",
 	}); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return

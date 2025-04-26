@@ -41,14 +41,14 @@ func NewMiddlewareMux() *Middleware {
 	}
 }
 
-// Add Inserts Global middlewares
+// Add Inserts Global middlewares, global middlewares are run after the handler middlewares
 func (m *Middleware) Add(mw Handler) {
 	m.middlewares = append(m.middlewares, mw)
 	m.composedHandle = compose(m.middlewares...)
 }
 
 func (m *Middleware) HandleFunc(route string, h http.HandlerFunc, middlewareHandlers ...Handler) {
-	middlewares := append(m.middlewares, middlewareHandlers...)
+	middlewares := append(middlewareHandlers, m.middlewares...)
 	composed := compose(middlewares...)
 	m.Mux.HandleFunc(route, composed(h))
 }
