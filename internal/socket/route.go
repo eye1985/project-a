@@ -5,6 +5,6 @@ import (
 	"project-a/internal/shared"
 )
 
-func RegisterRoutes(m *middleware.Middleware, h *Hub, session shared.Session, ur shared.UserRepository) {
-	m.HandleFunc("GET /ws", ServeWs(h, newClient, session, ur))
+func RegisterRoutes(m *middleware.Middleware, h *Hub, as shared.AuthService, ur shared.UserRepository) {
+	m.HandleFunc("GET /ws", ServeWs(h, newClient, as, ur))
 }

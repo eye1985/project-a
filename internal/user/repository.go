@@ -29,8 +29,7 @@ var deleteUserByEmailSql string
 //go:embed sql/update_username.sql
 var updateUsernameSql string
 
-func (r *userRepository) GetUser(email string) (*shared.User, error) {
-	ctx := context.Background()
+func (r *userRepository) GetUser(ctx context.Context, email string) (*shared.User, error) {
 	user := &shared.User{}
 
 	row := r.pool.QueryRow(ctx, getUserByEmailSql, email)
@@ -42,8 +41,7 @@ func (r *userRepository) GetUser(email string) (*shared.User, error) {
 	return user, nil
 }
 
-func (r *userRepository) GetUserFromSessionId(sessionId string) (*shared.User, error) {
-	ctx := context.Background()
+func (r *userRepository) GetUserFromSessionId(ctx context.Context, sessionId string) (*shared.User, error) {
 	user := &shared.User{}
 	row := r.pool.QueryRow(ctx, getUserBySessionIdSql, sessionId)
 	err := row.Scan(&user.Id, &user.Username, &user.Email, &user.CreatedAt)
@@ -54,9 +52,7 @@ func (r *userRepository) GetUserFromSessionId(sessionId string) (*shared.User, e
 	return user, nil
 }
 
-func (r *userRepository) GetUsers() ([]*shared.User, error) {
-	ctx := context.Background()
-
+func (r *userRepository) GetUsers(ctx context.Context) ([]*shared.User, error) {
 	rows, err := r.pool.Query(ctx, getAllUsersSql)
 	if err != nil {
 		return nil, err
@@ -76,8 +72,7 @@ func (r *userRepository) GetUsers() ([]*shared.User, error) {
 	return users, nil
 }
 
-func (r *userRepository) InsertUser(username string, email string) (*shared.User, error) {
-	ctx := context.Background()
+func (r *userRepository) InsertUser(ctx context.Context, username string, email string) (*shared.User, error) {
 	row := r.pool.QueryRow(ctx, insertUserSql, username, email)
 
 	u := &shared.User{}
@@ -89,8 +84,7 @@ func (r *userRepository) InsertUser(username string, email string) (*shared.User
 	return u, nil
 }
 
-func (r *userRepository) DeleteUser(email string) error {
-	ctx := context.Background()
+func (r *userRepository) DeleteUser(ctx context.Context, email string) error {
 	result, err := r.pool.Exec(ctx, deleteUserByEmailSql, email)
 	if err != nil {
 		return err
@@ -103,8 +97,7 @@ func (r *userRepository) DeleteUser(email string) error {
 	return nil
 }
 
-func (r *userRepository) UpdateUserName(newUsername string, userId int64) error {
-	ctx := context.Background()
+func (r *userRepository) UpdateUserName(ctx context.Context, newUsername string, userId int64) error {
 	result, err := r.pool.Exec(ctx, updateUsernameSql, newUsername, userId)
 	if err != nil {
 		return err

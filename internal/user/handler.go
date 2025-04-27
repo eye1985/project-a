@@ -14,9 +14,9 @@ type Handler struct {
 	Hub  *socket.Hub
 }
 
-func (h *Handler) GetUsers(w http.ResponseWriter, _ *http.Request) {
+func (h *Handler) GetUsers(w http.ResponseWriter, r *http.Request) {
 	w.Header().Add("Content-Type", "application/json")
-	users, err := h.Repo.GetUsers()
+	users, err := h.Repo.GetUsers(r.Context())
 
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -53,7 +53,7 @@ func (h *Handler) RegisterUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	_, err = h.Repo.InsertUser(user.Username, user.Email)
+	_, err = h.Repo.InsertUser(r.Context(), user.Username, user.Email)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -79,7 +79,7 @@ func (h *Handler) UpdateUserName(w http.ResponseWriter, r *http.Request) {
 	}
 
 	sessionID := r.Context().Value(shared.SessionCtxKey).([]byte)
-	u, err := h.Repo.GetUserFromSessionId(string(sessionID))
+	u, err := h.Repo.GetUserFromSessionId(r.Context(), string(sessionID))
 	if err != nil {
 		http.Error(w, "no session", http.StatusInternalServerError)
 		return
@@ -97,7 +97,7 @@ func (h *Handler) UpdateUserName(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = h.Repo.UpdateUserName(newUser.Username, u.Id)
+	err = h.Repo.UpdateUserName(r.Context(), newUser.Username, u.Id)
 	if err != nil {
 		log.Printf("%s", err.Error())
 		http.Error(w, "could not update username", http.StatusInternalServerError)

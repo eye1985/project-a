@@ -12,7 +12,7 @@ type RegisterRoutesArgs struct {
 	UserRepo   shared.UserRepository
 }
 
-func RegisterRoutes(m *middleware.Middleware, h *Handler, authService shared.Session) {
+func RegisterRoutes(m *middleware.Middleware, h *Handler, authService shared.AuthService) {
 	m.HandleFunc("GET /", h.RenderRegisterUser)
 	m.HandleFunc("GET /chat", h.RenderChat, middleware.Guard(authService))
 	m.HandleFunc("GET /profile", h.RenderProfile, middleware.Guard(authService))

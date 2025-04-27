@@ -6,7 +6,7 @@ import (
 	"project-a/internal/shared"
 )
 
-func Guard(session shared.Session) func(handlerFunc http.HandlerFunc) http.HandlerFunc {
+func Guard(session shared.AuthService) func(handlerFunc http.HandlerFunc) http.HandlerFunc {
 	return func(next http.HandlerFunc) http.HandlerFunc {
 		return func(w http.ResponseWriter, r *http.Request) {
 			cookie, err := r.Cookie(string(shared.SessionCtxKey))
@@ -23,7 +23,7 @@ func Guard(session shared.Session) func(handlerFunc http.HandlerFunc) http.Handl
 				return
 			}
 
-			if !session.IsSessionActive(string(cookieValue)) {
+			if !session.IsSessionActive(r.Context(), string(cookieValue)) {
 				// TODO add flashcookie
 				http.Redirect(w, r, "/?error=unauthorized", http.StatusSeeOther)
 				return

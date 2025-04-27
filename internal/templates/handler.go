@@ -19,7 +19,7 @@ const (
 
 type Handler struct {
 	userRepo    shared.UserRepository
-	authService shared.Session
+	authService shared.AuthService
 	wsUrl       string
 }
 
@@ -27,7 +27,7 @@ func (h *Handler) RenderRegisterUser(w http.ResponseWriter, r *http.Request) {
 	cookie, err := r.Cookie(string(shared.SessionCtxKey))
 	if err == nil {
 		cookieValue, _ := h.authService.VerifyCookie(cookie)
-		if h.authService.IsSessionActive(string(cookieValue)) {
+		if h.authService.IsSessionActive(r.Context(), string(cookieValue)) {
 			http.Redirect(w, r, shared.HomeRoute, http.StatusSeeOther)
 			return
 		}
@@ -60,7 +60,7 @@ func (h *Handler) RenderChat(w http.ResponseWriter, r *http.Request) {
 	}
 
 	sessionID := r.Context().Value(shared.SessionCtxKey).([]byte)
-	u, err := h.userRepo.GetUserFromSessionId(string(sessionID))
+	u, err := h.userRepo.GetUserFromSessionId(r.Context(), string(sessionID))
 	if err != nil {
 		http.Error(w, "no session", http.StatusInternalServerError)
 		return
@@ -90,7 +90,7 @@ func (h *Handler) RenderProfile(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	sessionID := r.Context().Value(shared.SessionCtxKey).([]byte)
-	u, err := h.userRepo.GetUserFromSessionId(string(sessionID))
+	u, err := h.userRepo.GetUserFromSessionId(r.Context(), string(sessionID))
 	if err != nil {
 		http.Error(w, "no session", http.StatusInternalServerError)
 		return
@@ -123,7 +123,7 @@ func (h *Handler) RenderUserList(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func NewHandler(userRepo shared.UserRepository, authService shared.Session, wsUrl string) *Handler {
+func NewHandler(userRepo shared.UserRepository, authService shared.AuthService, wsUrl string) *Handler {
 	return &Handler{
 		userRepo:    userRepo,
 		authService: authService,

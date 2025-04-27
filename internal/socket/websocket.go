@@ -19,7 +19,7 @@ const (
 	channelNameDoesNotExist = "channels does not exist"
 )
 
-func ServeWs(hub *Hub, cf ClientFactory, session shared.Session, ur shared.UserRepository) func(http.ResponseWriter, *http.Request) {
+func ServeWs(hub *Hub, cf ClientFactory, as shared.AuthService, ur shared.UserRepository) func(http.ResponseWriter, *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		upgrader.CheckOrigin = func(r *http.Request) bool {
 			origin := r.Header.Get("Origin")
@@ -40,14 +40,14 @@ func ServeWs(hub *Hub, cf ClientFactory, session shared.Session, ur shared.UserR
 			return
 		}
 
-		cookieValue, err := session.VerifyCookie(cookie)
+		cookieValue, err := as.VerifyCookie(cookie)
 		if err != nil {
 			_ = conn.WriteControl(websocket.CloseMessage, websocket.FormatCloseMessage(websocket.ClosePolicyViolation, "unauthorized"), time.Now().Add(time.Second))
 			_ = conn.Close()
 			return
 		}
 
-		if !session.IsSessionActive(string(cookieValue)) {
+		if !as.IsSessionActive(r.Context(), string(cookieValue)) {
 			_ = conn.WriteControl(websocket.CloseMessage, websocket.FormatCloseMessage(websocket.ClosePolicyViolation, "unauthorized"), time.Now().Add(time.Second))
 			_ = conn.Close()
 			return
@@ -60,7 +60,7 @@ func ServeWs(hub *Hub, cf ClientFactory, session shared.Session, ur shared.UserR
 			return
 		}
 
-		u, err := ur.GetUserFromSessionId(string(cookieValue))
+		u, err := ur.GetUserFromSessionId(r.Context(), string(cookieValue))
 		if err != nil {
 			_ = conn.WriteControl(websocket.CloseMessage, websocket.FormatCloseMessage(websocket.ClosePolicyViolation, channelNameDoesNotExist), time.Now().Add(time.Second))
 			_ = conn.Close()

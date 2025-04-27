@@ -5,6 +5,6 @@ import (
 	"project-a/internal/shared"
 )
 
-func RegisterRoutes(m *middleware.Middleware, h *Handler, authService shared.Session) {
+func RegisterRoutes(m *middleware.Middleware, h *Handler, authService shared.AuthService) {
 	m.HandleFunc("POST /userlist", h.CreateUserList, middleware.Guard(authService))
 }

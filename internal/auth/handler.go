@@ -1,6 +1,7 @@
 package auth
 
 import (
+	"context"
 	"log"
 	"net/http"
 	"net/mail"
@@ -9,14 +10,14 @@ import (
 
 type Handler struct {
 	Repo     Repository
-	Service  Service
+	Service  shared.AuthService
 	UserRepo shared.UserRepository
 }
 
-func createMagicLinkIfNotExist(email string, h *Handler) (*shared.User, string, error) {
-	u, err := h.UserRepo.GetUser(email)
+func createMagicLinkIfNotExist(ctx context.Context, email string, h *Handler) (*shared.User, string, error) {
+	u, err := h.UserRepo.GetUser(ctx, email)
 	if err != nil {
-		code, err := h.Service.CreateMagicLink(email)
+		code, err := h.Service.CreateMagicLink(ctx, email)
 		if err != nil {
 			return nil, "", err
 		}
@@ -33,7 +34,7 @@ func (h *Handler) RegisterUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	ml, err := h.Repo.ActivateNonExpiredMagicLink(code)
+	ml, err := h.Repo.ActivateNonExpiredMagicLink(r.Context(), code)
 	if err != nil {
 		http.Error(w, "invalid magic link", http.StatusBadRequest)
 		return
@@ -45,14 +46,14 @@ func (h *Handler) RegisterUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	u, err := h.UserRepo.InsertUser(username, ml.Email)
+	u, err := h.UserRepo.InsertUser(r.Context(), username, ml.Email)
 	if err != nil {
 		log.Printf("failed to register user: %v", err)
 		http.Error(w, "User registration failed", http.StatusInternalServerError)
 		return
 	}
 
-	session, err := h.Service.CreateOrGetSession(u.Id)
+	session, err := h.Service.CreateOrGetSession(r.Context(), u.Id)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -96,7 +97,7 @@ func (h *Handler) Login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	existingUser, magicCode, err := createMagicLinkIfNotExist(email, h)
+	existingUser, magicCode, err := createMagicLinkIfNotExist(r.Context(), email, h)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -108,7 +109,7 @@ func (h *Handler) Login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	session, err := h.Service.CreateOrGetSession(existingUser.Id)
+	session, err := h.Service.CreateOrGetSession(r.Context(), existingUser.Id)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -141,12 +142,12 @@ func (h *Handler) Logout(w http.ResponseWriter, r *http.Request) {
 	}
 
 	sessionID := r.Context().Value(shared.SessionCtxKey).([]byte)
-	_ = h.Repo.DeleteSession(string(sessionID))
+	_ = h.Repo.DeleteSession(r.Context(), string(sessionID))
 
 	http.Redirect(w, r, "/", http.StatusSeeOther)
 }
 
-func NewAuthHandler(as Service, repo Repository, ur shared.UserRepository) *Handler {
+func NewAuthHandler(as shared.AuthService, repo Repository, ur shared.UserRepository) *Handler {
 	return &Handler{
 		Repo:     repo,
 		Service:  as,
