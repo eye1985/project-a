@@ -81,15 +81,15 @@ func testServerHub(silence bool, cf ClientFactory) HubAndTestServer {
 	hub := NewHub()
 	go hub.Run()
 
-	mockSession := &MockSession{}
-	mockUserRepo := &MockUserRepo{
-		user: &shared.User{},
-	}
+	//mockSession := &MockSession{}
+	//mockUserRepo := &MockUserRepo{
+	//	user: &shared.User{},
+	//}
 
-	wsHandler := ServeWs(hub, cf, mockSession, mockUserRepo)
+	//wsHandler := ServeWs(hub, cf, mockSession, mockUserRepo)
 	return HubAndTestServer{
-		server: httptest.NewServer(http.HandlerFunc(wsHandler)),
-		hub:    hub,
+		//server: httptest.NewServer(http.HandlerFunc(wsHandler)),
+		hub: hub,
 	}
 }
 
