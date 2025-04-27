@@ -3,7 +3,8 @@ CREATE TABLE users
     id         SERIAL PRIMARY KEY,
     username   TEXT        NOT NULL,
     email      TEXT UNIQUE NOT NULL,
-    created_at TIMESTAMPTZ DEFAULT NOW()
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at timestamptz
 );
 
 CREATE TABLE user_lists
@@ -11,6 +12,7 @@ CREATE TABLE user_lists
     id         SERIAL PRIMARY KEY,
     name       TEXT    NOT NULL,
     created_at timestamptz DEFAULT now(),
+    updated_at timestamptz,
     user_id    integer not null references users (id) on delete cascade,
     UNIQUE (user_id, name)
 );

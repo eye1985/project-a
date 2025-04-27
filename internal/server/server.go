@@ -11,6 +11,7 @@ import (
 	"project-a/internal/socket"
 	"project-a/internal/templates"
 	"project-a/internal/user"
+	"project-a/internal/userlists"
 )
 
 const PORT = ":3000"
@@ -40,6 +41,7 @@ func Serve(pool *pgxpool.Pool) error {
 	// repos
 	authRepo := auth.NewAuthRepo(pool)
 	userRepo := user.NewUserRepo(pool)
+	userListRepo := userlists.NewUserListsRepository(pool)
 
 	// services
 	authService := auth.NewAuthService(authRepo, hashKey, blockKey)
@@ -47,6 +49,7 @@ func Serve(pool *pgxpool.Pool) error {
 	// handlers
 	healthHandler := health.NewHealthHandler(pool)
 	userHandler := user.NewUserHandler(userRepo, hub)
+	userListHandler := userlists.NewHandler(userListRepo)
 	authHandler := auth.NewAuthHandler(authService, authRepo, userRepo)
 	templateHandler := templates.NewHandler(userRepo, authService, wsUrl)
 
@@ -60,6 +63,7 @@ func Serve(pool *pgxpool.Pool) error {
 	health.RegisterRoutes(midWare, healthHandler)
 	auth.RegisterRoutes(midWare, authHandler, authService)
 	user.RegisterRoutes(midWare, userHandler, authService)
+	userlists.RegisterRoutes(midWare, userListHandler, authService)
 	socket.RegisterRoutes(midWare, hub, authService, userRepo)
 	templates.RegisterRoutes(midWare, templateHandler, authService)
 
