@@ -6,7 +6,6 @@ import (
 	"net/http"
 	"project-a/internal/shared"
 	"project-a/internal/socket"
-	"strings"
 )
 
 type Handler struct {
@@ -30,11 +29,6 @@ func (h *Handler) GetUsers(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) RegisterUser(w http.ResponseWriter, r *http.Request) {
-	if r.Header.Get("Content-Type") != "application/json" {
-		http.Error(w, "Invalid request content-type", http.StatusUnsupportedMediaType)
-		return
-	}
-
 	user := &shared.User{}
 	decoder := json.NewDecoder(r.Body)
 	decoder.DisallowUnknownFields()
@@ -68,16 +62,6 @@ func (h *Handler) RegisterUser(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) UpdateUserName(w http.ResponseWriter, r *http.Request) {
-	if r.Method != "PATCH" {
-		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
-		return
-	}
-
-	if !strings.HasPrefix(r.Header.Get("Content-Type"), "application/json") {
-		http.Error(w, "Invalid request content-type", http.StatusUnsupportedMediaType)
-		return
-	}
-
 	sessionID := r.Context().Value(shared.SessionCtxKey).([]byte)
 	u, err := h.Repo.GetUserFromSessionId(r.Context(), string(sessionID))
 	if err != nil {

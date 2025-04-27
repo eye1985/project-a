@@ -79,11 +79,6 @@ func (h *Handler) RegisterUser(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) Login(w http.ResponseWriter, r *http.Request) {
-	if r.Method != "POST" {
-		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
-		return
-	}
-
 	err := r.ParseForm()
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
@@ -136,11 +131,6 @@ func (h *Handler) Login(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) Logout(w http.ResponseWriter, r *http.Request) {
-	if r.Method != "POST" {
-		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
-		return
-	}
-
 	sessionID := r.Context().Value(shared.SessionCtxKey).([]byte)
 	_ = h.Repo.DeleteSession(r.Context(), string(sessionID))
 

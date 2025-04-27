@@ -7,6 +7,13 @@ import (
 
 func RegisterRoutes(m *middleware.Middleware, h *Handler, as shared.AuthService) {
 	m.HandleFunc("GET /users", h.GetUsers)
-	m.HandleFunc("POST /users", h.RegisterUser)
-	m.HandleFunc("PATCH /user", h.UpdateUserName, middleware.Guard(as))
+	m.HandleFunc("POST /users", h.RegisterUser,
+		middleware.AllowOnlyPost,
+		middleware.AllowOnlyApplicationJson,
+	)
+	m.HandleFunc("PATCH /user", h.UpdateUserName,
+		middleware.AllowOnlyPatch,
+		middleware.AllowOnlyApplicationJson,
+		middleware.Guard(as),
+	)
 }
