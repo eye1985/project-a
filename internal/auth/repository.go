@@ -127,6 +127,6 @@ func (a *authRepository) DeleteSession(ctx context.Context, sessionId string) er
 	return nil
 }
 
-func NewAuthRepo(pool *pgxpool.Pool) Repository {
+func NewRepo(pool *pgxpool.Pool) Repository {
 	return &authRepository{pool}
 }

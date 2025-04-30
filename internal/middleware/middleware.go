@@ -33,7 +33,7 @@ type Middleware struct {
 	Mux            *http.ServeMux
 }
 
-func NewMiddlewareMux() *Middleware {
+func NewMux() *Middleware {
 	return &Middleware{
 		Mux:            http.NewServeMux(),
 		middlewares:    []Handler{},

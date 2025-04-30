@@ -86,7 +86,7 @@ func (a *authService) CreateMagicLink(ctx context.Context, email string) (string
 	return encoded, nil
 }
 
-func NewAuthService(repo Repository, hashKey string, blockKey string) shared.AuthService {
+func NewService(repo Repository, hashKey string, blockKey string) shared.AuthService {
 	hk, err := base64.StdEncoding.DecodeString(hashKey)
 	if err != nil {
 		log.Fatalf("Failed to decode hash key: %s", err)

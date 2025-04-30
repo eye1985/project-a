@@ -30,27 +30,26 @@ func Serve(pool *pgxpool.Pool) error {
 		log.Fatalf("BLOCK_KEY environment variable not set")
 	}
 
-	midWare := middleware.NewMiddlewareMux()
+	midWare := middleware.NewMux()
 	midWare.Add(middleware.Logger)
 	midWare.Add(middleware.BodyCloser)
-	mux := midWare.Mux
 
 	hub := socket.NewHub()
 	go hub.Run()
 
 	// repos
-	authRepo := auth.NewAuthRepo(pool)
+	authRepo := auth.NewRepo(pool)
 	userRepo := user.NewUserRepo(pool)
 	contactsRepo := contacts.NewRepo(pool)
 
 	// services
-	authService := auth.NewAuthService(authRepo, hashKey, blockKey)
+	authService := auth.NewService(authRepo, hashKey, blockKey)
 
 	// handlers
-	healthHandler := health.NewHealthHandler(pool)
+	healthHandler := health.NewHandler(pool)
 	userHandler := user.NewUserHandler(userRepo, hub)
 	contactsHandler := contacts.NewHandler(contactsRepo, userRepo)
-	authHandler := auth.NewAuthHandler(authService, authRepo, userRepo, contactsRepo)
+	authHandler := auth.NewHandler(authService, authRepo, userRepo, contactsRepo)
 	templateHandler := templates.NewHandler(userRepo, contactsRepo, authService, wsUrl)
 
 	// routes
@@ -69,5 +68,5 @@ func Serve(pool *pgxpool.Pool) error {
 	socket.RegisterRoutes(midWare, hub, authService, userRepo)
 	templates.RegisterRoutes(midWare, templateHandler, authService)
 
-	return http.ListenAndServe(PORT, mux)
+	return http.ListenAndServe(PORT, midWare.Mux)
 }

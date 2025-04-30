@@ -59,7 +59,7 @@ func (h *Handler) CreateContact(w http.ResponseWriter, r *http.Request) {
 
 	_, err = h.Repo.CreateContact(r.Context(), invitee.Id, inviter.Id, body.ContactListId, invitee.Username)
 	if err != nil {
-		log.Printf(err.Error())
+		log.Printf("create contact error: %s", err.Error())
 		http.Error(w, "Could not create contact", http.StatusInternalServerError)
 		return
 	}
@@ -84,7 +84,7 @@ func (h *Handler) AcceptInvite(w http.ResponseWriter, r *http.Request) {
 
 	err = h.Repo.UpdateContact(r.Context(), true, body.Uuid, invitee.Id)
 	if err != nil {
-		log.Printf(err.Error())
+		log.Printf("accept invite error: %s", err.Error())
 		http.Error(w, "Could not accept invite", http.StatusInternalServerError)
 	}
 }

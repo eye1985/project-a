@@ -10,7 +10,7 @@ type Handler struct {
 	Pool *pgxpool.Pool
 }
 
-func NewHealthHandler(pool *pgxpool.Pool) *Handler {
+func NewHandler(pool *pgxpool.Pool) *Handler {
 	return &Handler{pool}
 }
 
