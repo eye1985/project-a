@@ -97,6 +97,15 @@ export const shortcut = () => {
                         let body = {};
                         for (const elm of el.querySelectorAll('[name]')) {
                             if (elm instanceof HTMLInputElement) {
+                                const isNumber = !isNaN(Number(elm.value));
+                                if (isNumber) {
+                                    if (Number.isInteger(elm.value)) {
+                                        body[elm.name] = parseInt(elm.value);
+                                        continue;
+                                    }
+                                    body[elm.name] = parseFloat(elm.value);
+                                    continue;
+                                }
                                 body[elm.name] = elm.value;
                             }
                         }

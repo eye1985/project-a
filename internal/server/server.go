@@ -6,12 +6,12 @@ import (
 	"net/http"
 	"os"
 	"project-a/internal/auth"
+	"project-a/internal/contacts"
 	"project-a/internal/health"
 	"project-a/internal/middleware"
 	"project-a/internal/socket"
 	"project-a/internal/templates"
 	"project-a/internal/user"
-	"project-a/internal/userlists"
 )
 
 const PORT = ":3000"
@@ -41,7 +41,7 @@ func Serve(pool *pgxpool.Pool) error {
 	// repos
 	authRepo := auth.NewAuthRepo(pool)
 	userRepo := user.NewUserRepo(pool)
-	userListRepo := userlists.NewUserListsRepository(pool)
+	contactsRepo := contacts.NewRepo(pool)
 
 	// services
 	authService := auth.NewAuthService(authRepo, hashKey, blockKey)
@@ -49,21 +49,23 @@ func Serve(pool *pgxpool.Pool) error {
 	// handlers
 	healthHandler := health.NewHealthHandler(pool)
 	userHandler := user.NewUserHandler(userRepo, hub)
-	userListHandler := userlists.NewHandler(userListRepo)
-	authHandler := auth.NewAuthHandler(authService, authRepo, userRepo)
-	templateHandler := templates.NewHandler(userRepo, authService, wsUrl)
+	contactsHandler := contacts.NewHandler(contactsRepo, userRepo)
+	authHandler := auth.NewAuthHandler(authService, authRepo, userRepo, contactsRepo)
+	templateHandler := templates.NewHandler(userRepo, contactsRepo, authService, wsUrl)
 
 	// routes
 	midWare.Handle("GET /assets/", http.StripPrefix("/assets/", http.FileServer(http.Dir("web/assets"))))
 	midWare.Handle("GET /styles/", http.StripPrefix("/styles/", http.FileServer(http.Dir("web/styles"))))
-	midWare.HandleFunc("GET /favicon.ico", func(w http.ResponseWriter, r *http.Request) {
-		w.WriteHeader(http.StatusNoContent)
-	})
+	midWare.HandleFunc(
+		"GET /favicon.ico", func(w http.ResponseWriter, r *http.Request) {
+			w.WriteHeader(http.StatusNoContent)
+		},
+	)
 
 	health.RegisterRoutes(midWare, healthHandler)
 	auth.RegisterRoutes(midWare, authHandler, authService)
 	user.RegisterRoutes(midWare, userHandler, authService)
-	userlists.RegisterRoutes(midWare, userListHandler, authService)
+	contacts.RegisterRoutes(midWare, contactsHandler, authService)
 	socket.RegisterRoutes(midWare, hub, authService, userRepo)
 	templates.RegisterRoutes(midWare, templateHandler, authService)
 

@@ -5,17 +5,19 @@ import (
 	"log"
 	"net/http"
 	"net/mail"
+	"project-a/internal/contacts"
 	"project-a/internal/shared"
 )
 
 type Handler struct {
-	Repo     Repository
-	Service  shared.AuthService
-	UserRepo shared.UserRepository
+	Repo         Repository
+	Service      shared.AuthService
+	UserRepo     shared.UserRepository
+	UserlistRepo contacts.Repository
 }
 
 func createMagicLinkIfNotExist(ctx context.Context, email string, h *Handler) (*shared.User, string, error) {
-	u, err := h.UserRepo.GetUser(ctx, email)
+	u, err := h.UserRepo.GetUserByEmail(ctx, email)
 	if err != nil {
 		code, err := h.Service.CreateMagicLink(ctx, email)
 		if err != nil {
@@ -53,6 +55,13 @@ func (h *Handler) RegisterUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	err = h.UserlistRepo.CreateContactList(r.Context(), "Contacts", u.Id)
+	if err != nil {
+		log.Printf("failed to create userlist: %v", err)
+		http.Error(w, "Userlist creation failed", http.StatusInternalServerError)
+		return
+	}
+
 	session, err := h.Service.CreateOrGetSession(r.Context(), u.Id)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -65,15 +74,17 @@ func (h *Handler) RegisterUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	http.SetCookie(w, &http.Cookie{
-		Name:     string(shared.SessionCtxKey),
-		Value:    encoded,
-		Path:     "/",
-		Expires:  session.ExpiresAt,
-		Secure:   true,
-		HttpOnly: true,
-		SameSite: http.SameSiteStrictMode,
-	})
+	http.SetCookie(
+		w, &http.Cookie{
+			Name:     string(shared.SessionCtxKey),
+			Value:    encoded,
+			Path:     "/",
+			Expires:  session.ExpiresAt,
+			Secure:   true,
+			HttpOnly: true,
+			SameSite: http.SameSiteStrictMode,
+		},
+	)
 
 	http.Redirect(w, r, shared.HomeRoute, http.StatusSeeOther)
 }
@@ -117,15 +128,17 @@ func (h *Handler) Login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	http.SetCookie(w, &http.Cookie{
-		Name:     string(shared.SessionCtxKey),
-		Value:    encoded,
-		Path:     "/",
-		Expires:  session.ExpiresAt,
-		Secure:   true,
-		HttpOnly: true,
-		SameSite: http.SameSiteStrictMode,
-	})
+	http.SetCookie(
+		w, &http.Cookie{
+			Name:     string(shared.SessionCtxKey),
+			Value:    encoded,
+			Path:     "/",
+			Expires:  session.ExpiresAt,
+			Secure:   true,
+			HttpOnly: true,
+			SameSite: http.SameSiteStrictMode,
+		},
+	)
 
 	http.Redirect(w, r, shared.HomeRoute, http.StatusSeeOther)
 }
@@ -137,10 +150,16 @@ func (h *Handler) Logout(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, "/", http.StatusSeeOther)
 }
 
-func NewAuthHandler(as shared.AuthService, repo Repository, ur shared.UserRepository) *Handler {
+func NewAuthHandler(
+	as shared.AuthService,
+	repo Repository,
+	ur shared.UserRepository,
+	ulr contacts.Repository,
+) *Handler {
 	return &Handler{
-		Repo:     repo,
-		Service:  as,
-		UserRepo: ur,
+		Repo:         repo,
+		Service:      as,
+		UserRepo:     ur,
+		UserlistRepo: ulr,
 	}
 }

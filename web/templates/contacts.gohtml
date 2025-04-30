@@ -1,0 +1,59 @@
+{{define "main-content"}}
+  <div class="main-content">
+    <h2>
+      Hi {{.Username}}
+    </h2>
+
+      {{range $list, $contacts := .ContactLists}}
+          {{if $list.Name}}
+            <div>
+              <form action="/contact" data-method="post" data-cid="inviteForm">
+                <label for="email">Email</label>
+                <input id="email" type="text" name="email" />
+                <input type="hidden" name="contactListId" value="{{$list.Id}}" />
+                <button type="submit">Invite</button>
+              </form>
+
+              <h2>
+                  {{$list.Name}}:
+              </h2>
+              <ul>
+                  {{range $contact := $contacts}}
+                      {{if .HasAccepted}}
+                          {{if .IsInviter}}
+                            <li>{{$contact.InviteeUsername}} isOnline</li>
+                          {{else}}
+                            <li>{{$contact.InviterUsername}} isOnline</li>
+                          {{end}}
+                      {{else}}
+                          {{if .IsInviter}}
+                            <li>
+                              Invitation sent to {{$contact.InviteeEmail}}
+                            </li>
+                          {{else}}
+                            <li>Invitation received from: {{$contact.InviterEmail}}
+                              <form action="/contact" data-method="patch" data-cid="acceptInviteForm">
+                                <input type="hidden" name="uuid" value="{{$contact.Uuid}}" />
+                                <button type="submit">
+                                  Accept
+                                </button>
+                              </form>
+                            </li>
+                          {{end}}
+                      {{end}}
+                  {{end}}
+              </ul>
+            </div>
+          {{end}}
+      {{end}}
+  </div>
+{{end}}
+
+{{define "inline-js"}}
+  <script type="module">
+    import { shortcut } from '/assets/dist/shortcut.js';
+
+    const sc = shortcut();
+    sc.init();
+  </script>
+{{end}}

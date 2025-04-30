@@ -1,33 +1,36 @@
 CREATE TABLE users
 (
     id         SERIAL PRIMARY KEY,
+    uuid       UUID        NOT NULL UNIQUE DEFAULT gen_random_uuid(),
     username   TEXT        NOT NULL,
     email      TEXT UNIQUE NOT NULL,
-    created_at TIMESTAMPTZ DEFAULT NOW(),
+    created_at TIMESTAMPTZ                 DEFAULT NOW(),
     updated_at timestamptz
 );
 
-CREATE TABLE user_lists
+CREATE TABLE contact_lists
 (
     id         SERIAL PRIMARY KEY,
+    uuid       UUID    NOT NULL UNIQUE DEFAULT gen_random_uuid(),
     name       TEXT    NOT NULL,
-    created_at timestamptz DEFAULT now(),
+    created_at timestamptz             DEFAULT now(),
     updated_at timestamptz,
     user_id    integer not null references users (id) on delete cascade,
     UNIQUE (user_id, name)
 );
 
-create table user_list_record
+create table contact
 (
     id           SERIAL PRIMARY KEY,
+    uuid         UUID    NOT NULL UNIQUE DEFAULT gen_random_uuid(),
     user_id      INTEGER NOT NULL REFERENCES users (id) ON DELETE CASCADE,
     invited_by   INTEGER NOT NULL REFERENCES users (id) ON DELETE CASCADE,
     display_name TEXT    NOT NULL,
-    has_accepted bool        DEFAULT false,
-    invited_at   timestamptz DEFAULT now(),
+    has_accepted bool                    DEFAULT false,
+    invited_at   timestamptz             DEFAULT now(),
     accepted_at  timestamptz,
     removed_at   timestamptz,
-    list_id      integer not null references user_lists (id) on DELETE CASCADE,
+    list_id      integer not null references contact_lists (id) on DELETE CASCADE,
     UNIQUE (user_id, invited_by),
     CHECK (user_id IS DISTINCT FROM invited_by)
 );

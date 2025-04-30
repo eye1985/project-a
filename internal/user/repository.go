@@ -29,7 +29,7 @@ var deleteUserByEmailSql string
 //go:embed sql/update_username.sql
 var updateUsernameSql string
 
-func (r *userRepository) GetUser(ctx context.Context, email string) (*shared.User, error) {
+func (r *userRepository) GetUserByEmail(ctx context.Context, email string) (*shared.User, error) {
 	user := &shared.User{}
 
 	row := r.pool.QueryRow(ctx, getUserByEmailSql, email)

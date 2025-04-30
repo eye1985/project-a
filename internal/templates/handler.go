@@ -5,22 +5,24 @@ import (
 	"html/template"
 	"log"
 	"net/http"
+	"project-a/internal/contacts"
 	"project-a/internal/shared"
 )
 
 const (
-	path       = "web/templates"
-	baseLayout = "base-layout.gohtml"
-	register   = "register.gohtml"
-	chat       = "chat.gohtml"
-	profile    = "profile.gohtml"
-	userList   = "user-lists.gohtml"
+	path         = "web/templates"
+	baseLayout   = "base-layout.gohtml"
+	register     = "register.gohtml"
+	chat         = "chat.gohtml"
+	profile      = "profile.gohtml"
+	userContacts = "contacts.gohtml"
 )
 
 type Handler struct {
-	userRepo    shared.UserRepository
-	authService shared.AuthService
-	wsUrl       string
+	userRepo     shared.UserRepository
+	userListRepo contacts.Repository
+	authService  shared.AuthService
+	wsUrl        string
 }
 
 func (h *Handler) RenderRegisterUser(w http.ResponseWriter, r *http.Request) {
@@ -69,12 +71,14 @@ func (h *Handler) RenderChat(w http.ResponseWriter, r *http.Request) {
 	log.Printf("wsUrl: %v", h.wsUrl)
 	log.Printf("username: %v", u.Username)
 
-	if err := tmpl.Execute(w, &PageData{
-		WsUrl:    h.wsUrl,
-		Username: u.Username,
-		Title:    "Chat",
-		Css:      "chat.css",
-	}); err != nil {
+	if err := tmpl.Execute(
+		w, &PageData{
+			WsUrl:    h.wsUrl,
+			Username: u.Username,
+			Title:    "Chat",
+			Css:      "chat.css",
+		},
+	); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
@@ -96,37 +100,76 @@ func (h *Handler) RenderProfile(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := tmpl.Execute(w, &PageData{
-		Username: u.Username,
-		Title:    "Profile",
-	}); err != nil {
+	if err := tmpl.Execute(
+		w, &PageData{
+			Username: u.Username,
+			Title:    "Profile",
+		},
+	); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 }
 
-func (h *Handler) RenderUserList(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) RenderContacts(w http.ResponseWriter, r *http.Request) {
 	tmpl, err := template.ParseFiles(
 		fmt.Sprintf("%s/%s", path, baseLayout),
-		fmt.Sprintf("%s/%s", path, userList),
+		fmt.Sprintf("%s/%s", path, userContacts),
 	)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	if err := tmpl.Execute(w, &PageData{
-		Title: "My lists",
-	}); err != nil {
+	sessionID := r.Context().Value(shared.SessionCtxKey).([]byte)
+	u, _ := h.userRepo.GetUserFromSessionId(r.Context(), string(sessionID))
+
+	contactList, err := h.userListRepo.GetContactLists(r.Context(), u.Id)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	listMap := make(map[*contacts.List][]*contacts.Contact)
+
+	for _, ul := range contactList {
+		listOfContact, err := h.userListRepo.GetContacts(r.Context(), ul.UserId)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		for _, c := range listOfContact {
+			if c.InviterId == u.Id {
+				c.IsInviter = true
+			}
+		}
+
+		listMap[ul] = listOfContact
+	}
+
+	if err := tmpl.Execute(
+		w, &ContactListPage{
+			Title:        "My lists",
+			Username:     u.Username,
+			ContactLists: listMap,
+		},
+	); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 }
 
-func NewHandler(userRepo shared.UserRepository, authService shared.AuthService, wsUrl string) *Handler {
+func NewHandler(
+	userRepo shared.UserRepository,
+	userlistRepo contacts.Repository,
+	authService shared.AuthService,
+	wsUrl string,
+) *Handler {
 	return &Handler{
-		userRepo:    userRepo,
-		authService: authService,
-		wsUrl:       wsUrl,
+		userRepo:     userRepo,
+		userListRepo: userlistRepo,
+		authService:  authService,
+		wsUrl:        wsUrl,
 	}
 }

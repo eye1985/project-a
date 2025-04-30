@@ -1,6 +1,7 @@
 package templates
 
 import (
+	"project-a/internal/contacts"
 	"project-a/internal/shared"
 )
 
@@ -14,6 +15,13 @@ type PageData struct {
 	Username string
 	Title    string
 	Css      string
+}
+
+type ContactListPage struct {
+	Title        string
+	Css          string
+	Username     string
+	ContactLists map[*contacts.List][]*contacts.Contact
 }
 
 type RenderChatArgs struct {

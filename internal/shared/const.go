@@ -1,3 +1,3 @@
 package shared
 
-const HomeRoute = "/userlists"
+const HomeRoute = "/contacts"

@@ -1,0 +1,1 @@
+delete from contact_lists where id=$1;
