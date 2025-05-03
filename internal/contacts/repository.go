@@ -5,7 +5,6 @@ import (
 	_ "embed"
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgxpool"
-	"time"
 )
 
 type contactsRepo struct {
@@ -18,11 +17,11 @@ var insertContactListSql string
 //go:embed sql/insert_contact.sql
 var insertContactSql string
 
+//go:embed sql/insert_contact_list_link.sql
+var insertContactLinkSql string
+
 //go:embed sql/update_contact_list.sql
 var updateContactListSql string
-
-//go:embed sql/update_contact.sql
-var updateContactSql string
 
 //go:embed sql/delete_contact_list.sql
 var deleteContactListSql string
@@ -36,19 +35,28 @@ var getContactListSql string
 //go:embed sql/get_contact.sql
 var getContactSql string
 
+//go:embed sql/insert_invites.sql
+var insertInvitesSql string
+
+//go:embed sql/accept_invite.sql
+var acceptInviteSql string
+
+//go:embed sql/get_invitations.sql
+var getInvitationsSql string
+
 type Repository interface {
 	GetContactLists(ctx context.Context, userId int64) ([]*List, error)
 	GetContactList(ctx context.Context, contactListId int64) (*List, error)
-	GetContactListBySession(ctx context.Context, sessionId string) (*List, error)
+	//GetContactListBySession(ctx context.Context, sessionId string) (*List, error)
 	GetContacts(ctx context.Context, userId int64) ([]*Contact, error)
 	CreateContactList(ctx context.Context, name string, userId int64) error
-	CreateContact(ctx context.Context, userId int64, inviterId int64, contactListId int64, displayName string) (
-		*Contact,
-		error,
-	)
+	CreateContact(ctx context.Context, inviterId int64, inviteeId int64) (*InsertedContact, error)
+	CreateContactLink(ctx context.Context, contactId int64, contactListId int64) error
 	UpdateContactList(ctx context.Context, name string, contactListId int64) error
 	DeleteContactList(ctx context.Context, contactListId int64) error
-	UpdateContact(ctx context.Context, hasAccepted bool, contactUuid uuid.UUID, userId int64) error
+	GetInvitations(ctx context.Context, userId int64) ([]*Invitation, error)
+	InviteUser(ctx context.Context, inviterId int64, inviteeId int64) error
+	AcceptInvite(ctx context.Context, uuid uuid.UUID, inviteeId int64) (*AcceptedInvite, error)
 }
 
 func (ulr *contactsRepo) CreateContactList(ctx context.Context, name string, userId int64) error {
@@ -65,35 +73,13 @@ func (ulr *contactsRepo) CreateContactList(ctx context.Context, name string, use
 }
 
 func (ulr *contactsRepo) UpdateContactList(ctx context.Context, name string, contactListId int64) error {
-	conn, err := ulr.pool.Exec(ctx, updateContactListSql, name, time.Now(), contactListId)
+	conn, err := ulr.pool.Exec(ctx, updateContactListSql, name, contactListId)
 	if err != nil {
 		return err
 	}
 
 	if conn.RowsAffected() != 1 {
 		return contactsNotUpdated
-	}
-
-	return nil
-}
-
-func (ulr *contactsRepo) UpdateContact(
-	ctx context.Context,
-	hasAccepted bool,
-	contactUuid uuid.UUID,
-	userId int64,
-) error {
-	if !hasAccepted {
-		return nil
-	}
-
-	conn, err := ulr.pool.Exec(ctx, updateContactSql, hasAccepted, time.Now(), contactUuid, userId)
-	if err != nil {
-		return err
-	}
-
-	if conn.RowsAffected() != 1 {
-		return contactNotUpdated
 	}
 
 	return nil
@@ -125,6 +111,7 @@ func (ulr *contactsRepo) GetContactLists(ctx context.Context, userId int64) ([]*
 		var userList List
 		err = rows.Scan(
 			&userList.Id,
+			&userList.Uuid,
 			&userList.Name,
 			&userList.CreatedAt,
 			&userList.UpdatedAt,
@@ -156,22 +143,22 @@ func (ulr *contactsRepo) GetContactList(ctx context.Context, contactListId int64
 	return &userList, nil
 }
 
-func (ulr *contactsRepo) GetContactListBySession(ctx context.Context, sessionId string) (*List, error) {
-	row := ulr.pool.QueryRow(ctx, getContactListSql, sessionId)
-	var userList List
-	err := row.Scan(
-		&userList.Id,
-		&userList.Name,
-		&userList.CreatedAt,
-		&userList.UpdatedAt,
-		&userList.UserId,
-	)
-	if err != nil {
-		return nil, err
-	}
-
-	return &userList, nil
-}
+//func (ulr *contactsRepo) GetContactListBySession(ctx context.Context, sessionId string) (*List, error) {
+//	row := ulr.pool.QueryRow(ctx, getContactListSql, sessionId)
+//	var userList List
+//	err := row.Scan(
+//		&userList.Id,
+//		&userList.Name,
+//		&userList.CreatedAt,
+//		&userList.UpdatedAt,
+//		&userList.UserId,
+//	)
+//	if err != nil {
+//		return nil, err
+//	}
+//
+//	return &userList, nil
+//}
 
 func (ulr *contactsRepo) GetContacts(ctx context.Context, userId int64) ([]*Contact, error) {
 	rows, err := ulr.pool.Query(ctx, getContactSql, userId)
@@ -186,15 +173,11 @@ func (ulr *contactsRepo) GetContacts(ctx context.Context, userId int64) ([]*Cont
 		var record Contact
 
 		err := rows.Scan(
-			&record.Id,
-			&record.Uuid,
-			&record.InviterId,
-			&record.InviterEmail,
-			&record.InviterUsername,
-			&record.InviteeId,
-			&record.InviteeEmail,
-			&record.InviteeUsername,
-			&record.HasAccepted,
+			&record.UserId,
+			&record.UserUuid,
+			&record.Username,
+			&record.Email,
+			&record.ListName,
 		)
 		if err != nil {
 			return nil, err
@@ -207,28 +190,87 @@ func (ulr *contactsRepo) GetContacts(ctx context.Context, userId int64) ([]*Cont
 
 func (ulr *contactsRepo) CreateContact(
 	ctx context.Context,
-	userId int64,
 	inviterId int64,
-	contactListId int64,
-	displayName string,
-) (*Contact, error) {
+	inviteeId int64,
+) (*InsertedContact, error) {
+	row := ulr.pool.QueryRow(ctx, insertContactSql, inviterId, inviteeId)
 
-	var contact Contact
-	row := ulr.pool.QueryRow(ctx, insertContactSql, userId, inviterId, displayName, contactListId)
-	err := row.Scan(
-		&contact.Id,
-		&contact.InviteeId,
-		&contact.InviterId,
-		&contact.HasAccepted,
-		&contact.InviteeEmail,
-		&contact.InviterEmail,
-	)
-
+	var inserted InsertedContact
+	err := row.Scan(&inserted.Id, &inserted.User1Id, &inserted.User2Id)
 	if err != nil {
 		return nil, err
 	}
 
-	return &contact, nil
+	return &inserted, nil
+}
+
+func (ulr *contactsRepo) CreateContactLink(ctx context.Context, contactId int64, contactListId int64) error {
+	conn, err := ulr.pool.Exec(ctx, insertContactLinkSql, contactId, contactListId)
+	if err != nil {
+		return err
+	}
+
+	if conn.RowsAffected() != 1 {
+		return contactsNotCreated
+	}
+
+	return nil
+}
+
+func (ulr *contactsRepo) InviteUser(ctx context.Context, inviterId int64, inviteeId int64) error {
+	conn, err := ulr.pool.Exec(ctx, insertInvitesSql, inviterId, inviteeId)
+	if err != nil {
+		return err
+	}
+
+	if conn.RowsAffected() != 1 {
+		return inviteNotCreated
+	}
+
+	return nil
+}
+
+func (ulr *contactsRepo) AcceptInvite(ctx context.Context, uuid uuid.UUID, inviteeId int64) (*AcceptedInvite, error) {
+	row := ulr.pool.QueryRow(ctx, acceptInviteSql, uuid, inviteeId)
+	var acceptedInvite AcceptedInvite
+
+	err := row.Scan(&acceptedInvite.Id, &acceptedInvite.InviterId, &acceptedInvite.InviteeId)
+	if err != nil {
+		return nil, err
+	}
+
+	return &acceptedInvite, nil
+}
+
+func (ulr *contactsRepo) GetInvitations(ctx context.Context, userId int64) ([]*Invitation, error) {
+	rows, err := ulr.pool.Query(ctx, getInvitationsSql, userId)
+	if err != nil {
+		return nil, err
+	}
+
+	defer rows.Close()
+
+	var invitations []*Invitation
+	for rows.Next() {
+		var invitation Invitation
+		err := rows.Scan(
+			&invitation.Id,
+			&invitation.Uuid,
+			&invitation.InviterId,
+			&invitation.InviteeId,
+			&invitation.InviterEmail,
+			&invitation.InviteeEmail,
+			&invitation.Accepted,
+		)
+
+		if err != nil {
+			return nil, err
+		}
+
+		invitations = append(invitations, &invitation)
+	}
+
+	return invitations, nil
 }
 
 func NewRepo(pool *pgxpool.Pool) Repository {

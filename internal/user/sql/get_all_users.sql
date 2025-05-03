@@ -1,2 +1,2 @@
-select id, username, email, created_at
-from users
+select id, uuid, username, email, created_at
+from users;

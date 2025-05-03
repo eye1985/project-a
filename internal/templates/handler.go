@@ -139,13 +139,32 @@ func (h *Handler) RenderContacts(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		for _, c := range listOfContact {
-			if c.InviterId == u.Id {
-				c.IsInviter = true
-			}
-		}
+		log.Printf("listOfContact: %v", listOfContact)
 
 		listMap[ul] = listOfContact
+	}
+
+	invitations, err := h.userListRepo.GetInvitations(r.Context(), u.Id)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	var invitationTemplates []*InvitationTemplate
+	for _, inv := range invitations {
+		var invitationTemplate InvitationTemplate
+		invitationTemplate.InviteUuid = inv.Uuid
+
+		if u.Id == inv.InviteeId {
+			invitationTemplate.IsInviter = false
+			invitationTemplate.Email = inv.InviterEmail
+
+		} else if u.Id == inv.InviterId {
+			invitationTemplate.IsInviter = true
+			invitationTemplate.Email = inv.InviteeEmail
+		}
+
+		invitationTemplates = append(invitationTemplates, &invitationTemplate)
 	}
 
 	if err := tmpl.Execute(
@@ -153,6 +172,8 @@ func (h *Handler) RenderContacts(w http.ResponseWriter, r *http.Request) {
 			Title:        "My lists",
 			Username:     u.Username,
 			ContactLists: listMap,
+			Invitations:  invitationTemplates,
+			WsUrl:        h.wsUrl,
 		},
 	); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)

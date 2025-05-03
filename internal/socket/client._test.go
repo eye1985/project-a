@@ -44,7 +44,7 @@ func fromByte(b []byte) (*MessageJSON, error) {
 //		t.Errorf("pollingForClientInChannels error: %v", err)
 //	}
 //
-//	channelLength := len(serverHub.hub.channels[channel])
+//	channelLength := len(serverHub.hub.clients[channel])
 //	if channelLength != 2 {
 //		t.Errorf("should be 2 client in channel %s but got %d", channel, channelLength)
 //	}
@@ -132,8 +132,8 @@ func fromByte(b []byte) (*MessageJSON, error) {
 //		t.Errorf("pollingForClientInChannels error: %v", err)
 //	}
 //
-//	if len(serverHub.hub.channels[channel]) != 1 {
-//		t.Errorf("Should have one client, but got %v", len(serverHub.hub.channels[channel]))
+//	if len(serverHub.hub.clients[channel]) != 1 {
+//		t.Errorf("Should have one client, but got %v", len(serverHub.hub.clients[channel]))
 //	}
 //
 //	err = pollingForClientInChannels(pollingForClientInChannelsArgs{
@@ -147,7 +147,7 @@ func fromByte(b []byte) (*MessageJSON, error) {
 //		t.Errorf("pollingForClientInChannels error: %v", err)
 //	}
 //
-//	if len(serverHub.hub.channels[channel]) != 0 {
-//		t.Errorf("Should have 0 client, but got %v", len(serverHub.hub.channels[channel]))
+//	if len(serverHub.hub.clients[channel]) != 0 {
+//		t.Errorf("Should have 0 client, but got %v", len(serverHub.hub.clients[channel]))
 //	}
 //}

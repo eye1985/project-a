@@ -1,9 +1,9 @@
 export const initSocket = () => {
     let ws;
     return {
-        connect(username, channel, wsUrl, { onClose, onError, onOpen, onMessage }) {
+        connect(wsUrl, { onClose, onError, onOpen, onMessage }) {
             try {
-                ws = new WebSocket(`${wsUrl}/ws?username=${username}&channels=${channel}`);
+                ws = new WebSocket(`${wsUrl}/ws`);
                 ws.onopen = (evt) => {
                     onOpen && onOpen(evt);
                 };

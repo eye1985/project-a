@@ -1,6 +1,7 @@
 package templates
 
 import (
+	"github.com/google/uuid"
 	"project-a/internal/contacts"
 	"project-a/internal/shared"
 )
@@ -17,11 +18,19 @@ type PageData struct {
 	Css      string
 }
 
+type InvitationTemplate struct {
+	InviteUuid uuid.UUID `json:"invite_uuid"`
+	IsInviter  bool      `json:"isInviter"`
+	Email      string    `json:"email"`
+}
+
 type ContactListPage struct {
 	Title        string
 	Css          string
 	Username     string
 	ContactLists map[*contacts.List][]*contacts.Contact
+	Invitations  []*InvitationTemplate
+	WsUrl        string
 }
 
 type RenderChatArgs struct {

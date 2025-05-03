@@ -9,13 +9,13 @@ func RegisterRoutes(m *middleware.Middleware, h *Handler, authService shared.Aut
 	m.HandleFunc("POST /contactlist", h.CreateUserList, middleware.Guard(authService))
 	m.HandleFunc(
 		"POST /contact",
-		h.CreateContact,
+		h.CreateInvitation,
 		middleware.Guard(authService),
 		middleware.AllowOnlyPost,
 		middleware.AllowOnlyApplicationJson,
 	)
 	m.HandleFunc(
-		"PATCH /contact",
+		"PATCH /invite",
 		h.AcceptInvite,
 		middleware.Guard(authService),
 		middleware.AllowOnlyPatch,

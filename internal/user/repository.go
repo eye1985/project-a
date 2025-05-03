@@ -44,7 +44,7 @@ func (r *userRepository) GetUserByEmail(ctx context.Context, email string) (*sha
 func (r *userRepository) GetUserFromSessionId(ctx context.Context, sessionId string) (*shared.User, error) {
 	user := &shared.User{}
 	row := r.pool.QueryRow(ctx, getUserBySessionIdSql, sessionId)
-	err := row.Scan(&user.Id, &user.Username, &user.Email, &user.CreatedAt)
+	err := row.Scan(&user.Id, &user.Uuid, &user.Username, &user.Email, &user.CreatedAt)
 	if err != nil {
 		return nil, err
 	}
@@ -62,7 +62,7 @@ func (r *userRepository) GetUsers(ctx context.Context) ([]*shared.User, error) {
 	var users []*shared.User
 	for rows.Next() {
 		var user shared.User
-		err = rows.Scan(&user.Id, &user.Username, &user.Email, &user.CreatedAt)
+		err = rows.Scan(&user.Id, &user.Uuid, &user.Username, &user.Email, &user.CreatedAt)
 		if err != nil {
 			return nil, err
 		}

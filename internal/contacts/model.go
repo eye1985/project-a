@@ -7,6 +7,7 @@ import (
 
 type List struct {
 	Id        int64      `json:"-"`
+	Uuid      uuid.UUID  `json:"uuid"`
 	Name      string     `json:"name"`
 	CreatedAt time.Time  `json:"created_at"`
 	UpdatedAt *time.Time `json:"updated_at"`
@@ -14,16 +15,27 @@ type List struct {
 }
 
 type Contact struct {
-	Id              int64  `json:"-"`
-	Uuid            string `json:"uuid"`
-	InviterId       int64  `json:"-"`
-	InviterEmail    string `json:"inviterEmail"`
-	InviterUsername string `json:"inviterUsername"`
-	InviteeId       int64  `json:"-"`
-	InviteeEmail    string `json:"inviteeEmail"`
-	InviteeUsername string `json:"inviteeUsername"`
-	HasAccepted     bool   `json:"hasAccepted"`
-	IsInviter       bool   `json:"isInviter"`
+	UserId   int64     `json:"-"`
+	UserUuid uuid.UUID `json:"uuid"`
+	Username string    `json:"username"`
+	Email    string    `json:"email"`
+	ListName string    `json:"list_name"`
+}
+
+type InsertedContact struct {
+	Id      int64 `json:"-"`
+	User1Id int64 `json:"-"`
+	User2Id int64 `json:"-"`
+}
+
+type Invitation struct {
+	Id           int64     `json:"-"`
+	Uuid         uuid.UUID `json:"uuid"`
+	InviterId    int64     `json:"_"`
+	InviteeId    int64     `json:"-"`
+	InviterEmail string    `json:"inviterEmail"`
+	InviteeEmail string    `json:"inviteeEmail"`
+	Accepted     bool      `json:"accepted"`
 }
 
 type CreateUserListBody struct {
@@ -31,11 +43,16 @@ type CreateUserListBody struct {
 	UserId int64  `json:"user_id"`
 }
 
-type CreateContactBody struct {
-	Email         string `json:"email"`
-	ContactListId int64  `json:"contactListId"`
+type CreateInvitationBody struct {
+	Email string `json:"email"`
 }
 
 type AcceptInviteBody struct {
 	Uuid uuid.UUID `json:"uuid"`
+}
+
+type AcceptedInvite struct {
+	Id        int64 `json:"-"`
+	InviterId int64 `json:"_"`
+	InviteeId int64 `json:"-"`
 }

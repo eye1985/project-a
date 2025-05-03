@@ -27,7 +27,7 @@ package socket
 //	}
 //
 //	res := []string{}
-//	for _, c := range serverHub.hub.channels[channel] {
+//	for _, c := range serverHub.hub.clients[channel] {
 //		if c.username == username || c.username == username2 {
 //			res = append(res, c.username)
 //		}
@@ -48,7 +48,7 @@ package socket
 //		t.Errorf("pooling failed: %v", err)
 //	}
 //
-//	if len(serverHub.hub.channels[channel]) != 1 {
-//		t.Errorf("clients on websocket should have one clients but got %d", len(serverHub.hub.channels[channel]))
+//	if len(serverHub.hub.clients[channel]) != 1 {
+//		t.Errorf("clients on websocket should have one clients but got %d", len(serverHub.hub.clients[channel]))
 //	}
 //}

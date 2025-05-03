@@ -1,13 +1,13 @@
 export type SocketMessage = {
+  uuid: string;
   message: string;
+  event: string;
   username: string;
   createdAt: Date;
 };
 
 export type SocketController = {
   connect: (
-    username: string,
-    channel: string,
     wsUrl: string,
     {
       onClose,
@@ -30,8 +30,6 @@ export const initSocket = (): SocketController => {
 
   return {
     connect(
-      username: string,
-      channel: string,
       wsUrl,
       {
         onClose,
@@ -48,7 +46,7 @@ export const initSocket = (): SocketController => {
 
       try {
         ws = new WebSocket(
-          `${wsUrl}/ws?username=${username}&channels=${channel}`
+          `${wsUrl}/ws`
         );
 
         ws.onopen = (evt) => {

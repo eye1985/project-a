@@ -4,26 +4,29 @@ import (
 	"bytes"
 	"encoding/json"
 	"errors"
+	"github.com/google/uuid"
 	"github.com/gorilla/websocket"
 	"log"
 	"time"
 )
 
 type MessageJSON struct {
+	Uuid      uuid.UUID `json:"uuid"`
 	Message   string    `json:"message"`
-	Event     string    `json:"Event"`
+	Event     string    `json:"event"`
 	Username  string    `json:"username"`
 	CreatedAt time.Time `json:"createdAt"`
 }
 
 type sendMessage struct {
-	ClientId   int64
-	ToChannels []string
-	Message    *MessageJSON
+	ClientId    int64
+	ToClientIds []int64
+	Message     *MessageJSON
 }
 
 type client struct {
 	id         int64
+	uuid       uuid.UUID
 	conn       *websocket.Conn
 	email      string
 	username   string
@@ -31,37 +34,48 @@ type client struct {
 	send       chan []byte
 	tickerWait time.Duration
 	pongWait   time.Duration
-	channels   []string
+	talkingTo  []int64
+	contacts   []int64
 }
 
 const (
-	messageTypeMessage = "Message"
-	messageTypeJoin    = "join"
-	messageTypeQuit    = "quit"
+	messageTypeMessage  = "Message"
+	messageTypeJoin     = "join"
+	messageTypeQuit     = "quit"
+	messageTypeIsOnline = "isOnline"
 )
 
-type ClientFactory func(conn *websocket.Conn, hub *Hub, id int64, username string, channel string) *client
+type ClientFactory func(
+	conn *websocket.Conn,
+	hub *Hub,
+	id int64,
+	username string,
+	contacts []int64,
+	uuid uuid.UUID,
+) *client
 
-func newClient(conn *websocket.Conn, hub *Hub, id int64, username string, channel string) *client {
+func newClient(conn *websocket.Conn, hub *Hub, id int64, username string, contacts []int64, uuid uuid.UUID) *client {
 	return &client{
 		id:         id,
+		uuid:       uuid,
 		conn:       conn,
 		username:   username,
 		hub:        hub,
 		send:       make(chan []byte, 256),
 		tickerWait: 10 * time.Second,
 		pongWait:   15 * time.Second,
-		channels:   []string{channel},
+		contacts:   contacts,
 	}
 }
 
 func (c *client) read() {
 	defer func() {
 		quitMsg := &sendMessage{
-			ClientId:   c.id,
-			ToChannels: c.channels,
+			ClientId:    c.id,
+			ToClientIds: c.contacts,
 			Message: &MessageJSON{
 				Message:   c.username + " quit",
+				Uuid:      c.uuid,
 				Event:     messageTypeQuit,
 				Username:  c.username,
 				CreatedAt: time.Now(),
@@ -82,13 +96,17 @@ func (c *client) read() {
 		return
 	}
 
-	c.conn.SetPongHandler(func(string) error {
-		dErr := c.conn.SetReadDeadline(time.Now().Add(c.pongWait))
-		if dErr != nil {
-			return dErr
-		}
-		return nil
-	})
+	c.conn.SetPongHandler(
+		func(string) error {
+			dErr := c.conn.SetReadDeadline(time.Now().Add(c.pongWait))
+			if dErr != nil {
+				return dErr
+			}
+			return nil
+		},
+	)
+
+	c.conn.SetReadLimit(2048)
 
 	for {
 		_, message, err := c.conn.ReadMessage()
@@ -101,11 +119,12 @@ func (c *client) read() {
 		}
 
 		msg := &sendMessage{
-			ClientId:   c.id,
-			ToChannels: c.channels,
+			ClientId:    c.id,
+			ToClientIds: c.talkingTo,
 			Message: &MessageJSON{
 				Message:   string(message),
 				Username:  c.username,
+				Uuid:      c.uuid,
 				CreatedAt: time.Now().UTC(),
 				Event:     messageTypeMessage,
 			},

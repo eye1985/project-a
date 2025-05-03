@@ -2,9 +2,11 @@ package socket
 
 import (
 	"encoding/json"
+	"github.com/google/uuid"
 	"github.com/gorilla/websocket"
 	"log"
 	"net/http"
+	"project-a/internal/contacts"
 	"project-a/internal/shared"
 	"time"
 )
@@ -16,10 +18,14 @@ var upgrader = websocket.Upgrader{
 }
 
 const (
-	channelNameDoesNotExist = "channels does not exist"
+	sessionDoesNotExist = "session does not exist"
+	contactError        = "contact error"
 )
 
-func ServeWs(hub *Hub, cf ClientFactory, as shared.AuthService, ur shared.UserRepository) func(http.ResponseWriter, *http.Request) {
+func ServeWs(hub *Hub, cf ClientFactory, as shared.AuthService, ur shared.UserRepository, cr contacts.Repository) func(
+	http.ResponseWriter,
+	*http.Request,
+) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		upgrader.CheckOrigin = func(r *http.Request) bool {
 			origin := r.Header.Get("Origin")
@@ -35,47 +41,95 @@ func ServeWs(hub *Hub, cf ClientFactory, as shared.AuthService, ur shared.UserRe
 
 		cookie, err := r.Cookie(string(shared.SessionCtxKey))
 		if err != nil {
-			_ = conn.WriteControl(websocket.CloseMessage, websocket.FormatCloseMessage(websocket.ClosePolicyViolation, "unauthorized"), time.Now().Add(time.Second))
+			_ = conn.WriteControl(
+				websocket.CloseMessage,
+				websocket.FormatCloseMessage(websocket.ClosePolicyViolation, "unauthorized"),
+				time.Now().Add(time.Second),
+			)
 			_ = conn.Close()
 			return
 		}
 
 		cookieValue, err := as.VerifyCookie(cookie)
 		if err != nil {
-			_ = conn.WriteControl(websocket.CloseMessage, websocket.FormatCloseMessage(websocket.ClosePolicyViolation, "unauthorized"), time.Now().Add(time.Second))
+			_ = conn.WriteControl(
+				websocket.CloseMessage,
+				websocket.FormatCloseMessage(websocket.ClosePolicyViolation, "unauthorized"),
+				time.Now().Add(time.Second),
+			)
 			_ = conn.Close()
 			return
 		}
 
 		if !as.IsSessionActive(r.Context(), string(cookieValue)) {
-			_ = conn.WriteControl(websocket.CloseMessage, websocket.FormatCloseMessage(websocket.ClosePolicyViolation, "unauthorized"), time.Now().Add(time.Second))
-			_ = conn.Close()
-			return
-		}
-
-		channel := r.URL.Query().Get("channels")
-		if channel == "" {
-			_ = conn.WriteControl(websocket.CloseMessage, websocket.FormatCloseMessage(websocket.ClosePolicyViolation, channelNameDoesNotExist), time.Now().Add(time.Second))
+			_ = conn.WriteControl(
+				websocket.CloseMessage,
+				websocket.FormatCloseMessage(websocket.ClosePolicyViolation, "unauthorized"),
+				time.Now().Add(time.Second),
+			)
 			_ = conn.Close()
 			return
 		}
 
 		u, err := ur.GetUserFromSessionId(r.Context(), string(cookieValue))
 		if err != nil {
-			_ = conn.WriteControl(websocket.CloseMessage, websocket.FormatCloseMessage(websocket.ClosePolicyViolation, channelNameDoesNotExist), time.Now().Add(time.Second))
+			_ = conn.WriteControl(
+				websocket.CloseMessage,
+				websocket.FormatCloseMessage(websocket.ClosePolicyViolation, sessionDoesNotExist),
+				time.Now().Add(time.Second),
+			)
 			_ = conn.Close()
 			return
 		}
 
-		client := cf(conn, hub, u.Id, u.Username, channel)
+		listOfContact, err := cr.GetContacts(r.Context(), u.Id)
+		if err != nil {
+			_ = conn.WriteControl(
+				websocket.CloseMessage,
+				websocket.FormatCloseMessage(websocket.ClosePolicyViolation, contactError),
+				time.Now().Add(time.Second),
+			)
+			_ = conn.Close()
+			return
+		}
+
+		var contactIds []int64
+		contactsOnline := []uuid.UUID{}
+		for _, c := range listOfContact {
+			contactIds = append(contactIds, c.UserId)
+			_, ok := hub.clients[c.UserId]
+			if ok {
+				contactsOnline = append(contactsOnline, c.UserUuid)
+			}
+		}
+
+		client := cf(conn, hub, u.Id, u.Username, contactIds, u.Uuid)
 		hub.register <- client
 
 		joinMsg := sendMessage{
-			ClientId:   client.id,
-			ToChannels: client.channels,
+			ClientId:    client.id,
+			ToClientIds: contactIds,
 			Message: &MessageJSON{
+				Uuid:      client.uuid,
 				Message:   client.username + " joined",
 				Event:     messageTypeJoin,
+				Username:  client.username,
+				CreatedAt: time.Now(),
+			},
+		}
+
+		isOnlineList, err := json.Marshal(contactsOnline)
+		if err != nil {
+			log.Println("Websocket marshal failed: ", err)
+		}
+
+		listOfUserContactsOnlineMsg := sendMessage{
+			ClientId:    client.id,
+			ToClientIds: []int64{client.id},
+			Message: &MessageJSON{
+				Uuid:      client.uuid,
+				Message:   string(isOnlineList),
+				Event:     messageTypeIsOnline,
 				Username:  client.username,
 				CreatedAt: time.Now(),
 			},
@@ -87,6 +141,12 @@ func ServeWs(hub *Hub, cf ClientFactory, as shared.AuthService, ur shared.UserRe
 		}
 
 		hub.broadcast <- joinedMsgByte
+
+		listOfUserContactsOnlineMsgByte, err := json.Marshal(listOfUserContactsOnlineMsg)
+		if err != nil {
+			log.Println("Websocket marshal failed: ", err)
+		}
+		hub.broadcast <- listOfUserContactsOnlineMsgByte
 
 		go client.read()
 		go client.write()

@@ -4,13 +4,39 @@
       Hi {{.Username}}
     </h2>
 
+    <h2>
+      Invitations:
+    </h2>
+    <ul>
+        {{range $invite := .Invitations}}
+          <li>
+            <div>
+                {{if $invite.IsInviter}}
+                  You have invited:
+                {{end}}
+
+                {{$invite.Email}}
+
+                {{if not $invite.IsInviter}}
+                  <form action="/invite" data-method="patch" data-cid="acceptInviteForm">
+                    <input type="hidden" name="uuid" value="{{$invite.InviteUuid}}" />
+                    <button type="submit">
+                      Accept
+                    </button>
+                  </form>
+                {{end}}
+            </div>
+          </li>
+        {{end}}
+    </ul>
+
+
       {{range $list, $contacts := .ContactLists}}
           {{if $list.Name}}
             <div>
               <form action="/contact" data-method="post" data-cid="inviteForm">
                 <label for="email">Email</label>
                 <input id="email" type="text" name="email" />
-                <input type="hidden" name="contactListId" value="{{$list.Id}}" />
                 <button type="submit">Invite</button>
               </form>
 
@@ -19,28 +45,13 @@
               </h2>
               <ul>
                   {{range $contact := $contacts}}
-                      {{if .HasAccepted}}
-                          {{if .IsInviter}}
-                            <li>{{$contact.InviteeUsername}} isOnline</li>
-                          {{else}}
-                            <li>{{$contact.InviterUsername}} isOnline</li>
-                          {{end}}
-                      {{else}}
-                          {{if .IsInviter}}
-                            <li>
-                              Invitation sent to {{$contact.InviteeEmail}}
-                            </li>
-                          {{else}}
-                            <li>Invitation received from: {{$contact.InviterEmail}}
-                              <form action="/contact" data-method="patch" data-cid="acceptInviteForm">
-                                <input type="hidden" name="uuid" value="{{$contact.Uuid}}" />
-                                <button type="submit">
-                                  Accept
-                                </button>
-                              </form>
-                            </li>
-                          {{end}}
-                      {{end}}
+                    <li>
+                      <div data-cid="isOnline_{{$contact.UserUuid}}">
+                        Offline
+                      </div>
+                        {{$contact.Username}}
+                        {{$contact.Email}}
+                    </li>
                   {{end}}
               </ul>
             </div>
@@ -51,9 +62,9 @@
 
 {{define "inline-js"}}
   <script type="module">
-    import { shortcut } from '/assets/dist/shortcut.js';
+    import contacts from './assets/dist/contacts.js';
 
-    const sc = shortcut();
-    sc.init();
+    const wsUrl = "{{.WsUrl}}";
+    contacts.connect(wsUrl);
   </script>
 {{end}}

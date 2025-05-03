@@ -31,7 +31,7 @@ func (m *MockSession) SignCookie(cookieName string, value []byte) (string, error
 }
 
 func (h *HubAndTestServer) wsUrl(username string, channel string) string {
-	return "ws" + h.server.URL[len("http"):] + "?username=" + username + "&channels=" + channel
+	return "ws" + h.server.URL[len("http"):] + "?username=" + username + "&clients=" + channel
 }
 
 type MockUserRepo struct {
@@ -70,7 +70,6 @@ func newTestClient(conn *websocket.Conn, hub *Hub, username string, channel stri
 		send:       make(chan []byte, 256),
 		tickerWait: 10 * time.Millisecond,
 		pongWait:   15 * time.Millisecond,
-		channels:   []string{channel},
 	}
 }
 
@@ -109,9 +108,9 @@ func pollingForClientInChannels(props pollingForClientInChannelsArgs) error {
 		case <-timeout:
 			return errors.New("timeout waiting for client")
 		case <-tick:
-			if len(props.hub.channels[props.channel]) == props.cap {
-				return nil
-			}
+			//if len(props.hub.clients[props.channel]) == props.cap {
+			//	return nil
+			//}
 		}
 	}
 }

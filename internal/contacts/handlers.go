@@ -29,7 +29,7 @@ func (h *Handler) CreateUserList(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func (h *Handler) CreateContact(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) CreateInvitation(w http.ResponseWriter, r *http.Request) {
 	session := r.Context().Value(shared.SessionCtxKey).([]byte)
 	inviter, err := h.UserRepo.GetUserFromSessionId(r.Context(), string(session))
 	if err != nil {
@@ -37,7 +37,7 @@ func (h *Handler) CreateContact(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var body CreateContactBody
+	var body CreateInvitationBody
 	decoder := json.NewDecoder(r.Body)
 	decoder.DisallowUnknownFields()
 	err = decoder.Decode(&body)
@@ -46,7 +46,7 @@ func (h *Handler) CreateContact(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if body.Email == "" || body.ContactListId == 0 {
+	if body.Email == "" {
 		http.Error(w, "missing required fields", http.StatusBadRequest)
 		return
 	}
@@ -57,7 +57,7 @@ func (h *Handler) CreateContact(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	_, err = h.Repo.CreateContact(r.Context(), invitee.Id, inviter.Id, body.ContactListId, invitee.Username)
+	err = h.Repo.InviteUser(r.Context(), inviter.Id, invitee.Id)
 	if err != nil {
 		log.Printf("create contact error: %s", err.Error())
 		http.Error(w, "Could not create contact", http.StatusInternalServerError)
@@ -82,10 +82,53 @@ func (h *Handler) AcceptInvite(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = h.Repo.UpdateContact(r.Context(), true, body.Uuid, invitee.Id)
+	acceptedInvite, err := h.Repo.AcceptInvite(r.Context(), body.Uuid, invitee.Id)
 	if err != nil {
 		log.Printf("accept invite error: %s", err.Error())
 		http.Error(w, "Could not accept invite", http.StatusInternalServerError)
+		return
+	}
+
+	if acceptedInvite == nil {
+		http.Error(w, "Could not accept invite", http.StatusInternalServerError)
+		return
+	}
+
+	cl1, err := h.Repo.GetContactLists(r.Context(), acceptedInvite.InviterId)
+	if err != nil {
+		log.Printf("get contact lists error: %s", err.Error())
+		http.Error(w, "Could not get contact lists", http.StatusInternalServerError)
+		return
+	}
+	cl2, err := h.Repo.GetContactLists(r.Context(), acceptedInvite.InviteeId)
+	if err != nil {
+		log.Printf("get contact lists error: %s", err.Error())
+		http.Error(w, "Could not get contact lists", http.StatusInternalServerError)
+		return
+	}
+
+	insertedContact, err := h.Repo.CreateContact(
+		r.Context(),
+		acceptedInvite.InviterId,
+		acceptedInvite.InviteeId,
+	)
+	if err != nil {
+		log.Printf("create contact error: %s", err.Error())
+		http.Error(w, "Could not create contact", http.StatusInternalServerError)
+		return
+	}
+
+	err = h.Repo.CreateContactLink(r.Context(), insertedContact.Id, cl1[0].Id)
+	if err != nil {
+		log.Printf("create contact link error: %s", err.Error())
+		http.Error(w, "Could not create contact link", http.StatusInternalServerError)
+		return
+	}
+	err = h.Repo.CreateContactLink(r.Context(), insertedContact.Id, cl2[0].Id)
+	if err != nil {
+		log.Printf("create contact link error 2: %s", err.Error())
+		http.Error(w, "Could not create contact link 2", http.StatusInternalServerError)
+		return
 	}
 }
 

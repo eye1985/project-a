@@ -65,7 +65,7 @@ func Serve(pool *pgxpool.Pool) error {
 	auth.RegisterRoutes(midWare, authHandler, authService)
 	user.RegisterRoutes(midWare, userHandler, authService)
 	contacts.RegisterRoutes(midWare, contactsHandler, authService)
-	socket.RegisterRoutes(midWare, hub, authService, userRepo)
+	socket.RegisterRoutes(midWare, hub, authService, userRepo, contactsRepo)
 	templates.RegisterRoutes(midWare, templateHandler, authService)
 
 	return http.ListenAndServe(PORT, midWare.Mux)
