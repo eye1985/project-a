@@ -1,8 +1,51 @@
 import { shortcut } from './shortcut.js';
 import { initSocket } from './websocket.js';
-const sc = shortcut();
-sc.init();
 const socket = initSocket();
+const sc = shortcut();
+sc.addHandler({
+    openChat(evt) {
+        const cid = evt.target.getAttribute('data-cid');
+        if (!cid) {
+            return;
+        }
+        const toUuid = cid.split('_')[1];
+        const chatTemplate = document.getElementById('chatTemplate');
+        if (!chatTemplate) {
+            return;
+        }
+        const clone = chatTemplate.content.cloneNode(true);
+        const target = document.getElementById('chatBody');
+        if (!target) {
+            return;
+        }
+        target.appendChild(clone);
+        // Quick and dirty fix for now
+        //const messages = target.querySelector('[data-cid=\'messages\']');
+        const input = target.querySelector('[data-cid=\'messageInput\']');
+        if (input) {
+            const inputElm = input;
+            inputElm?.addEventListener('keyup', (evt) => {
+                if (evt.key === 'Enter' && toUuid) {
+                    socket.send(JSON.stringify({
+                        toUuid,
+                        msg: inputElm.value
+                    }));
+                    inputElm.value = '';
+                }
+            });
+        }
+    }
+    // handleInput(e) {
+    //
+    //   const messageInput = sc.getElement('messageInput') as HTMLInputElement;
+    //
+    //   if ((e as KeyboardEvent).key === 'Enter') {
+    //     socket.send(messageInput.value);
+    //     messageInput.value = '';
+    //   }
+    // }
+});
+sc.init();
 export default {
     connect(wsUrl) {
         socket.connect(wsUrl, {
@@ -10,6 +53,7 @@ export default {
                 console.log(evt, 'event onopen');
             },
             onMessage(event) {
+                console.log(event, 'event onmessage');
                 const parsedSocketData = JSON.parse(event.data);
                 let element;
                 switch (parsedSocketData.event) {

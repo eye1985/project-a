@@ -2,6 +2,7 @@ package socket
 
 import (
 	"encoding/json"
+	"github.com/google/uuid"
 	"github.com/gorilla/websocket"
 	"log"
 )
@@ -12,20 +13,22 @@ type ClientNameUpdateRequest struct {
 }
 
 type Hub struct {
-	broadcast  chan []byte
-	register   chan *client
-	unregister chan *client
-	clients    map[int64]*client
-	updateName chan ClientNameUpdateRequest
+	broadcast   chan []byte
+	register    chan *client
+	unregister  chan *client
+	clients     map[int64]*client
+	uuidToIdMap map[uuid.UUID]int64
+	updateName  chan ClientNameUpdateRequest
 }
 
 func NewHub() *Hub {
 	return &Hub{
-		broadcast:  make(chan []byte),
-		register:   make(chan *client),
-		unregister: make(chan *client),
-		clients:    make(map[int64]*client),
-		updateName: make(chan ClientNameUpdateRequest),
+		broadcast:   make(chan []byte),
+		register:    make(chan *client),
+		unregister:  make(chan *client),
+		clients:     make(map[int64]*client),
+		uuidToIdMap: make(map[uuid.UUID]int64),
+		updateName:  make(chan ClientNameUpdateRequest),
 	}
 }
 
@@ -49,6 +52,7 @@ func (h *Hub) Run() {
 			}
 
 			h.clients[userClient.id] = userClient
+			h.uuidToIdMap[userClient.uuid] = userClient.id
 		case userClient := <-h.unregister:
 			_ = userClient.conn.WriteMessage(
 				websocket.CloseMessage,
@@ -63,7 +67,6 @@ func (h *Hub) Run() {
 				log.Printf("Error unmarshalling Message: %s", err)
 				continue
 			}
-
 			for _, clientId := range msg.ToClientIds {
 
 				log.Printf("Sending message to %d", clientId)

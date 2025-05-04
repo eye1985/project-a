@@ -10,14 +10,6 @@ import (
 	"time"
 )
 
-type MessageJSON struct {
-	Uuid      uuid.UUID `json:"uuid"`
-	Message   string    `json:"message"`
-	Event     string    `json:"event"`
-	Username  string    `json:"username"`
-	CreatedAt time.Time `json:"createdAt"`
-}
-
 type sendMessage struct {
 	ClientId    int64
 	ToClientIds []int64
@@ -118,11 +110,25 @@ func (c *client) read() {
 			break
 		}
 
+		messageIn := &MessageIn{}
+		err = json.Unmarshal(message, messageIn)
+		if err != nil {
+			log.Printf("Cannot unmarshal json: %s", err)
+			break
+		}
+
+		id, ok := c.hub.uuidToIdMap[messageIn.ToUuid]
+		if !ok {
+			break
+		}
+
+		c.talkingTo = []int64{id}
+
 		msg := &sendMessage{
 			ClientId:    c.id,
 			ToClientIds: c.talkingTo,
 			Message: &MessageJSON{
-				Message:   string(message),
+				Message:   messageIn.Msg,
 				Username:  c.username,
 				Uuid:      c.uuid,
 				CreatedAt: time.Now().UTC(),
