@@ -61,9 +61,6 @@ export default {
         console.log(evt, 'event onopen');
       },
       onMessage(event) {
-
-        console.log(event, 'event onmessage');
-
         const parsedSocketData: SocketMessage = JSON.parse(event.data);
         let element: Element;
         switch (parsedSocketData.event) {
@@ -73,7 +70,6 @@ export default {
               element = sc.getElement(`isOnline_${uuid}`);
               element.textContent = 'Online';
             }
-
             break;
           case 'join':
             element = sc.getElement(`isOnline_${parsedSocketData.uuid}`);
@@ -82,6 +78,37 @@ export default {
           case 'quit':
             element = sc.getElement(`isOnline_${parsedSocketData.uuid}`);
             element.textContent = 'Offline';
+            break;
+          case 'message':
+            const messages = sc.getElement('messages');
+            if (!messages) {
+              return;
+            }
+
+            const container = document.createElement('div');
+            container.classList.add('message');
+            const date = document.createElement('div');
+            date.classList.add('message-date');
+            const from = document.createElement('div');
+            from.classList.add('message-from');
+            const p = document.createElement('p');
+            p.classList.add('message-text');
+            from.innerText = `${parsedSocketData.username}`;
+            p.innerText = `${parsedSocketData.message}`;
+            date.innerText = `${new Date(parsedSocketData.createdAt).toLocaleString('en-US', {
+              month: 'short',
+              day: 'numeric',
+              hour: 'numeric',
+              minute: 'numeric',
+              second: 'numeric',
+              hour12: false
+            })}`;
+
+            container.appendChild(from);
+            container.appendChild(p);
+            container.appendChild(date);
+
+            messages.appendChild(container);
             break;
         }
       },

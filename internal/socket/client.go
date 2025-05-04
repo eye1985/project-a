@@ -31,7 +31,7 @@ type client struct {
 }
 
 const (
-	messageTypeMessage  = "Message"
+	messageTypeMessage  = "message"
 	messageTypeJoin     = "join"
 	messageTypeQuit     = "quit"
 	messageTypeIsOnline = "isOnline"
@@ -122,7 +122,7 @@ func (c *client) read() {
 			break
 		}
 
-		c.talkingTo = []int64{id}
+		c.talkingTo = []int64{id, c.id}
 
 		msg := &sendMessage{
 			ClientId:    c.id,

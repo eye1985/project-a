@@ -1,0 +1,42 @@
+.messages {
+  background: #fff;
+  margin-bottom: 10px;
+  height: 100%;
+  overflow: auto;
+  border-radius: 8px;
+  contain: content;
+}
+
+.message {
+  display: grid;
+  grid-template-rows: 1fr 1fr 1fr;
+  background-color: var(--chat-bubble-bg);
+  padding: 10px;
+  border-radius: 8px;
+  margin-bottom: 10px;
+}
+
+
+.message:last-child {
+  margin-bottom: 0;
+}
+
+.message-date {
+  margin-left: auto;
+}
+
+.messages:has(div) {
+  padding: 10px;
+}
+
+.messages p {
+  margin: 0;
+}
+
+.chat-input {
+  width: 100%;
+  padding: 8px;
+  border-radius: 8px;
+  border: 1px solid #ccc;
+  font-size: 18px;
+}

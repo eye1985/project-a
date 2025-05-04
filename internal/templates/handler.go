@@ -174,6 +174,7 @@ func (h *Handler) RenderContacts(w http.ResponseWriter, r *http.Request) {
 			ContactLists: listMap,
 			Invitations:  invitationTemplates,
 			WsUrl:        h.wsUrl,
+			Css:          "contacts.css",
 		},
 	); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
