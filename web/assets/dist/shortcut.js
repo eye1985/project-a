@@ -59,11 +59,110 @@ const addBindElements = (currentElement) => {
         });
     }
 };
+const createTemplateStore = () => {
+    const templates = [];
+    return {
+        add(id, template) {
+            templates.push({
+                id,
+                template
+            });
+        },
+        get(id) {
+            return templates.filter(t => t.id === id)[0];
+        },
+        createClone(id) {
+            const template = templates.filter(t => t.id === id)[0];
+            if (!template) {
+                return null;
+            }
+            return template.template.content.cloneNode(true);
+        }
+    };
+};
+const attachActions = (elements, templates, handlers) => {
+    for (const el of elements) {
+        if (el instanceof HTMLFormElement) {
+            el.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const action = el.getAttribute('action');
+                const method = el.getAttribute('data-method');
+                const successMessage = el.getAttribute('data-success-message');
+                if (!method || !action) {
+                    return;
+                }
+                const methods = ['POST', 'PUT', 'DELETE', 'PATCH'];
+                const upperCasedMethod = method.toUpperCase();
+                if (!methods.includes(upperCasedMethod)) {
+                    return;
+                }
+                let body = {};
+                for (const elm of el.querySelectorAll('[name]')) {
+                    if (elm instanceof HTMLInputElement) {
+                        const isNumber = !isNaN(Number(elm.value));
+                        if (isNumber) {
+                            if (Number.isInteger(elm.value)) {
+                                body[elm.name] = parseInt(elm.value);
+                                continue;
+                            }
+                            body[elm.name] = parseFloat(elm.value);
+                            continue;
+                        }
+                        body[elm.name] = elm.value;
+                    }
+                }
+                const res = await fetch(action, {
+                    method: upperCasedMethod,
+                    body: JSON.stringify(body),
+                    credentials: 'include',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+                if (!res.ok) {
+                    const message = await res.text();
+                    console.error('error: ' + message);
+                    return;
+                }
+                const contentType = res.headers.get('Content-Type');
+                if (contentType && contentType?.length > 0) {
+                    location.href = '/';
+                }
+                if (successMessage) {
+                    const successElm = document.createElement('p');
+                    successElm.innerText = successMessage;
+                    el.appendChild(successElm);
+                    setTimeout(() => {
+                        successElm.remove();
+                    }, 2000);
+                }
+            });
+        }
+        if (el instanceof HTMLTemplateElement) {
+            templates.add(el.id, el);
+        }
+        if (handlers) {
+            addHandler(el, handlers);
+        }
+        addBindElements(el);
+    }
+};
+export const getElement = (cid) => {
+    const elm = document.querySelector(`[data-cid='${cid}']`);
+    if (!elm) {
+        throw new Error(`Not found element ${cid}`);
+    }
+    return elm;
+};
 export const shortcut = () => {
-    const elements = Array.from(document.querySelectorAll('[data-cid]'));
-    const handlerNames = elements.map((e) => e.getAttribute('data-handler')?.split(':')[1]);
+    const templateStore = createTemplateStore();
+    let elements = [];
+    let handlerNames = [];
     let handlers = null;
     return {
+        getTemplateClone(id) {
+            return templateStore.createClone(id);
+        },
         addHandler(handlersArg) {
             const isAllHandlersPresent = Object.keys(handlersArg).every((handlerName) => handlerNames.includes(handlerName));
             if (!isAllHandlersPresent) {
@@ -71,76 +170,32 @@ export const shortcut = () => {
             }
             handlers = handlersArg;
         },
-        getElement(cid) {
-            const elm = document.querySelector(`[data-cid='${cid}']`);
-            if (!elm) {
-                throw new Error(`Not found element ${cid}`);
-            }
-            return elm;
+        appendScanElements(target) {
+            let scanned = Array.from(target.querySelectorAll('[data-cid]'));
+            let scannedHandlerNames = scanned.map((e) => e.getAttribute('data-handler')?.split(':')[1]);
+            let appendHandlers = null;
+            return {
+                addHandler(handlersArg) {
+                    const isAllHandlersPresent = Object.keys(handlersArg).every((handlerName) => scannedHandlerNames.includes(handlerName));
+                    if (!isAllHandlersPresent) {
+                        throw new Error('Not all handlers present, did you remember to add data-handler attribute to your elements?');
+                    }
+                    appendHandlers = handlersArg;
+                    return {
+                        setActions() {
+                            attachActions(scanned, templateStore, appendHandlers);
+                        }
+                    };
+                },
+            };
         },
-        init() {
-            for (const el of elements) {
-                if (el instanceof HTMLFormElement) {
-                    el.addEventListener('submit', async (e) => {
-                        e.preventDefault();
-                        const action = el.getAttribute('action');
-                        const method = el.getAttribute('data-method');
-                        const successMessage = el.getAttribute('data-success-message');
-                        if (!method || !action) {
-                            return;
-                        }
-                        const methods = ['POST', 'PUT', 'DELETE', 'PATCH'];
-                        const upperCasedMethod = method.toUpperCase();
-                        if (!methods.includes(upperCasedMethod)) {
-                            return;
-                        }
-                        let body = {};
-                        for (const elm of el.querySelectorAll('[name]')) {
-                            if (elm instanceof HTMLInputElement) {
-                                const isNumber = !isNaN(Number(elm.value));
-                                if (isNumber) {
-                                    if (Number.isInteger(elm.value)) {
-                                        body[elm.name] = parseInt(elm.value);
-                                        continue;
-                                    }
-                                    body[elm.name] = parseFloat(elm.value);
-                                    continue;
-                                }
-                                body[elm.name] = elm.value;
-                            }
-                        }
-                        const res = await fetch(action, {
-                            method: upperCasedMethod,
-                            body: JSON.stringify(body),
-                            credentials: 'include',
-                            headers: {
-                                'Content-Type': 'application/json'
-                            }
-                        });
-                        if (!res.ok) {
-                            const message = await res.text();
-                            console.error('error: ' + message);
-                            return;
-                        }
-                        const contentType = res.headers.get('Content-Type');
-                        if (contentType && contentType?.length > 0) {
-                            location.href = '/';
-                        }
-                        if (successMessage) {
-                            const successElm = document.createElement('p');
-                            successElm.innerText = successMessage;
-                            el.appendChild(successElm);
-                            setTimeout(() => {
-                                successElm.remove();
-                            }, 2000);
-                        }
-                    });
-                }
-                if (handlers) {
-                    addHandler(el, handlers);
-                }
-                addBindElements(el);
-            }
+        scanElements() {
+            elements = Array.from(document.querySelectorAll('[data-cid]'));
+            handlerNames = elements.map((e) => e.getAttribute('data-handler')?.split(':')[1]);
+            attachActions(elements, templateStore, handlers);
+        },
+        setActions() {
+            attachActions(elements, templateStore, handlers);
         }
     };
 };

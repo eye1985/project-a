@@ -1,9 +1,15 @@
-import { shortcut } from './shortcut.js';
+import { getElement, shortcut } from './shortcut.js';
 import { initSocket } from './websocket.js';
 const socket = initSocket();
 const sc = shortcut();
+sc.scanElements();
 sc.addHandler({
     openChat(evt) {
+        const target = document.getElementById('chatBody');
+        if (target && target.children.length > 0) {
+            target.innerHTML = '';
+            return;
+        }
         const cid = evt.target.getAttribute('data-cid');
         if (!cid) {
             return;
@@ -13,39 +19,31 @@ sc.addHandler({
         if (!chatTemplate) {
             return;
         }
-        const clone = chatTemplate.content.cloneNode(true);
-        const target = document.getElementById('chatBody');
+        const clone = sc.getTemplateClone('chatTemplate');
         if (!target) {
             return;
         }
+        if (!clone) {
+            return;
+        }
         target.appendChild(clone);
-        // Quick and dirty fix for now
-        //const messages = target.querySelector('[data-cid=\'messages\']');
-        const input = target.querySelector('[data-cid=\'messageInput\']');
-        if (input) {
-            const inputElm = input;
-            inputElm?.addEventListener('keyup', (evt) => {
-                if (evt.key === 'Enter' && toUuid) {
+        const chatSc = sc.appendScanElements(target);
+        chatSc.addHandler({
+            handleInput(evt) {
+                const event = evt;
+                if (event.key === 'Enter' && toUuid) {
+                    const inputElm = event.target;
                     socket.send(JSON.stringify({
                         toUuid,
                         msg: inputElm.value
                     }));
                     inputElm.value = '';
                 }
-            });
-        }
+            }
+        }).setActions();
     }
-    // handleInput(e) {
-    //
-    //   const messageInput = sc.getElement('messageInput') as HTMLInputElement;
-    //
-    //   if ((e as KeyboardEvent).key === 'Enter') {
-    //     socket.send(messageInput.value);
-    //     messageInput.value = '';
-    //   }
-    // }
 });
-sc.init();
+sc.setActions();
 export default {
     connect(wsUrl) {
         socket.connect(wsUrl, {
@@ -59,20 +57,20 @@ export default {
                     case 'isOnline':
                         const online = JSON.parse(parsedSocketData.message);
                         for (const uuid of online) {
-                            element = sc.getElement(`isOnline_${uuid}`);
+                            element = getElement(`isOnline_${uuid}`);
                             element.textContent = 'Online';
                         }
                         break;
                     case 'join':
-                        element = sc.getElement(`isOnline_${parsedSocketData.uuid}`);
+                        element = getElement(`isOnline_${parsedSocketData.uuid}`);
                         element.textContent = 'Online';
                         break;
                     case 'quit':
-                        element = sc.getElement(`isOnline_${parsedSocketData.uuid}`);
+                        element = getElement(`isOnline_${parsedSocketData.uuid}`);
                         element.textContent = 'Offline';
                         break;
                     case 'message':
-                        const messages = sc.getElement('messages');
+                        const messages = getElement('messages');
                         if (!messages) {
                             return;
                         }
