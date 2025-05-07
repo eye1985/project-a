@@ -54,6 +54,7 @@ func (h *Hub) Run() {
 			h.clients[userClient.id] = userClient
 			h.uuidToIdMap[userClient.uuid] = userClient.id
 		case userClient := <-h.unregister:
+			log.Printf("Unregistering client %d", userClient.id)
 			_ = userClient.conn.WriteMessage(
 				websocket.CloseMessage,
 				websocket.FormatCloseMessage(websocket.CloseNormalClosure, "closing"),
@@ -68,7 +69,6 @@ func (h *Hub) Run() {
 				continue
 			}
 			for _, clientId := range msg.ToClientIds {
-
 				log.Printf("Sending message to %d", clientId)
 
 				jsonMsg, err := json.Marshal(msg.Message)
@@ -86,6 +86,21 @@ func (h *Hub) Run() {
 				if target, ok := h.clients[clientId]; ok {
 					target.send <- jsonMsg
 					log.Printf("Message sent to %d", clientId)
+				} else {
+					notOnlineMsg := &MessageJSON{
+						Uuid:      msg.Message.Uuid,
+						Message:   "User is not online",
+						Event:     messageTypeMessage,
+						Username:  "System",
+						CreatedAt: msg.Message.CreatedAt,
+					}
+					jsonMsg, err := json.Marshal(notOnlineMsg)
+					if err != nil {
+						continue
+					}
+					if target, ok := h.clients[msg.ClientId]; ok {
+						target.send <- jsonMsg
+					}
 				}
 			}
 		case clientReq := <-h.updateName:

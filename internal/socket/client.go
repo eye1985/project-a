@@ -119,7 +119,7 @@ func (c *client) read() {
 
 		id, ok := c.hub.uuidToIdMap[messageIn.ToUuid]
 		if !ok {
-			break
+			log.Printf("Cannot find user with uuid: %s", messageIn.ToUuid)
 		}
 
 		c.talkingTo = []int64{id, c.id}
@@ -153,27 +153,36 @@ func (c *client) write() {
 		select {
 		case msg, ok := <-c.send:
 			if !ok {
+				log.Printf("Channel closed, closing socket for: %s %d", c.username, c.id)
 				_ = c.conn.WriteMessage(websocket.CloseMessage, []byte("Closing connection"))
 				_ = c.conn.Close()
 				return
 			}
 
-			w, err := c.conn.NextWriter(websocket.TextMessage)
-			if err != nil {
-				_ = c.conn.WriteMessage(websocket.CloseMessage, []byte{})
-				_ = c.conn.Close()
-				return
-			}
-			newline := []byte{'\n'}
-			w.Write(msg)
-			w.Write(newline)
+			// Batch together buffered messages
+			messages := [][]byte{msg}
 			for i := 0; i < len(c.send); i++ {
-				w.Write(newline)
-				w.Write(<-c.send)
+				messages = append(messages, <-c.send)
 			}
 
-			err = w.Close()
+			// Build JSON array
+			batched := []byte("[")
+			for i, m := range messages {
+				batched = append(batched, m...)
+
+				//If this is not the last message, add a comma
+				if i < len(messages)-1 {
+					batched = append(batched, ',')
+				}
+			}
+			batched = append(batched, ']')
+
+			// Send as a single WebSocket message
+			err := c.conn.WriteMessage(websocket.TextMessage, batched)
 			if err != nil {
+				log.Printf("Writer error, closing socket for: %s %d", c.username, c.id)
+				_ = c.conn.WriteMessage(websocket.CloseMessage, []byte{})
+				_ = c.conn.Close()
 				return
 			}
 		case <-ticker.C:

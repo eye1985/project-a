@@ -166,7 +166,7 @@ const attachActions = (elements, templates, handlers) => {
 export const getElement = (cid) => {
     const elm = document.querySelector(`[data-cid='${cid}']`);
     if (!elm) {
-        throw new Error(`Not found element ${cid}`);
+        console.warn(`Not found element ${cid}`);
     }
     return elm;
 };
@@ -208,7 +208,6 @@ export const shortcut = () => {
         scanElements() {
             elements = Array.from(document.querySelectorAll('[data-cid]'));
             handlerNames = elements.map((e) => e.getAttribute('data-handler')?.split(':')[1]);
-            attachActions(elements, templateStore, handlers);
         },
         setActions() {
             attachActions(elements, templateStore, handlers);

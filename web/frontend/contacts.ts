@@ -6,14 +6,19 @@ const sc = shortcut();
 sc.scanElements();
 sc.addHandler({
   openChat(evt) {
-    const targetButton = evt.target as HTMLButtonElement;
     const target = document.getElementById('chatBody');
-    const addedWid = targetButton.getAttribute('data-added-wid');
 
-    if (addedWid) {
-      sc.templateStore().remove(addedWid);
-      targetButton.removeAttribute('data-added-wid');
+    if (!target) {
       return;
+    }
+
+    if (target.children.length > 0) {
+      for (const child of target.children) {
+        const dataWID = child.getAttribute('data-wid');
+        if (dataWID) {
+          sc.templateStore().remove(dataWID);
+        }
+      }
     }
 
     const cid = (evt.target as HTMLButtonElement).getAttribute('data-cid');
@@ -32,8 +37,6 @@ sc.addHandler({
     if (!rand) {
       return;
     }
-
-    targetButton.setAttribute('data-added-wid', `${rand}`);
 
     if (!target) {
       return;
@@ -71,56 +74,67 @@ export default {
         console.log(evt, 'event onopen');
       },
       onMessage(event) {
-        const parsedSocketData: SocketMessage = JSON.parse(event.data);
-        let element: Element;
-        switch (parsedSocketData.event) {
-          case 'isOnline':
-            const online = JSON.parse(parsedSocketData.message);
-            for (const uuid of online) {
-              element = getElement(`isOnline_${uuid}`);
-              element.textContent = 'Online';
+        const parsedSocketData: SocketMessage[] = JSON.parse(event.data);
+        let element: Element | null;
+
+        parsedSocketData.forEach(
+          (data: SocketMessage) => {
+            switch (data.event) {
+              case 'isOnline':
+                const online = JSON.parse(data.message);
+                for (const uuid of online) {
+                  element = getElement(`isOnline_${uuid}`);
+                  if (element) {
+                    element.textContent = 'Online';
+                  }
+                }
+                break;
+              case 'join':
+                element = getElement(`isOnline_${data.uuid}`);
+                if (element) {
+                  element.textContent = 'Online';
+                }
+                break;
+              case 'quit':
+                element = getElement(`isOnline_${data.uuid}`);
+                if (element) {
+                  element.textContent = 'Offline';
+                }
+                break;
+              case 'message':
+                const messages = getElement('messages');
+                if (!messages) {
+                  return;
+                }
+
+                const container = document.createElement('div');
+                container.classList.add('message');
+                const date = document.createElement('div');
+                date.classList.add('message-date');
+                const from = document.createElement('div');
+                from.classList.add('message-from');
+                const p = document.createElement('p');
+                p.classList.add('message-text');
+                from.innerText = `${data.username}`;
+                p.innerText = `${data.message}`;
+                date.innerText = `${new Date(data.createdAt).toLocaleString('en-US', {
+                  month: 'short',
+                  day: 'numeric',
+                  hour: 'numeric',
+                  minute: 'numeric',
+                  second: 'numeric',
+                  hour12: false
+                })}`;
+
+                container.appendChild(from);
+                container.appendChild(p);
+                container.appendChild(date);
+
+                messages.appendChild(container);
+                break;
             }
-            break;
-          case 'join':
-            element = getElement(`isOnline_${parsedSocketData.uuid}`);
-            element.textContent = 'Online';
-            break;
-          case 'quit':
-            element = getElement(`isOnline_${parsedSocketData.uuid}`);
-            element.textContent = 'Offline';
-            break;
-          case 'message':
-            const messages = getElement('messages');
-            if (!messages) {
-              return;
-            }
-
-            const container = document.createElement('div');
-            container.classList.add('message');
-            const date = document.createElement('div');
-            date.classList.add('message-date');
-            const from = document.createElement('div');
-            from.classList.add('message-from');
-            const p = document.createElement('p');
-            p.classList.add('message-text');
-            from.innerText = `${parsedSocketData.username}`;
-            p.innerText = `${parsedSocketData.message}`;
-            date.innerText = `${new Date(parsedSocketData.createdAt).toLocaleString('en-US', {
-              month: 'short',
-              day: 'numeric',
-              hour: 'numeric',
-              minute: 'numeric',
-              second: 'numeric',
-              hour12: false
-            })}`;
-
-            container.appendChild(from);
-            container.appendChild(p);
-            container.appendChild(date);
-
-            messages.appendChild(container);
-            break;
-        }
+          }
+        );
       },
 
       onClose(evt) {
