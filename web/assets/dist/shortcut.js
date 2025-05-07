@@ -61,8 +61,12 @@ const addBindElements = (currentElement) => {
 };
 const createTemplateStore = () => {
     const templates = [];
+    const cloneRefs = [];
     return {
         add(id, template) {
+            if (!id) {
+                throw new Error('id is required');
+            }
             templates.push({
                 id,
                 template
@@ -76,7 +80,19 @@ const createTemplateStore = () => {
             if (!template) {
                 return null;
             }
-            return template.template.content.cloneNode(true);
+            const wrapper = document.createElement('div');
+            const clone = template.template.content.cloneNode(true);
+            const rand = crypto.randomUUID();
+            wrapper.appendChild(clone);
+            wrapper.setAttribute('data-wid', rand);
+            cloneRefs.push({
+                id: rand,
+                element: wrapper
+            });
+            return wrapper;
+        },
+        remove(randId) {
+            cloneRefs.find(clone => clone.id === randId)?.element.remove();
         }
     };
 };
@@ -160,8 +176,8 @@ export const shortcut = () => {
     let handlerNames = [];
     let handlers = null;
     return {
-        getTemplateClone(id) {
-            return templateStore.createClone(id);
+        templateStore() {
+            return templateStore;
         },
         addHandler(handlersArg) {
             const isAllHandlersPresent = Object.keys(handlersArg).every((handlerName) => handlerNames.includes(handlerName));
@@ -186,7 +202,7 @@ export const shortcut = () => {
                             attachActions(scanned, templateStore, appendHandlers);
                         }
                     };
-                },
+                }
             };
         },
         scanElements() {

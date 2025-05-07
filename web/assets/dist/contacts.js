@@ -5,9 +5,12 @@ const sc = shortcut();
 sc.scanElements();
 sc.addHandler({
     openChat(evt) {
+        const targetButton = evt.target;
         const target = document.getElementById('chatBody');
-        if (target && target.children.length > 0) {
-            target.innerHTML = '';
+        const addedWid = targetButton.getAttribute('data-added-wid');
+        if (addedWid) {
+            sc.templateStore().remove(addedWid);
+            targetButton.removeAttribute('data-added-wid');
             return;
         }
         const cid = evt.target.getAttribute('data-cid');
@@ -19,7 +22,12 @@ sc.addHandler({
         if (!chatTemplate) {
             return;
         }
-        const clone = sc.getTemplateClone('chatTemplate');
+        const clone = sc.templateStore().createClone('chatTemplate');
+        const rand = clone?.getAttribute('data-wid');
+        if (!rand) {
+            return;
+        }
+        targetButton.setAttribute('data-added-wid', `${rand}`);
         if (!target) {
             return;
         }

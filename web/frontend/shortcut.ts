@@ -82,14 +82,25 @@ type TemplateObj = {
 type TemplateStore = {
   add(id: string, template: HTMLTemplateElement): void;
   get(id: string): TemplateObj | undefined;
-  createClone(id: string): DocumentFragment | null;
+  createClone(id: string): HTMLDivElement | null;
+  remove(randId: string): void;
+}
+
+type TemplateWrapper = {
+  id: string;
+  element: HTMLDivElement;
 }
 
 const createTemplateStore = (): TemplateStore => {
   const templates: TemplateObj[] = [];
+  const cloneRefs: TemplateWrapper[] = [];
 
   return {
     add(id: string, template: HTMLTemplateElement) {
+      if (!id) {
+        throw new Error('id is required');
+      }
+
       templates.push({
         id,
         template
@@ -100,13 +111,26 @@ const createTemplateStore = (): TemplateStore => {
       return templates.filter(t => t.id === id)[0];
     },
 
-    createClone(id: string): DocumentFragment | null {
+    createClone(id: string): HTMLDivElement | null {
       const template = templates.filter(t => t.id === id)[0];
       if (!template) {
         return null;
       }
+      const wrapper = document.createElement('div');
+      const clone = template.template.content.cloneNode(true) as DocumentFragment;
+      const rand = crypto.randomUUID();
 
-      return template.template.content.cloneNode(true) as DocumentFragment;
+      wrapper.appendChild(clone);
+      wrapper.setAttribute('data-wid', rand);
+      cloneRefs.push({
+        id: rand,
+        element: wrapper
+      });
+      return wrapper;
+    },
+
+    remove(randId: string) {
+      cloneRefs.find(clone => clone.id === randId)?.element.remove();
     }
   };
 };
@@ -207,8 +231,8 @@ export const shortcut = () => {
   let handlers: Record<string, EventListener> | null = null;
 
   return {
-    getTemplateClone(id: string) {
-      return templateStore.createClone(id);
+    templateStore() {
+      return templateStore;
     },
 
     addHandler(handlersArg: Record<string, EventListener>) {
@@ -247,7 +271,7 @@ export const shortcut = () => {
               attachActions(scanned, templateStore, appendHandlers);
             }
           };
-        },
+        }
       };
     },
 
