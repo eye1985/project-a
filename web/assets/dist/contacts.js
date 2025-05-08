@@ -7,6 +7,7 @@ sc.addHandler({
     openChat(evt) {
         const target = document.getElementById('chatBody');
         if (!target) {
+            console.error('target not found');
             return;
         }
         if (target.children.length > 0) {
@@ -17,24 +18,29 @@ sc.addHandler({
                 }
             }
         }
-        const cid = evt.target.getAttribute('data-cid');
+        const cid = evt.currentTarget.getAttribute('data-cid');
         if (!cid) {
+            console.error('cid not found');
             return;
         }
         const toUuid = cid.split('_')[1];
         const chatTemplate = document.getElementById('chatTemplate');
         if (!chatTemplate) {
+            console.error('chatTemplate not found');
             return;
         }
         const clone = sc.templateStore().createClone('chatTemplate');
         const rand = clone?.getAttribute('data-wid');
         if (!rand) {
+            console.error('rand not found');
             return;
         }
         if (!target) {
+            console.error('target not found');
             return;
         }
         if (!clone) {
+            console.error('clone not found');
             return;
         }
         target.appendChild(clone);
@@ -43,7 +49,7 @@ sc.addHandler({
             handleInput(evt) {
                 const event = evt;
                 if (event.key === 'Enter' && toUuid) {
-                    const inputElm = event.target;
+                    const inputElm = event.currentTarget;
                     socket.send(JSON.stringify({
                         toUuid,
                         msg: inputElm.value
@@ -114,6 +120,10 @@ export default {
                             container.appendChild(p);
                             container.appendChild(date);
                             messages.appendChild(container);
+                            messages.scrollTo({
+                                top: messages.scrollHeight,
+                                behavior: 'smooth'
+                            });
                             break;
                     }
                 });

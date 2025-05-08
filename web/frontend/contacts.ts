@@ -9,6 +9,7 @@ sc.addHandler({
     const target = document.getElementById('chatBody');
 
     if (!target) {
+      console.error('target not found');
       return;
     }
 
@@ -21,28 +22,34 @@ sc.addHandler({
       }
     }
 
-    const cid = (evt.target as HTMLButtonElement).getAttribute('data-cid');
+    const cid = (evt.currentTarget as HTMLButtonElement).getAttribute('data-cid');
+
     if (!cid) {
+      console.error('cid not found');
       return;
     }
     const toUuid = cid.split('_')[1];
 
     const chatTemplate = document.getElementById('chatTemplate');
     if (!chatTemplate) {
+      console.error('chatTemplate not found');
       return;
     }
 
     const clone = sc.templateStore().createClone('chatTemplate');
     const rand = clone?.getAttribute('data-wid');
     if (!rand) {
+      console.error('rand not found');
       return;
     }
 
     if (!target) {
+      console.error('target not found');
       return;
     }
 
     if (!clone) {
+      console.error('clone not found');
       return;
     }
 
@@ -53,7 +60,7 @@ sc.addHandler({
       handleInput(evt) {
         const event = evt as KeyboardEvent;
         if (event.key === 'Enter' && toUuid) {
-          const inputElm = event.target as HTMLInputElement;
+          const inputElm = event.currentTarget as HTMLInputElement;
           socket.send(JSON.stringify({
             toUuid,
             msg: inputElm.value
@@ -131,6 +138,11 @@ export default {
                 container.appendChild(date);
 
                 messages.appendChild(container);
+
+                messages.scrollTo({
+                  top: messages.scrollHeight,
+                  behavior: 'smooth'
+                });
                 break;
             }
           }

@@ -1,7 +1,23 @@
+.contact-layout {
+  display: grid;
+  grid-template-columns: 1fr;
+}
+
+@media (width >= 768px) {
+  .contact-layout {
+    grid-template-columns: auto 1fr;
+    gap: 40px;
+  }
+}
+
+.sidebar{
+  max-width: 300px;
+}
+
 .messages {
   background: #fff;
   margin-bottom: 10px;
-  height: 100%;
+  height: calc(100vh - 200px);
   overflow: auto;
   border-radius: 8px;
   contain: content;
@@ -16,7 +32,6 @@
   margin-bottom: 10px;
 }
 
-
 .message:last-child {
   margin-bottom: 0;
 }
@@ -25,12 +40,13 @@
   margin-left: auto;
 }
 
-.messages:has(div) {
-  padding: 10px;
-}
-
 .messages p {
   margin: 0;
+}
+
+.chat-body {
+  max-width: 768px;
+  margin: 0 auto;
 }
 
 .chat-input {
@@ -39,4 +55,41 @@
   border-radius: 8px;
   border: 1px solid #ccc;
   font-size: 18px;
+}
+
+.contact-list {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 10px;
+  list-style: none;
+  padding: 0;
+}
+
+.contact-list__button {
+  background: transparent;
+  width: 100%;
+  height: 100%;
+  border: 1px solid #ccc;
+  padding: 20px 10px;
+  border-radius: 8px;
+
+  display: grid;
+  grid-template-columns: 1fr 1fr auto;
+  gap: 10px;
+
+  &:hover {
+    background: #eee;
+    cursor: pointer;
+  }
+}
+
+.contact-list__email {
+  text-align: left;
+  font-style: italic;
+  font-weight: lighter;
+}
+
+.contact-list__username {
+  text-align: left;
+  font-weight: bold;
 }

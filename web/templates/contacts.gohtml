@@ -1,66 +1,74 @@
 {{define "main-content"}}
-  <div class="main-content">
-    <h2>
-      Hi {{.Username}}
-    </h2>
+  <div class="contact-layout">
+    <div class="sidebar">
+        {{range $list, $contacts := .ContactLists}}
+            {{if $list.Name}}
+              <div>
+                <form action="/contact" data-method="post" data-cid="inviteForm">
+                  <label for="email">Email</label>
+                  <input id="email" type="text" name="email" />
+                  <button type="submit">Invite</button>
+                </form>
 
-    <h2>
-      Invitations:
-    </h2>
-    <ul>
-        {{range $invite := .Invitations}}
-          <li>
-            <div>
-                {{if $invite.IsInviter}}
-                  You have invited:
-                {{end}}
-
-                {{$invite.Email}}
-
-                {{if not $invite.IsInviter}}
-                  <form action="/invite" data-method="patch" data-cid="acceptInviteForm">
-                    <input type="hidden" name="uuid" value="{{$invite.InviteUuid}}" />
-                    <button type="submit">
-                      Accept
-                    </button>
-                  </form>
-                {{end}}
-            </div>
-          </li>
+                <h2>
+                    {{$list.Name}}:
+                </h2>
+                <ul class="contact-list">
+                    {{range $contact := $contacts}}
+                      <li class="contact-list__item">
+                        <button class="contact-list__button" type="button" data-cid="chat_{{$contact.UserUuid}}"
+                                data-handler="click:openChat">
+                          <div class="contact-list__username">
+                              {{$contact.Username}}
+                          </div>
+                          <div class="contact-list__email">
+                              {{$contact.Email}}
+                          </div>
+                          <div data-cid="isOnline_{{$contact.UserUuid}}">
+                            Offline
+                          </div>
+                        </button>
+                      </li>
+                    {{end}}
+                </ul>
+              </div>
+            {{end}}
         {{end}}
-    </ul>
-      {{range $list, $contacts := .ContactLists}}
-          {{if $list.Name}}
-            <div>
-              <form action="/contact" data-method="post" data-cid="inviteForm">
-                <label for="email">Email</label>
-                <input id="email" type="text" name="email" />
-                <button type="submit">Invite</button>
-              </form>
+    </div>
 
-              <h2>
-                  {{$list.Name}}:
-              </h2>
-              <ul>
-                  {{range $contact := $contacts}}
-                    <li>
-                      <button type="button" data-cid="chat_{{$contact.UserUuid}}" data-handler="click:openChat">
-                        Chat
-                      </button>
-                      <div data-cid="isOnline_{{$contact.UserUuid}}">
-                        Offline
-                      </div>
-                        {{$contact.Username}}
-                        {{$contact.Email}}
-                    </li>
-                  {{end}}
-              </ul>
-            </div>
-          {{end}}
-      {{end}}
+    <div class="main-content">
+      <div data-cid="contacts" data-sc-dtoggle="block:none">
+        <div class="invitations">
+          <ul>
+              {{range $invite := .Invitations}}
+                <li>
+                  <div>
+                      {{if $invite.IsInviter}}
+                        You have invited:
+                      {{end}}
 
-    <div id="chatBody"></div>
+                      {{$invite.Email}}
+
+                      {{if not $invite.IsInviter}}
+                        <form action="/invite" data-method="patch" data-cid="acceptInviteForm">
+                          <input type="hidden" name="uuid" value="{{$invite.InviteUuid}}" />
+                          <button type="submit">
+                            Accept
+                          </button>
+                        </form>
+                      {{end}}
+                  </div>
+                </li>
+              {{end}}
+          </ul>
+        </div>
+      </div>
+      <div id="chatBody" class="chat-body" data-cid="chatBody" data-view-flip="contacts">
+      </div>
+    </div>
   </div>
+
+
 
   <template id="chatTemplate" data-cid="chatTemplate">
     <div class="messages" data-cid="messages">

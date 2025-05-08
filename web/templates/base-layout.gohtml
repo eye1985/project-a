@@ -53,11 +53,22 @@
     .header-content {
       justify-self: center;
       display: grid;
-      grid-template-columns: 1fr auto auto;
+      grid-template-columns: auto 1fr auto auto;
       gap: 30px;
       align-items: center;
-      max-width: 768px;
       width: 100%;
+    }
+
+    @media (width >= 414px) {
+      .header-content {
+        justify-self: center;
+        display: grid;
+        grid-template-columns: 1fr auto auto;
+        gap: 30px;
+        align-items: center;
+        max-width: 768px;
+        width: 100%;
+      }
     }
 
     .header-title {
@@ -88,9 +99,23 @@
 
     .main {
       grid-column: 2 / 3;
-      max-width: 768px;
       width: 100%;
       justify-self: center;
+    }
+
+    .menu-button {
+      background: none;
+      border: none;
+      padding: 0;
+      margin: 0;
+      height: 32px;
+      width: 32px;
+    }
+
+    @media (width >= 414px) {
+      .menu-button {
+        display: none;
+      }
     }
   </style>
     {{if .Css}}
@@ -101,13 +126,24 @@
 <div class="layout">
   <header class="header">
     <div class="header-content">
+      <button type="button" class="menu-button">
+        <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" id="menu" class="icon glyph" fill="#000000">
+          <g id="SVGRepo_bgCarrier" stroke-width="0"></g>
+          <g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g>
+          <g id="SVGRepo_iconCarrier">
+            <path d="M21,19H9a1,1,0,0,1,0-2H21a1,1,0,0,1,0,2Z" style="fill:#fff"></path>
+            <path d="M21,13H3a1,1,0,0,1,0-2H21a1,1,0,0,1,0,2Z" style="fill:#fff"></path>
+            <path d="M15,7H3A1,1,0,0,1,3,5H15a1,1,0,0,1,0,2Z" style="fill:#fff"></path>
+          </g>
+        </svg>
+      </button>
       <h1 class="header-title">
         <a class="header-anchor" href="/">
           Chat
         </a>
       </h1>
 
-      <a class="header-link" href="/profile">Profile</a>
+      <a class="header-link" href="/profile">{{.Username}}'s Profile</a>
       <form method="POST" action="/logout">
         <button class="logout-button" type="submit">
           Logout
