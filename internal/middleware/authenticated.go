@@ -6,7 +6,7 @@ import (
 	"project-a/internal/shared"
 )
 
-func Guard(session shared.AuthService) func(handlerFunc http.HandlerFunc) http.HandlerFunc {
+func Authenticated(session shared.AuthService) func(handlerFunc http.HandlerFunc) http.HandlerFunc {
 	return func(next http.HandlerFunc) http.HandlerFunc {
 		return func(w http.ResponseWriter, r *http.Request) {
 			cookie, err := r.Cookie(string(shared.SessionCtxKey))

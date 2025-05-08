@@ -14,6 +14,6 @@ type RegisterRoutesArgs struct {
 
 func RegisterRoutes(m *middleware.Middleware, h *Handler, authService shared.AuthService) {
 	m.HandleFunc("GET /", h.RenderRegisterUser)
-	m.HandleFunc("GET /profile", h.RenderProfile, middleware.Guard(authService))
-	m.HandleFunc("GET /contacts", h.RenderContacts, middleware.Guard(authService))
+	m.HandleFunc("GET /profile", h.RenderProfile, middleware.Authenticated(authService))
+	m.HandleFunc("GET /contacts", h.RenderContacts, middleware.Authenticated(authService))
 }

@@ -16,17 +16,16 @@ type Handler struct {
 	UserlistRepo contacts.Repository
 }
 
-func createMagicLinkIfNotExist(ctx context.Context, email string, h *Handler) (*shared.User, string, error) {
+func createMagicLink(ctx context.Context, email string, h *Handler) (*shared.User, string, error) {
 	u, err := h.UserRepo.GetUserByEmail(ctx, email)
 	if err != nil {
-		code, err := h.Service.CreateMagicLink(ctx, email)
-		if err != nil {
-			return nil, "", err
-		}
-
-		return nil, code, nil
+		return nil, "", err
 	}
-	return u, "", nil
+	code, err := h.Service.CreateMagicLink(ctx, email)
+	if err != nil {
+		return nil, "", err
+	}
+	return u, code, nil
 }
 
 func (h *Handler) RegisterUser(w http.ResponseWriter, r *http.Request) {
@@ -89,39 +88,31 @@ func (h *Handler) RegisterUser(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, shared.HomeRoute, http.StatusSeeOther)
 }
 
-func (h *Handler) Login(w http.ResponseWriter, r *http.Request) {
-	err := r.ParseForm()
+func (h *Handler) SignIn(w http.ResponseWriter, r *http.Request) {
+	code := r.PathValue("code")
+	if code == "" {
+		http.Error(w, "code is required", http.StatusBadRequest)
+		return
+	}
+
+	ml, err := h.Repo.ActivateNonExpiredMagicLink(r.Context(), code)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
+		http.Error(w, "invalid magic link", http.StatusBadRequest)
 		return
 	}
 
-	email := r.Form.Get("email")
-	_, err = mail.ParseAddress(email)
+	u, err := h.UserRepo.GetUserByEmail(r.Context(), ml.Email)
 	if err != nil {
-		http.Error(w, "Invalid email", http.StatusBadRequest)
+		http.Error(w, "invalid email", http.StatusBadRequest)
 		return
 	}
 
-	existingUser, magicCode, err := createMagicLinkIfNotExist(r.Context(), email, h)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-
-	if magicCode != "" {
-		// TODO Send email here
-		http.Redirect(w, r, "/?magicLinkCode="+magicCode, http.StatusSeeOther)
-		return
-	}
-
-	session, err := h.Service.CreateOrGetSession(r.Context(), existingUser.Id)
+	session, err := h.Service.CreateOrGetSession(r.Context(), u.Id)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	// TODO create link for login
 	encoded, err := h.Service.SignCookie(string(shared.SessionCtxKey), []byte(session.SessionID))
 	if err != nil {
 		http.Error(w, "Session error", http.StatusInternalServerError)
@@ -141,6 +132,33 @@ func (h *Handler) Login(w http.ResponseWriter, r *http.Request) {
 	)
 
 	http.Redirect(w, r, shared.HomeRoute, http.StatusSeeOther)
+}
+
+// TODO add some security for this
+func (h *Handler) CreateMagicLinkCode(w http.ResponseWriter, r *http.Request) {
+	err := r.ParseForm()
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	email := r.Form.Get("email")
+	_, err = mail.ParseAddress(email)
+	if err != nil {
+		http.Error(w, "Invalid email", http.StatusBadRequest)
+		return
+	}
+
+	_, magicCode, err := createMagicLink(r.Context(), email, h)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	if magicCode != "" {
+		// TODO Send email here
+		http.Redirect(w, r, "/?magicLinkCode="+magicCode, http.StatusSeeOther)
+	}
 }
 
 func (h *Handler) Logout(w http.ResponseWriter, r *http.Request) {

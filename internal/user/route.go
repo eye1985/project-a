@@ -14,6 +14,6 @@ func RegisterRoutes(m *middleware.Middleware, h *Handler, as shared.AuthService)
 	m.HandleFunc("PATCH /user", h.UpdateUserName,
 		middleware.AllowOnlyPatch,
 		middleware.AllowOnlyApplicationJson,
-		middleware.Guard(as),
+		middleware.Authenticated(as),
 	)
 }
