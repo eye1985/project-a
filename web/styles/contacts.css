@@ -10,7 +10,7 @@
   }
 }
 
-.sidebar{
+.sidebar {
   max-width: 300px;
 }
 
@@ -21,6 +21,10 @@
   overflow: auto;
   border-radius: 8px;
   contain: content;
+
+  display: flex;
+  justify-content: flex-end;
+  flex-direction: column;
 }
 
 .message {
@@ -80,6 +84,10 @@
   &:hover {
     background: #eee;
     cursor: pointer;
+  }
+
+  &.active{
+    background: #eee;
   }
 }
 

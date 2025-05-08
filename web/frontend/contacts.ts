@@ -6,6 +6,14 @@ const sc = shortcut();
 sc.scanElements();
 sc.addHandler({
   openChat(evt) {
+    const currentButton = evt.currentTarget as HTMLButtonElement;
+
+    // TODO change do some other ids
+    document.querySelectorAll('.contact-list__button').forEach(button => {
+      button.classList.remove('active');
+    });
+    currentButton.classList.add('active');
+
     const target = document.getElementById('chatBody');
 
     if (!target) {
@@ -22,7 +30,7 @@ sc.addHandler({
       }
     }
 
-    const cid = (evt.currentTarget as HTMLButtonElement).getAttribute('data-cid');
+    const cid = currentButton.getAttribute('data-cid');
 
     if (!cid) {
       console.error('cid not found');
