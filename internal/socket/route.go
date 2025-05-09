@@ -12,6 +12,7 @@ func RegisterRoutes(
 	as shared.AuthService,
 	ur shared.UserRepository,
 	cr contacts.Repository,
+	origin string,
 ) {
-	m.HandleFunc("GET /ws", ServeWs(h, newClient, as, ur, cr))
+	m.HandleFunc("GET /ws", ServeWs(h, newClient, as, ur, cr, origin))
 }

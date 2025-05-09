@@ -29,6 +29,10 @@ func Serve(pool *pgxpool.Pool) error {
 	if !ok {
 		log.Fatalf("BLOCK_KEY environment variable not set")
 	}
+	origin, ok := os.LookupEnv("ORIGIN")
+	if !ok {
+		log.Fatalf("ORIGIN environment variable not set")
+	}
 
 	midWare := middleware.NewMux()
 	midWare.Add(middleware.Logger)
@@ -66,7 +70,7 @@ func Serve(pool *pgxpool.Pool) error {
 	auth.RegisterRoutes(midWare, authHandler, authService)
 	user.RegisterRoutes(midWare, userHandler, authService)
 	contacts.RegisterRoutes(midWare, contactsHandler, authService)
-	socket.RegisterRoutes(midWare, hub, authService, userRepo, contactsRepo)
+	socket.RegisterRoutes(midWare, hub, authService, userRepo, contactsRepo, origin)
 	templates.RegisterRoutes(midWare, templateHandler, authService)
 
 	return http.ListenAndServe(PORT, midWare.Mux)

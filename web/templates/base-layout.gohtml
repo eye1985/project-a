@@ -15,7 +15,7 @@
       /*--main-bg-color: #F8DF07;*/
       --main-bg-color: #fff;
       --chat-bubble-bg: #f9f777;
-      --sidebar-bg:#fde27a;
+      --sidebar-bg: #fde27a;
       --header-height: 62px;
     }
 
@@ -44,7 +44,7 @@
     }
 
     .header {
-      display:flex;
+      display: flex;
       align-items: center;
       background: #251405;
       color: white;
@@ -118,6 +118,28 @@
         display: none;
       }
     }
+
+    .toast {
+      position: fixed;
+      bottom: 10px;
+      right: 10px;
+      left: 10px;
+      background: #fff;
+      padding: 10px 20px;
+      border-radius: 8px;
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+
+      & .toast__text {
+        line-height: 1.5;
+      }
+    }
+
+    @media (width >= 414px) {
+      .toast {
+        left:unset;
+        max-width: 300px;
+      }
+    }
   </style>
     {{if .Css}}
       <link rel="stylesheet" href="styles/{{.Css}}" />
@@ -157,6 +179,14 @@
       {{template "main-content" .}}
   </main>
 </div>
+
+<template data-cid="toast">
+  <div class="toast">
+    <p class="toast__text">
+    </p>
+  </div>
+</template>
+
 {{template "inline-js" .}}
 </body>
 </html>

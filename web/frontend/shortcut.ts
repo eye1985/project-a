@@ -203,7 +203,7 @@ const attachActions = (elements: Element[], templates: TemplateStore, handlers: 
     }
 
     if (el instanceof HTMLTemplateElement) {
-      templates.add(el.id, el);
+      templates.add(el.getAttribute('data-cid')!, el);
     }
 
     if (handlers) {

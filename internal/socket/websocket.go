@@ -11,28 +11,34 @@ import (
 	"time"
 )
 
-var upgrader = websocket.Upgrader{
-	CheckOrigin: func(r *http.Request) bool {
-		return true
-	},
-}
-
 const (
 	sessionDoesNotExist = "session does not exist"
 	contactError        = "contact error"
 )
 
-func ServeWs(hub *Hub, cf ClientFactory, as shared.AuthService, ur shared.UserRepository, cr contacts.Repository) func(
+func ServeWs(
+	hub *Hub,
+	cf ClientFactory,
+	as shared.AuthService,
+	ur shared.UserRepository,
+	cr contacts.Repository,
+	origin string,
+) func(
 	http.ResponseWriter,
 	*http.Request,
 ) {
-	return func(w http.ResponseWriter, r *http.Request) {
-		upgrader.CheckOrigin = func(r *http.Request) bool {
-			origin := r.Header.Get("Origin")
-			log.Printf("origin %s", origin)
-			// TODO add origin check here
+	var upgrader = websocket.Upgrader{
+		CheckOrigin: func(r *http.Request) bool {
+			rOrigin := r.Header.Get("Origin")
+			log.Printf("rOrigin: %s", rOrigin)
+			if rOrigin != origin {
+				return false
+			}
 			return true
-		}
+		},
+	}
+
+	return func(w http.ResponseWriter, r *http.Request) {
 		conn, err := upgrader.Upgrade(w, r, nil)
 		if err != nil {
 			log.Println("Websocket upgrade failed: ", err)

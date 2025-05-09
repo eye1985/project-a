@@ -155,7 +155,7 @@ const attachActions = (elements, templates, handlers) => {
             });
         }
         if (el instanceof HTMLTemplateElement) {
-            templates.add(el.id, el);
+            templates.add(el.getAttribute('data-cid'), el);
         }
         if (handlers) {
             addHandler(el, handlers);

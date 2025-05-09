@@ -139,6 +139,19 @@ export default {
             },
             onError(evt) {
                 console.error(evt, 'on error');
+                const toastWrapper = sc.templateStore().createClone('toast');
+                if (!toastWrapper) {
+                    return;
+                }
+                const p = toastWrapper.querySelector('p');
+                if (!p) {
+                    return;
+                }
+                p.innerText = 'Could not connect to server. Please try again later.';
+                document.body.appendChild(toastWrapper);
+                setTimeout(() => {
+                    sc.templateStore().remove(toastWrapper.getAttribute('data-wid'));
+                }, 2000);
             }
         });
     }

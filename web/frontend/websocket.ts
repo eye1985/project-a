@@ -43,31 +43,25 @@ export const initSocket = (): SocketController => {
         onError?: (e: Event) => void;
       }
     ) {
+      ws = new WebSocket(
+        `${wsUrl}/ws`
+      );
 
-      try {
-        ws = new WebSocket(
-          `${wsUrl}/ws`
-        );
+      ws.onopen = (evt) => {
+        onOpen && onOpen(evt);
+      };
 
-        ws.onopen = (evt) => {
-          onOpen && onOpen(evt);
-        };
+      ws.onmessage = (event) => {
+        onMessage && onMessage(event);
+      };
 
-        ws.onmessage = (event) => {
-          onMessage && onMessage(event);
-        };
+      ws.onclose = (event) => {
+        onClose && onClose(event);
+      };
 
-        ws.onclose = (event) => {
-          onClose && onClose(event);
-        };
-
-        ws.onerror = (error) => {
-          onError && onError(error);
-        };
-      } catch (error) {
-        const err = error as Error;
-        throw new Error(err.message);
-      }
+      ws.onerror = (error) => {
+        onError && onError(error);
+      };
     },
 
     disconnect() {
