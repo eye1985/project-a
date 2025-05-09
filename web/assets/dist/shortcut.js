@@ -170,6 +170,24 @@ export const getElement = (cid) => {
     }
     return elm;
 };
+// TODO create a delete cookie
+export const getCookie = (name) => {
+    const cookie = document.cookie
+        .split(';')
+        .map(cookie => cookie.trim())
+        .find(cookie => cookie.startsWith(name + '='))
+        ?.split('=');
+    if (cookie && cookie.length > 1) {
+        return {
+            key: cookie[0],
+            value: cookie[1]
+        };
+    }
+    return null;
+};
+export const deleteAllCookies = () => {
+    document.cookie = 'flash=; Max-Age=0; path=/;';
+};
 export const shortcut = () => {
     const templateStore = createTemplateStore();
     let elements = [];

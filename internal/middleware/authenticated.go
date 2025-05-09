@@ -3,6 +3,7 @@ package middleware
 import (
 	"context"
 	"net/http"
+	"project-a/internal/cookieutil"
 	"project-a/internal/shared"
 )
 
@@ -12,20 +13,39 @@ func Authenticated(session shared.AuthService) func(handlerFunc http.HandlerFunc
 			cookie, err := r.Cookie(string(shared.SessionCtxKey))
 
 			if err != nil {
-				// TODO add flashcookie
-				http.Redirect(w, r, "/?error=unauthorized", http.StatusSeeOther)
+				cookieutil.SetFlashCookie(
+					w, &cookieutil.FlashCookieArgs{
+						Name:  "flash",
+						Value: "unauthorized",
+						Path:  "/",
+					},
+				)
+				http.Redirect(w, r, "/", http.StatusSeeOther)
 				return
 			}
 
 			cookieValue, err := session.VerifyCookie(cookie)
 			if err != nil {
-				http.Redirect(w, r, "/?error=unauthorized", http.StatusSeeOther)
+				cookieutil.SetFlashCookie(
+					w, &cookieutil.FlashCookieArgs{
+						Name:  "flash",
+						Value: "unauthorized",
+						Path:  "/",
+					},
+				)
+				http.Redirect(w, r, "/", http.StatusSeeOther)
 				return
 			}
 
 			if !session.IsSessionActive(r.Context(), string(cookieValue)) {
-				// TODO add flashcookie
-				http.Redirect(w, r, "/?error=unauthorized", http.StatusSeeOther)
+				cookieutil.SetFlashCookie(
+					w, &cookieutil.FlashCookieArgs{
+						Name:  "flash",
+						Value: "unauthorized",
+						Path:  "/",
+					},
+				)
+				http.Redirect(w, r, "/", http.StatusSeeOther)
 				return
 			}
 
