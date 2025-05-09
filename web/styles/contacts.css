@@ -12,6 +12,9 @@
 
 .sidebar {
   max-width: 300px;
+  height: calc(100vh - var(--header-height));
+  background: var(--sidebar-bg);
+  padding: 20px;
 }
 
 .messages {
@@ -86,7 +89,7 @@
     cursor: pointer;
   }
 
-  &.active{
+  &.active {
     background: #eee;
   }
 }

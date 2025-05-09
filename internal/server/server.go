@@ -33,6 +33,7 @@ func Serve(pool *pgxpool.Pool) error {
 	midWare := middleware.NewMux()
 	midWare.Add(middleware.Logger)
 	midWare.Add(middleware.BodyCloser)
+	midWare.Add(middleware.NoCache)
 
 	hub := socket.NewHub()
 	go hub.Run()

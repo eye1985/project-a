@@ -20,12 +20,6 @@ func compose(fns ...Handler) Handler {
 	}
 }
 
-type RouteHandler interface {
-	HandleFunc(route string, h http.HandlerFunc)
-	Handle(pattern string, handler http.Handler)
-	HandleFuncWithMiddleWare(route string, h http.HandlerFunc, m ...Middleware)
-}
-
 type Handler func(next http.HandlerFunc) http.HandlerFunc
 type Middleware struct {
 	middlewares    []Handler
