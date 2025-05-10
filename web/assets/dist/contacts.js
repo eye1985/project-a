@@ -95,34 +95,36 @@ export default {
                             }
                             break;
                         case 'join':
-                            element = getElement(`isOnline_${data.uuid}`);
+                            element = getElement(`isOnline_${data.fromUuid}`);
                             if (element) {
                                 element.ref.textContent = 'Online';
                             }
                             break;
                         case 'quit':
-                            element = getElement(`isOnline_${data.uuid}`);
+                            element = getElement(`isOnline_${data.fromUuid}`);
                             if (element) {
                                 element.ref.textContent = 'Offline';
                             }
                             break;
                         case 'message':
+                            const toUuid = get('toUuid');
                             const messages = getElement('messages');
-                            const isToCurrentUuid = data.uuid === get('toUuid');
-                            const isMyMessage = data.uuid === myUuid;
-                            // if (data.username !== 'System' && !isToCurrentUuid && !isMyMessage) {
-                            //   const history = sessionStorage.getItem(data.uuid);
-                            //   if (!history) {
-                            //     sessionStorage.setItem(data.uuid, JSON.stringify([data]));
-                            //   } else {
-                            //     sessionStorage.setItem(data.uuid, JSON.stringify([...JSON.parse(history), data]));
-                            //   }
-                            // }
+                            const isSystemMsgToMe = data.username === 'System' && data.fromUuid === myUuid;
+                            const isMessageToThisUser = data.fromUuid === toUuid || data.toUuid === toUuid;
+                            if (data.username !== 'System' && isMessageToThisUser) {
+                                const history = sessionStorage.getItem(toUuid);
+                                if (!history) {
+                                    sessionStorage.setItem(toUuid, JSON.stringify([data]));
+                                }
+                                else {
+                                    sessionStorage.setItem(toUuid, JSON.stringify([...JSON.parse(history), data]));
+                                }
+                            }
                             if (!messages) {
                                 console.warn('cant find messages');
                                 return;
                             }
-                            if (isToCurrentUuid || isMyMessage) {
+                            if (isMessageToThisUser || isSystemMsgToMe) {
                                 insertMessage(data, messages.ref);
                                 messages.ref.scrollTo({
                                     top: messages.ref.scrollHeight,

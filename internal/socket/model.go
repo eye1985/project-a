@@ -11,7 +11,8 @@ type MessageIn struct {
 }
 
 type MessageJSON struct {
-	Uuid      uuid.UUID `json:"uuid"`
+	FromUuid  uuid.UUID `json:"fromUuid"`
+	ToUuid    uuid.UUID `json:"toUuid"`
 	Message   string    `json:"message"`
 	Event     string    `json:"event"`
 	Username  string    `json:"username"`

@@ -116,7 +116,7 @@ func ServeWs(
 			ClientId:    client.id,
 			ToClientIds: contactIds,
 			Message: &MessageJSON{
-				Uuid:      client.uuid,
+				FromUuid:  client.uuid,
 				Message:   client.username + " joined",
 				Event:     messageTypeJoin,
 				Username:  client.username,
@@ -133,7 +133,7 @@ func ServeWs(
 			ClientId:    client.id,
 			ToClientIds: []int64{client.id},
 			Message: &MessageJSON{
-				Uuid:      client.uuid,
+				FromUuid:  client.uuid,
 				Message:   string(isOnlineList),
 				Event:     messageTypeIsOnline,
 				Username:  client.username,

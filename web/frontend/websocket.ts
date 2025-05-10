@@ -1,5 +1,6 @@
 export type SocketMessage = {
-  uuid: string;
+  fromUuid: string;
+  toUuid: string;
   message: string;
   event: string;
   username: string;

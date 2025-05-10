@@ -88,7 +88,8 @@ func (h *Hub) Run() {
 					log.Printf("Message sent to %d", clientId)
 				} else {
 					notOnlineMsg := &MessageJSON{
-						Uuid:      msg.Message.Uuid,
+						FromUuid:  msg.Message.FromUuid,
+						ToUuid:    msg.Message.ToUuid,
 						Message:   "User is not online",
 						Event:     messageTypeMessage,
 						Username:  "System",

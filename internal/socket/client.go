@@ -67,7 +67,7 @@ func (c *client) read() {
 			ToClientIds: c.contacts,
 			Message: &MessageJSON{
 				Message:   c.username + " quit",
-				Uuid:      c.uuid,
+				FromUuid:  c.uuid,
 				Event:     messageTypeQuit,
 				Username:  c.username,
 				CreatedAt: time.Now(),
@@ -130,7 +130,8 @@ func (c *client) read() {
 			Message: &MessageJSON{
 				Message:   messageIn.Msg,
 				Username:  c.username,
-				Uuid:      c.uuid,
+				FromUuid:  c.uuid,
+				ToUuid:    messageIn.ToUuid,
 				CreatedAt: time.Now().UTC(),
 				Event:     messageTypeMessage,
 			},
