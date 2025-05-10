@@ -24,7 +24,11 @@
   scrollbar-gutter: stable;
   height: calc(100vh - 200px);
   display: flex;
-  flex-direction: column-reverse;
+  flex-direction: column;
+}
+
+.scroll-spacer{
+  margin-top: auto;
 }
 
 .messages {

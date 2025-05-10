@@ -156,15 +156,21 @@ export default {
 
                 if (isMessageToThisUser || isSystemMsgToMe) {
                   insertMessage(data, messages.ref, isMyMessage);
-                  messages.ref.scrollTo({
-                    top: messages.ref.scrollHeight,
-                    behavior: 'smooth'
-                  });
                 }
                 break;
             }
           }
         );
+
+        const messages = getElement('messages');
+        if (messages) {
+          requestAnimationFrame(() => {
+            messages.ref.parentElement?.scrollTo({
+              top: messages.ref.parentElement?.scrollHeight,
+              behavior: 'smooth'
+            });
+          });
+        }
       },
 
       onClose(evt) {
