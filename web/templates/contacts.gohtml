@@ -4,7 +4,7 @@
         {{range $list, $contacts := .ContactLists}}
             {{if $list.Name}}
               <div>
-                <form action="/contact" data-method="post" data-cid="inviteForm">
+                <form action="/contact" data-method="post" data-sc-id="inviteForm">
                   <label for="email">Email</label>
                   <input id="email" type="text" name="email" />
                   <button type="submit">Invite</button>
@@ -16,15 +16,17 @@
                 <ul class="contact-list">
                     {{range $contact := $contacts}}
                       <li class="contact-list__item">
-                        <button class="contact-list__button" type="button" data-cid="chat_{{$contact.UserUuid}}"
-                                data-handler="click:openChat">
+                        <button class="contact-list__button" type="button"
+                                data-sc-id="chat_{{$contact.UserUuid}}"
+                                data-sc-type="chat-button"
+                                data-sc-handler="click:openChat">
                           <div class="contact-list__username">
                               {{$contact.Username}}
                           </div>
                           <div class="contact-list__email">
                               {{$contact.Email}}
                           </div>
-                          <div data-cid="isOnline_{{$contact.UserUuid}}">
+                          <div data-sc-id="isOnline_{{$contact.UserUuid}}">
                             Offline
                           </div>
                         </button>
@@ -37,7 +39,7 @@
     </div>
 
     <div class="main-content">
-      <div data-cid="contacts" data-sc-dtoggle="block:none">
+      <div data-sc-id="contacts" data-sc-dtoggle="block:none">
         <div class="invitations">
           <ul>
               {{range $invite := .Invitations}}
@@ -50,7 +52,7 @@
                       {{$invite.Email}}
 
                       {{if not $invite.IsInviter}}
-                        <form action="/invite" data-method="patch" data-cid="acceptInviteForm">
+                        <form action="/invite" data-method="patch" data-sc-id="acceptInviteForm">
                           <input type="hidden" name="uuid" value="{{$invite.InviteUuid}}" />
                           <button type="submit">
                             Accept
@@ -63,19 +65,17 @@
           </ul>
         </div>
       </div>
-      <div id="chatBody" class="chat-body" data-cid="chatBody" data-view-flip="contacts">
+      <div class="chat-body" data-sc-id="chatBody">
       </div>
     </div>
   </div>
 
-
-
-  <template id="chatTemplate" data-cid="chatTemplate">
-    <div class="messages" data-cid="messages">
+  <template data-sc-id="chatTemplate">
+    <div class="messages" data-sc-id="messages">
     </div>
 
-    <input class="chat-input" type="text" placeholder="Type your message" data-cid="messageInput"
-           data-handler="keyup:handleInput"
+    <input class="chat-input" type="text" placeholder="Type your message" data-sc-id="messageInput"
+           data-sc-handler="keyup:handleInput"
     />
   </template>
 {{end}}

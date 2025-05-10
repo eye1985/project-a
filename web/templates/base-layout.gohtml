@@ -59,10 +59,8 @@
       align-items: center;
       width: 100%;
       margin: 0 auto;
-    }
 
-    @media (width >= 414px) {
-      .header-content {
+      @media (width >= 414px) {
         justify-self: center;
         display: grid;
         grid-template-columns: 1fr auto auto;
@@ -111,10 +109,7 @@
       margin: 0;
       height: 32px;
       width: 32px;
-    }
-
-    @media (width >= 414px) {
-      .menu-button {
+      @media (width >= 414px) {
         display: none;
       }
     }
@@ -132,11 +127,9 @@
       & .toast__text {
         line-height: 1.5;
       }
-    }
 
-    @media (width >= 414px) {
-      .toast {
-        left:unset;
+      @media (width >= 414px) {
+        left: unset;
         max-width: 300px;
       }
     }
@@ -180,7 +173,7 @@
   </main>
 </div>
 
-<template data-cid="toast">
+<template data-sc-id="toast">
   <div class="toast">
     <p class="toast__text">
     </p>

@@ -1,228 +1,285 @@
-const addHandler = (el: Element, handlers: Record<string, EventListener>) => {
-  const eventAndHandler = el.getAttribute('data-handler');
-  if (!eventAndHandler) {
-    return;
-  }
+const PREFIX = 'sc';
 
-  const [event, handlerName] = eventAndHandler.split(':');
-  if (!handlerName || !event) {
-    return;
-  }
+// data-* actions
+const ID = 'id';
+const TEMPLATE_ID = 'template-id';
+const TYPE = 'type';
+// const BIND = 'bind';
+// const BIND_ACTION = 'bind-action';
+const METHOD = 'method';
+const SUCCESS_MESSAGE = 'success-message';
+const HANDLER = 'handler';
 
-  const handler = handlers[handlerName] ? handlers[handlerName] : () => {
-  };
-  el.addEventListener(event, handler);
+type Handle = (e: Event, currentCustomElement: CustomElement, is: InternalState) => void;
+type InternalState = {
+  elements: Map<string, CustomElement>;
+  handlers: Map<string, Handle>;
+  state: Map<string, any>;
+  getByType(type: string): CustomElement[];
+}
+const store: InternalState = {
+  elements: new Map(),
+  handlers: new Map(),
+  state: new Map(),
+  getByType(type: string): CustomElement[] {
+    const result: CustomElement[] = [];
+    this.elements.forEach(elm => {
+      elm.type === type && result.push(elm);
+    });
+
+    return result;
+  }
 };
 
-const addBindElements = (currentElement: Element) => {
-  const bindValue = currentElement.getAttribute('data-bind');
-  const bindAction = currentElement.getAttribute('data-bind-action');
-  if (!bindValue || !bindAction) {
-    return;
+const createDataName = (action: string) => {
+  return `data-${PREFIX}-${action}`;
+};
+
+const scanElements = (target: Element) => {
+  return Array.from(target.querySelectorAll(`[${createDataName(ID)}]`));
+};
+
+const addToInternalState = (el: Element) => {
+  const id = el.getAttribute(createDataName(ID));
+  if (!id) {
+    throw new Error(`${addToInternalState.name}: id is required`);
   }
-
-  const bindRules = bindValue.split(',');
-
-  const state: {
-    [key: string]: any;
-  } = {};
-
-  for (const rule of bindRules) {
-    const [cid, expr] = rule.split(':');
-    if (!expr || !cid) {
-      continue;
-    }
-
-    const elm = document.querySelector(`[data-cid='${cid}']`);
-    if (!elm) {
-      continue;
-    }
-
-    const trimmedExpr = expr.trim();
-    // Not supported expression
-    if (trimmedExpr.length !== 2) {
-      continue;
-    }
-
-    const exprExec = (input: string) => {
-      if (trimmedExpr.indexOf('>') !== -1) {
-        return input.trim().length > parseInt(trimmedExpr[1]!);
-      } else {
-        return input.trim().length < parseInt(trimmedExpr[1]!);
-      }
-    };
-
-    state[cid] = {
-      elm,
-      exprExec,
-      bindAction
-    };
+  if (store.elements.get(id)) {
+    throw new Error(`${addToInternalState.name}: id ${id} already exists`);
   }
+  store.elements.set(id, new CustomElement(el));
+};
 
-  for (const item in state) {
-    state[item].elm.addEventListener('input', () => {
-      const res: boolean[] = [];
-
-      for (const cid in state) {
-        res.push(state[cid].exprExec(state[cid].elm.value));
+const syncHandle = () => {
+  for (const key of store.handlers.keys()) {
+    store.elements.forEach(elm => {
+      if (elm.handleName === key && !elm.isHandleApplied && elm.handleEvent) {
+        const handle = store.handlers.get(key);
+        if (!handle) {
+          throw new Error(`${syncHandle.name}: handler ${key} not found`);
+        }
+        const newHandle = (e: Event) => {
+          handle(e, elm, store);
+        };
+        elm.ref.addEventListener(elm.handleEvent, newHandle);
+        elm.handlers.push(newHandle);
+        elm.isHandleApplied = true;
       }
-
-      res.every((num) => num)
-        ? currentElement.removeAttribute(bindAction)
-        : currentElement.setAttribute(bindAction, bindAction);
     });
   }
 };
 
-type TemplateObj = {
-  id: string,
-  template: HTMLTemplateElement
-}
-
-type TemplateStore = {
-  add(id: string, template: HTMLTemplateElement): void;
-  get(id: string): TemplateObj | undefined;
-  createClone(id: string): HTMLDivElement | null;
-  remove(randId: string): void;
-}
-
-type TemplateWrapper = {
-  id: string;
-  element: HTMLDivElement;
-}
-
-const createTemplateStore = (): TemplateStore => {
-  const templates: TemplateObj[] = [];
-  const cloneRefs: TemplateWrapper[] = [];
-
-  return {
-    add(id: string, template: HTMLTemplateElement) {
-      if (!id) {
-        throw new Error('id is required');
-      }
-
-      templates.push({
-        id,
-        template
-      });
-    },
-
-    get(id: string) {
-      return templates.filter(t => t.id === id)[0];
-    },
-
-    createClone(id: string): HTMLDivElement | null {
-      const template = templates.filter(t => t.id === id)[0];
-      if (!template) {
-        return null;
-      }
-      const wrapper = document.createElement('div');
-      const clone = template.template.content.cloneNode(true) as DocumentFragment;
-      const rand = crypto.randomUUID();
-
-      wrapper.appendChild(clone);
-      wrapper.setAttribute('data-wid', rand);
-      cloneRefs.push({
-        id: rand,
-        element: wrapper
-      });
-      return wrapper;
-    },
-
-    remove(randId: string) {
-      cloneRefs.find(clone => clone.id === randId)?.element.remove();
-    }
-  };
+export const state = {
+  get(id: string) {
+    return store.state.get(id);
+  },
+  set(id: string, value: any) {
+    store.state.set(id, value);
+  }
 };
 
-const attachActions = (elements: Element[], templates: TemplateStore, handlers: Record<string, EventListener> | null) => {
-  for (const el of elements) {
-    if (el instanceof HTMLFormElement) {
-      el.addEventListener('submit', async (e) => {
-        e.preventDefault();
+export class CustomElement {
+  id: string;
+  type: string | null = null;
+  handleName: string | null = null;
+  handleEvent: string | null = null;
+  isHandleApplied = false;
+  isTemplate = false;
+  ref: Element;
+  templateWrapperRef: Element | null = null;
+  handlers: EventListenerOrEventListenerObject[];
 
-        const action = el.getAttribute('action');
-        const method = el.getAttribute('data-method');
-        const successMessage = el.getAttribute('data-success-message');
-        if (!method || !action) {
-          return;
-        }
+  constructor(el: Element) {
+    const id = el.getAttribute(createDataName(ID));
+    if (!id) {
+      throw new Error(`${CustomElement.name}: id is required`);
+    }
 
-        const methods = ['POST', 'PUT', 'DELETE', 'PATCH'];
-        const upperCasedMethod = method.toUpperCase();
-        if (!methods.includes(upperCasedMethod)) {
-          return;
-        }
+    const type = el.getAttribute(createDataName(TYPE));
+    if (type) {
+      this.type = type;
+    }
 
-        let body: Record<string, any> = {};
-        for (const elm of el.querySelectorAll('[name]')) {
-          if (elm instanceof HTMLInputElement) {
-            const isNumber = !isNaN(Number(elm.value));
+    const handler = el.getAttribute(`${createDataName(HANDLER)}`);
 
-            if (isNumber) {
-              if (Number.isInteger(elm.value)) {
-                body[elm.name] = parseInt(elm.value);
-                continue;
-              }
-              body[elm.name] = parseFloat(elm.value);
+    this.id = id;
+    this.ref = el;
+    this.handlers = [];
+    if (handler) {
+      const handleNameAndEvent = handler.split(':');
+      if (handleNameAndEvent[0] && handleNameAndEvent[1]) {
+        this.handleEvent = handleNameAndEvent[0];
+        this.handleName = handleNameAndEvent[1];
+      }
+    }
+
+    const hasAllAttrs = this.ref.getAttribute(`${createDataName(METHOD)}`) &&
+      this.ref.getAttribute('action') &&
+      this.ref.getAttribute(`${createDataName(SUCCESS_MESSAGE)}`);
+
+    if (this.ref instanceof HTMLFormElement && hasAllAttrs) {
+      this.overrideSubmit(this.ref);
+    } else if (this.ref instanceof HTMLTemplateElement) {
+      this.isTemplate = true;
+    }
+  }
+
+  private overrideSubmit = (el: HTMLFormElement) => {
+    const handler = async (e: SubmitEvent) => {
+      e.preventDefault();
+
+      const action = el.getAttribute('action');
+      const method = el.getAttribute(`${createDataName(METHOD)}`);
+      const successMessage = el.getAttribute(`${createDataName(SUCCESS_MESSAGE)}`);
+      if (!method || !action) {
+        console.warn(`${this.overrideSubmit.name}: action or method is missing, skipping`);
+        return;
+      }
+
+      const methods = ['POST', 'PUT', 'DELETE', 'PATCH'];
+      const upperCasedMethod = method.toUpperCase();
+      if (!methods.includes(upperCasedMethod)) {
+        return;
+      }
+
+      let body: Record<string, any> = {};
+      for (const elm of el.querySelectorAll('[name]')) {
+        if (elm instanceof HTMLInputElement) {
+          const isNumber = !isNaN(Number(elm.value));
+
+          if (isNumber) {
+            if (Number.isInteger(elm.value)) {
+              body[elm.name] = parseInt(elm.value);
               continue;
             }
-            body[elm.name] = elm.value;
+            body[elm.name] = parseFloat(elm.value);
+            continue;
           }
+          body[elm.name] = elm.value;
         }
+      }
 
-        const res = await fetch(action, {
-          method: upperCasedMethod,
-          body: JSON.stringify(body),
-          credentials: 'include',
-          headers: {
-            'Content-Type': 'application/json'
-          }
-        });
-
-        if (!res.ok) {
-          const message = await res.text();
-          console.error('error: ' + message);
-          return;
-        }
-
-        const contentType = res.headers.get('Content-Type');
-        if (contentType && contentType?.length > 0) {
-          location.href = '/';
-        }
-
-        if (successMessage) {
-          const successElm = document.createElement('p');
-          successElm.innerText = successMessage;
-          el.appendChild(successElm);
-          setTimeout(() => {
-            successElm.remove();
-          }, 2000);
+      const res = await fetch(action, {
+        method: upperCasedMethod,
+        body: JSON.stringify(body),
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json'
         }
       });
+
+      if (!res.ok) {
+        const message = await res.text();
+        console.error('error: ' + message);
+        return;
+      }
+
+      const contentType = res.headers.get('Content-Type');
+      if (contentType && contentType?.length > 0) {
+        location.href = '/';
+      }
+
+      if (successMessage) {
+        const successElm = document.createElement('p');
+        successElm.innerText = successMessage;
+        el.appendChild(successElm);
+        setTimeout(() => {
+          successElm.remove();
+        }, 2000);
+      }
+    };
+    el.addEventListener('submit', handler);
+    this.handlers.push(handler as unknown as EventListener);
+  };
+
+  insertTemplateInto = (target: CustomElement | Element, clearBeforeInsert?: boolean) => {
+    const intoTarget = target instanceof CustomElement ? target.ref : target;
+
+    if (!this.isTemplate) {
+      throw new Error(`${this.insertTemplateInto.name}: element is not a template`);
+    }
+    if (!intoTarget) {
+      throw new Error(`${this.insertTemplateInto.name}: target is required`);
     }
 
-    if (el instanceof HTMLTemplateElement) {
-      templates.add(el.getAttribute('data-cid')!, el);
-    }
+    const wrapper = document.createElement('div');
+    const template = this.ref as HTMLTemplateElement;
+    const clone = template.content.cloneNode(true) as DocumentFragment;
+    wrapper.appendChild(clone);
+    wrapper.setAttribute(createDataName(TEMPLATE_ID), this.id);
+    this.templateWrapperRef = wrapper;
 
-    if (handlers) {
-      addHandler(el, handlers);
+    if (clearBeforeInsert) {
+      // TODO test this for normal Element, this might throw error
+      deleteAllFromTarget(intoTarget);
+      intoTarget.innerHTML = '';
     }
-    addBindElements(el);
+    intoTarget.appendChild(wrapper);
+    addFromTarget(wrapper);
+    syncHandle();
+  };
+
+  remove() {
+    const ref = this.isTemplate ? this.templateWrapperRef : this.ref;
+    if(ref){
+      this.handlers.forEach(handle => {
+        if (this.handleEvent) {
+          ref.removeEventListener(this.handleEvent, handle);
+        }
+      });
+      deleteAllFromTarget(ref);
+      ref.remove();
+    }
   }
+}
+
+
+export const addFromTarget = (target: Element) => {
+  const elements = scanElements(target);
+  elements.forEach(element => {
+    addToInternalState(element);
+  });
 };
 
-export const getElement = (cid: string) => {
-  const elm = document.querySelector(`[data-cid='${cid}']`);
-  if (!elm) {
-    console.warn(`Not found element ${cid}`);
-  }
+export const deleteAllFromTarget = (target: Element) => {
+  const elements = scanElements(target);
+  elements.forEach(element => {
+    const id = element.getAttribute(createDataName(ID));
+    if (!id) {
+      throw new Error(`${deleteAllFromTarget.name}: id is not found, you somehow added a non custom element into the store`);
+    }
+    const elm = store.elements.get(id);
+    if (elm) {
+      elm.handlers.forEach(handle => {
+        if (elm.handleEvent) {
+          elm.ref.removeEventListener(elm.handleEvent, handle);
+        }
+      });
+      elm.ref.remove();
+    }
 
-  return elm;
+    store.elements.delete(id);
+  });
 };
 
-// TODO create a delete cookie
+export const getElement = (id: string) => {
+  const elm = store.elements.get(id);
+  if (elm) {
+    return elm;
+  }
+
+  return null;
+};
+
+export const addHandler = (handlerName: string, handle: Handle) => {
+  const getHandle = store.handlers.get(handlerName);
+  if (getHandle) {
+    throw new Error(`${addHandler.name}: handler ${handlerName} already exists`);
+  }
+  store.handlers.set(handlerName, handle);
+  syncHandle();
+};
+
 export const getCookie = (name: string) => {
   const cookie = document.cookie
     .split(';')
@@ -242,70 +299,4 @@ export const getCookie = (name: string) => {
 
 export const deleteAllCookies = () => {
   document.cookie = 'flash=; Max-Age=0; path=/;';
-};
-
-
-export const shortcut = () => {
-  const templateStore = createTemplateStore();
-  let elements: Element[] = [];
-  let handlerNames: (string | undefined)[] = [];
-
-  let handlers: Record<string, EventListener> | null = null;
-
-  return {
-    templateStore() {
-      return templateStore;
-    },
-
-    addHandler(handlersArg: Record<string, EventListener>) {
-      const isAllHandlersPresent = Object.keys(handlersArg).every(
-        (handlerName) => handlerNames.includes(handlerName)
-      );
-
-      if (!isAllHandlersPresent) {
-        throw new Error('Not all handlers present, did you remember to add data-handler attribute to your elements?');
-      }
-
-      handlers = handlersArg;
-    },
-
-    appendScanElements(target: Element) {
-      let scanned = Array.from(target.querySelectorAll('[data-cid]'));
-      let scannedHandlerNames = scanned.map(
-        (e) => e.getAttribute('data-handler')?.split(':')[1]
-      );
-      let appendHandlers: Record<string, EventListener> | null = null;
-
-      return {
-        addHandler(handlersArg: Record<string, EventListener>) {
-          const isAllHandlersPresent = Object.keys(handlersArg).every(
-            (handlerName) => scannedHandlerNames.includes(handlerName)
-          );
-
-          if (!isAllHandlersPresent) {
-            throw new Error('Not all handlers present, did you remember to add data-handler attribute to your elements?');
-          }
-
-          appendHandlers = handlersArg;
-
-          return {
-            setActions() {
-              attachActions(scanned, templateStore, appendHandlers);
-            }
-          };
-        }
-      };
-    },
-
-    scanElements() {
-      elements = Array.from(document.querySelectorAll('[data-cid]'));
-      handlerNames = elements.map(
-        (e) => e.getAttribute('data-handler')?.split(':')[1]
-      );
-    },
-
-    setActions() {
-      attachActions(elements, templateStore, handlers);
-    }
-  };
 };

@@ -1,72 +1,38 @@
-import { getElement, shortcut } from './shortcut.js';
+import { addFromTarget, addHandler, getElement, state } from './shortcut.js';
 import { initSocket } from './websocket.js';
+const { get, set } = state;
 const socket = initSocket();
-const sc = shortcut();
-sc.scanElements();
-sc.addHandler({
-    openChat(evt) {
-        const currentButton = evt.currentTarget;
-        // TODO change do some other ids
-        document.querySelectorAll('.contact-list__button').forEach(button => {
-            button.classList.remove('active');
-        });
-        currentButton.classList.add('active');
-        const target = document.getElementById('chatBody');
-        if (!target) {
-            console.error('target not found');
-            return;
-        }
-        if (target.children.length > 0) {
-            for (const child of target.children) {
-                const dataWID = child.getAttribute('data-wid');
-                if (dataWID) {
-                    sc.templateStore().remove(dataWID);
-                }
-            }
-        }
-        const cid = currentButton.getAttribute('data-cid');
-        if (!cid) {
-            console.error('cid not found');
-            return;
-        }
-        const toUuid = cid.split('_')[1];
-        const chatTemplate = document.getElementById('chatTemplate');
-        if (!chatTemplate) {
-            console.error('chatTemplate not found');
-            return;
-        }
-        const clone = sc.templateStore().createClone('chatTemplate');
-        const rand = clone?.getAttribute('data-wid');
-        if (!rand) {
-            console.error('rand not found');
-            return;
-        }
-        if (!target) {
-            console.error('target not found');
-            return;
-        }
-        if (!clone) {
-            console.error('clone not found');
-            return;
-        }
-        target.appendChild(clone);
-        const chatSc = sc.appendScanElements(target);
-        chatSc.addHandler({
-            handleInput(evt) {
-                const event = evt;
-                if (event.key === 'Enter' && toUuid) {
-                    const inputElm = event.currentTarget;
-                    socket.send(JSON.stringify({
-                        toUuid,
-                        msg: inputElm.value
-                    }));
-                    inputElm.value = '';
-                }
-            }
-        }).setActions();
+addFromTarget(document.body);
+addHandler('openChat', (e, currentCustomElement, store) => {
+    const buttons = store.getByType('chat-button');
+    buttons.forEach(button => {
+        button.ref.classList.remove('active');
+    });
+    const currentButton = e.currentTarget;
+    currentButton.classList.add('active');
+    const chatBody = store.elements.get('chatBody');
+    if (!chatBody) {
+        throw new Error('chatBody not found');
+    }
+    const template = store.elements.get('chatTemplate');
+    if (!template) {
+        throw new Error('chatTemplate not found');
+    }
+    template.insertTemplateInto(chatBody, true);
+    set('toUuid', currentCustomElement.id.split('_')[1]);
+});
+addHandler('handleInput', (e) => {
+    const event = e;
+    const toUuid = get('toUuid');
+    if (event.key === 'Enter' && toUuid) {
+        const inputElm = event.currentTarget;
+        socket.send(JSON.stringify({
+            toUuid,
+            msg: inputElm.value
+        }));
+        inputElm.value = '';
     }
 });
-sc.setActions();
 export default {
     connect(wsUrl) {
         socket.connect(wsUrl, {
@@ -83,20 +49,20 @@ export default {
                             for (const uuid of online) {
                                 element = getElement(`isOnline_${uuid}`);
                                 if (element) {
-                                    element.textContent = 'Online';
+                                    element.ref.textContent = 'Online';
                                 }
                             }
                             break;
                         case 'join':
                             element = getElement(`isOnline_${data.uuid}`);
                             if (element) {
-                                element.textContent = 'Online';
+                                element.ref.textContent = 'Online';
                             }
                             break;
                         case 'quit':
                             element = getElement(`isOnline_${data.uuid}`);
                             if (element) {
-                                element.textContent = 'Offline';
+                                element.ref.textContent = 'Offline';
                             }
                             break;
                         case 'message':
@@ -104,6 +70,7 @@ export default {
                             if (!messages) {
                                 return;
                             }
+                            // TODO Use template or something
                             const container = document.createElement('div');
                             container.classList.add('message');
                             const date = document.createElement('div');
@@ -125,9 +92,9 @@ export default {
                             container.appendChild(from);
                             container.appendChild(p);
                             container.appendChild(date);
-                            messages.appendChild(container);
-                            messages.scrollTo({
-                                top: messages.scrollHeight,
+                            messages.ref.appendChild(container);
+                            messages.ref.scrollTo({
+                                top: messages.ref.scrollHeight,
                                 behavior: 'smooth'
                             });
                             break;
@@ -139,18 +106,18 @@ export default {
             },
             onError(evt) {
                 console.error(evt, 'on error');
-                const toastWrapper = sc.templateStore().createClone('toast');
-                if (!toastWrapper) {
-                    return;
+                const template = getElement('toast');
+                if (!template) {
+                    throw new Error('toast not found');
                 }
-                const p = toastWrapper.querySelector('p');
+                const p = template.ref.content.querySelector('p');
                 if (!p) {
-                    return;
+                    throw new Error('toast p not found');
                 }
                 p.innerText = 'Could not connect to server. Please try again later.';
-                document.body.appendChild(toastWrapper);
+                template.insertTemplateInto(document.body);
                 setTimeout(() => {
-                    sc.templateStore().remove(toastWrapper.getAttribute('data-wid'));
+                    template.remove();
                 }, 2000);
             }
         });

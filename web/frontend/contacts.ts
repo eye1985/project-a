@@ -1,86 +1,46 @@
-import { getElement, shortcut } from './shortcut.js';
+import { addFromTarget, addHandler, CustomElement, getElement, state } from './shortcut.js';
 import { initSocket, SocketMessage } from './websocket.js';
 
+const { get, set } = state;
 const socket = initSocket();
-const sc = shortcut();
-sc.scanElements();
-sc.addHandler({
-  openChat(evt) {
-    const currentButton = evt.currentTarget as HTMLButtonElement;
+addFromTarget(document.body);
 
-    // TODO change do some other ids
-    document.querySelectorAll('.contact-list__button').forEach(button => {
-      button.classList.remove('active');
-    });
-    currentButton.classList.add('active');
+addHandler('openChat', (e, currentCustomElement, store) => {
+  const buttons = store.getByType('chat-button');
+  buttons.forEach(button => {
+    button.ref.classList.remove('active');
+  });
 
-    const target = document.getElementById('chatBody');
+  const currentButton = (e.currentTarget as HTMLButtonElement);
+  currentButton.classList.add('active');
 
-    if (!target) {
-      console.error('target not found');
-      return;
-    }
+  const chatBody = store.elements.get('chatBody');
+  if (!chatBody) {
+    throw new Error('chatBody not found');
+  }
 
-    if (target.children.length > 0) {
-      for (const child of target.children) {
-        const dataWID = child.getAttribute('data-wid');
-        if (dataWID) {
-          sc.templateStore().remove(dataWID);
-        }
-      }
-    }
+  const template = store.elements.get('chatTemplate');
+  if (!template) {
+    throw new Error('chatTemplate not found');
+  }
 
-    const cid = currentButton.getAttribute('data-cid');
+  template.insertTemplateInto(chatBody, true);
+  set('toUuid', currentCustomElement.id.split('_')[1]);
+});
 
-    if (!cid) {
-      console.error('cid not found');
-      return;
-    }
-    const toUuid = cid.split('_')[1];
+addHandler('handleInput', (e) => {
+  const event = e as KeyboardEvent;
+  const toUuid = get('toUuid');
 
-    const chatTemplate = document.getElementById('chatTemplate');
-    if (!chatTemplate) {
-      console.error('chatTemplate not found');
-      return;
-    }
-
-    const clone = sc.templateStore().createClone('chatTemplate');
-    const rand = clone?.getAttribute('data-wid');
-    if (!rand) {
-      console.error('rand not found');
-      return;
-    }
-
-    if (!target) {
-      console.error('target not found');
-      return;
-    }
-
-    if (!clone) {
-      console.error('clone not found');
-      return;
-    }
-
-    target.appendChild(clone);
-
-    const chatSc = sc.appendScanElements(target);
-    chatSc.addHandler({
-      handleInput(evt) {
-        const event = evt as KeyboardEvent;
-        if (event.key === 'Enter' && toUuid) {
-          const inputElm = event.currentTarget as HTMLInputElement;
-          socket.send(JSON.stringify({
-            toUuid,
-            msg: inputElm.value
-          }));
-          inputElm.value = '';
-        }
-      }
-    }).setActions();
+  if (event.key === 'Enter' && toUuid) {
+    const inputElm = event.currentTarget as HTMLInputElement;
+    socket.send(JSON.stringify({
+      toUuid,
+      msg: inputElm.value
+    }));
+    inputElm.value = '';
   }
 });
-sc.setActions();
-
 
 export default {
   connect(wsUrl: string) {
@@ -90,7 +50,7 @@ export default {
       },
       onMessage(event) {
         const parsedSocketData: SocketMessage[] = JSON.parse(event.data);
-        let element: Element | null;
+        let element: CustomElement | null;
 
         parsedSocketData.forEach(
           (data: SocketMessage) => {
@@ -100,20 +60,20 @@ export default {
                 for (const uuid of online) {
                   element = getElement(`isOnline_${uuid}`);
                   if (element) {
-                    element.textContent = 'Online';
+                    element.ref.textContent = 'Online';
                   }
                 }
                 break;
               case 'join':
                 element = getElement(`isOnline_${data.uuid}`);
                 if (element) {
-                  element.textContent = 'Online';
+                  element.ref.textContent = 'Online';
                 }
                 break;
               case 'quit':
                 element = getElement(`isOnline_${data.uuid}`);
                 if (element) {
-                  element.textContent = 'Offline';
+                  element.ref.textContent = 'Offline';
                 }
                 break;
               case 'message':
@@ -122,6 +82,7 @@ export default {
                   return;
                 }
 
+                // TODO Use template or something
                 const container = document.createElement('div');
                 container.classList.add('message');
                 const date = document.createElement('div');
@@ -145,10 +106,10 @@ export default {
                 container.appendChild(p);
                 container.appendChild(date);
 
-                messages.appendChild(container);
+                messages.ref.appendChild(container);
 
-                messages.scrollTo({
-                  top: messages.scrollHeight,
+                messages.ref.scrollTo({
+                  top: messages.ref.scrollHeight,
                   behavior: 'smooth'
                 });
                 break;
@@ -163,21 +124,20 @@ export default {
 
       onError(evt) {
         console.error(evt, 'on error');
-
-        const toastWrapper = sc.templateStore().createClone('toast');
-        if (!toastWrapper) {
-          return;
+        const template = getElement('toast');
+        if (!template) {
+          throw new Error('toast not found');
         }
 
-        const p = toastWrapper.querySelector('p');
+        const p = (template.ref as HTMLTemplateElement).content.querySelector('p');
         if (!p) {
-          return;
+          throw new Error('toast p not found');
         }
         p.innerText = 'Could not connect to server. Please try again later.';
-        document.body.appendChild(toastWrapper);
+        template.insertTemplateInto(document.body);
 
         setTimeout(() => {
-          sc.templateStore().remove(toastWrapper.getAttribute('data-wid')!);
+          template.remove();
         }, 2000);
       }
     });
