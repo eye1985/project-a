@@ -29,7 +29,7 @@ addFormMethod('onsuccess', (success) => {
     if (template) {
         template.insertTemplateInto(layout, {
             clearBeforeInsert: true,
-            className: 'layout-item'
+            classNames: ['layout-item']
         });
     }
 });

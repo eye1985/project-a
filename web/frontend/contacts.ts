@@ -40,7 +40,8 @@ addHandler('openChat', (e, currentCustomElement, store) => {
       throw new Error('messages not found');
     }
     JSON.parse(history).forEach((data: SocketMessage) => {
-      insertMessage(data, messages.ref);
+      const isMyMessage = data.fromUuid === get('myUuid');
+      insertMessage(data, messages.ref, isMyMessage);
     });
   }
 });
@@ -59,7 +60,7 @@ addHandler('handleInput', (e) => {
   }
 });
 
-const insertMessage = (data: SocketMessage, target: Element) => {
+const insertMessage = (data: SocketMessage, target: Element, isCurrentUser: boolean) => {
   const message = getElement('messageTemplate');
   if (!message) {
     throw new Error('messageTemplate not found');
@@ -83,14 +84,27 @@ const insertMessage = (data: SocketMessage, target: Element) => {
     text.innerText = `${data.message}`;
   }
 
+  const classNames = isCurrentUser ? ['message', 'me'] : ['message'];
   message.insertTemplateInto(target, {
     clearBeforeInsert: false,
-    className: 'message'
+    classNames
   });
 };
 
+const insertChatHistory = (toUuid: string, data: SocketMessage) => {
+  const history = sessionStorage.getItem(toUuid);
+  if (!history) {
+    sessionStorage.setItem(toUuid, JSON.stringify([data]));
+  } else {
+    sessionStorage.setItem(toUuid, JSON.stringify([...JSON.parse(history), data]));
+  }
+};
 export default {
   connect(wsUrl: string, myUuid: string) {
+    if (!myUuid) {
+      throw new Error('myUuid not found');
+    }
+    set('myUuid', myUuid);
     socket.connect(wsUrl, {
       onOpen(evt) {
         console.log(evt, 'event onopen');
@@ -126,25 +140,22 @@ export default {
               case 'message':
                 const toUuid = get('toUuid');
                 const messages = getElement('messages');
+                const isMyMessage = data.fromUuid === myUuid;
                 const isSystemMsgToMe = data.username === 'System' && data.fromUuid === myUuid;
 
                 const isMessageToThisUser = data.fromUuid === toUuid || data.toUuid === toUuid;
                 if (data.username !== 'System' && isMessageToThisUser) {
-                  const history = sessionStorage.getItem(toUuid);
-                  if (!history) {
-                    sessionStorage.setItem(toUuid, JSON.stringify([data]));
-                  } else {
-                    sessionStorage.setItem(toUuid, JSON.stringify([...JSON.parse(history), data]));
-                  }
+                  insertChatHistory(toUuid, data);
                 }
 
                 if (!messages) {
+                  insertChatHistory(data.fromUuid, data);
                   console.warn('cant find messages');
                   return;
                 }
 
                 if (isMessageToThisUser || isSystemMsgToMe) {
-                  insertMessage(data, messages.ref);
+                  insertMessage(data, messages.ref, isMyMessage);
                   messages.ref.scrollTo({
                     top: messages.ref.scrollHeight,
                     behavior: 'smooth'

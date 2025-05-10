@@ -207,7 +207,7 @@ export class CustomElement {
 
   insertTemplateInto = (target: CustomElement | Element, options?: {
     clearBeforeInsert?: boolean
-    className?: string
+    classNames?: string[]
   }) => {
     const intoTarget = target instanceof CustomElement ? target.ref : target;
 
@@ -223,8 +223,10 @@ export class CustomElement {
     const clone = template.content.cloneNode(true) as DocumentFragment;
     wrapper.appendChild(clone);
     wrapper.setAttribute(createDataName(TEMPLATE_ID), this.id);
-    if (options && options.className) {
-      wrapper.classList.add(options.className);
+    if (options && options.classNames) {
+      options.classNames.forEach(className => {
+        wrapper.classList.add(className);
+      });
     }
     this.templateWrapperRef = wrapper;
 
