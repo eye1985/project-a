@@ -6,7 +6,12 @@ import (
 )
 
 func RegisterRoutes(m *middleware.Middleware, h *Handler, as shared.AuthService) {
-	m.HandleFunc("POST /createMagicLink", h.CreateMagicLinkCode, middleware.AllowOnlyPost)
+	m.HandleFunc(
+		"POST /createMagicLink",
+		h.CreateMagicLinkCode,
+		middleware.AllowOnlyPost,
+		middleware.AllowOnlyApplicationJson,
+	)
 	m.HandleFunc(
 		"POST /logout", h.Logout,
 		middleware.AllowOnlyPost,

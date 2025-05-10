@@ -24,7 +24,9 @@ addHandler('openChat', (e, currentCustomElement, store) => {
     throw new Error('chatTemplate not found');
   }
 
-  template.insertTemplateInto(chatBody, true);
+  template.insertTemplateInto(chatBody, {
+    clearBeforeInsert: true
+  });
   set('toUuid', currentCustomElement.id.split('_')[1]);
 });
 

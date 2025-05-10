@@ -3,12 +3,12 @@ const PREFIX = 'sc';
 const ID = 'id';
 const TEMPLATE_ID = 'template-id';
 const TYPE = 'type';
-// const BIND = 'bind';
-// const BIND_ACTION = 'bind-action';
 const METHOD = 'method';
-const SUCCESS_MESSAGE = 'success-message';
+const FORM_ON_ERROR = 'form-onerror';
+const FORM_ON_SUCCESS = 'form-onsuccess';
 const HANDLER = 'handler';
 const store = {
+    formMethods: new Map(),
     elements: new Map(),
     handlers: new Map(),
     state: new Map(),
@@ -93,8 +93,7 @@ export class CustomElement {
             }
         }
         const hasAllAttrs = this.ref.getAttribute(`${createDataName(METHOD)}`) &&
-            this.ref.getAttribute('action') &&
-            this.ref.getAttribute(`${createDataName(SUCCESS_MESSAGE)}`);
+            this.ref.getAttribute('action');
         if (this.ref instanceof HTMLFormElement && hasAllAttrs) {
             this.overrideSubmit(this.ref);
         }
@@ -107,7 +106,8 @@ export class CustomElement {
             e.preventDefault();
             const action = el.getAttribute('action');
             const method = el.getAttribute(`${createDataName(METHOD)}`);
-            const successMessage = el.getAttribute(`${createDataName(SUCCESS_MESSAGE)}`);
+            const formOnSuccess = el.getAttribute(`${createDataName(FORM_ON_SUCCESS)}`);
+            const formOnError = el.getAttribute(`${createDataName(FORM_ON_ERROR)}`);
             if (!method || !action) {
                 console.warn(`${this.overrideSubmit.name}: action or method is missing, skipping`);
                 return;
@@ -115,6 +115,7 @@ export class CustomElement {
             const methods = ['POST', 'PUT', 'DELETE', 'PATCH'];
             const upperCasedMethod = method.toUpperCase();
             if (!methods.includes(upperCasedMethod)) {
+                console.warn(`${this.overrideSubmit.name}: method ${method} is not supported, skipping`);
                 return;
             }
             let body = {};
@@ -132,36 +133,46 @@ export class CustomElement {
                     body[elm.name] = elm.value;
                 }
             }
-            const res = await fetch(action, {
-                method: upperCasedMethod,
-                body: JSON.stringify(body),
-                credentials: 'include',
-                headers: {
-                    'Content-Type': 'application/json'
+            try {
+                const res = await fetch(action, {
+                    method: upperCasedMethod,
+                    body: JSON.stringify(body),
+                    credentials: 'include',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+                if (!res.ok) {
+                    const message = await res.text();
+                    if (!formOnError) {
+                        console.error('error: ' + message);
+                        return;
+                    }
+                    const errorFn = store.formMethods.get(formOnError);
+                    if (!errorFn) {
+                        return;
+                    }
+                    errorFn(message);
+                    return;
                 }
-            });
-            if (!res.ok) {
-                const message = await res.text();
-                console.error('error: ' + message);
-                return;
+                if (formOnSuccess) {
+                    const json = await res.json();
+                    const successFn = store.formMethods.get(formOnSuccess);
+                    if (!successFn) {
+                        throw new Error(`${this.overrideSubmit.name}: success handler ${formOnSuccess} not found`);
+                    }
+                    successFn(json);
+                }
             }
-            const contentType = res.headers.get('Content-Type');
-            if (contentType && contentType?.length > 0) {
-                location.href = '/';
-            }
-            if (successMessage) {
-                const successElm = document.createElement('p');
-                successElm.innerText = successMessage;
-                el.appendChild(successElm);
-                setTimeout(() => {
-                    successElm.remove();
-                }, 2000);
+            catch (e) {
+                const error = e;
+                console.error(error.message);
             }
         };
         el.addEventListener('submit', handler);
         this.handlers.push(handler);
     };
-    insertTemplateInto = (target, clearBeforeInsert) => {
+    insertTemplateInto = (target, options) => {
         const intoTarget = target instanceof CustomElement ? target.ref : target;
         if (!this.isTemplate) {
             throw new Error(`${this.insertTemplateInto.name}: element is not a template`);
@@ -174,8 +185,11 @@ export class CustomElement {
         const clone = template.content.cloneNode(true);
         wrapper.appendChild(clone);
         wrapper.setAttribute(createDataName(TEMPLATE_ID), this.id);
+        if (options && options.className) {
+            wrapper.classList.add(options.className);
+        }
         this.templateWrapperRef = wrapper;
-        if (clearBeforeInsert) {
+        if (options && options.clearBeforeInsert) {
             // TODO test this for normal Element, this might throw error
             deleteAllFromTarget(intoTarget);
             intoTarget.innerHTML = '';
@@ -236,6 +250,13 @@ export const addHandler = (handlerName, handle) => {
     }
     store.handlers.set(handlerName, handle);
     syncHandle();
+};
+export const addFormMethod = (methodName, method) => {
+    const getMethod = store.formMethods.get(methodName);
+    if (getMethod) {
+        throw new Error(`${addFormMethod.name}: method ${methodName} already exists`);
+    }
+    store.formMethods.set(methodName, method);
 };
 export const getCookie = (name) => {
     const cookie = document.cookie

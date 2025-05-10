@@ -59,7 +59,8 @@
 </head>
 <body>
 <div class="layout">
-  <form class="layout-item" method="POST" action="/createMagicLink">
+  <form class="layout-item" data-sc-method="POST" action="/createMagicLink" data-sc-id="registerForm"
+        data-sc-form-onerror="onerror" data-sc-form-onsuccess="onsuccess">
     <h1>Register / Login</h1>
     <div class="center">
       <label class="d-none" for="email">
@@ -69,30 +70,23 @@
     </div>
   </form>
 </div>
-<template data-cid="toast">
+<template data-sc-id="toast">
   <div class="toast">
     <p class="toast__text">
     </p>
   </div>
 </template>
 
+<template data-sc-id="emailSent">
+  <div class="layout-item">
+    <h2>
+      Check your Inbox for a magic link!
+    </h2>
+  </div>
+</template>
+
 <script type="module">
-  // TODO this is broken, fix later
-  import { shortcut, getCookie, deleteAllCookies } from './assets/dist/shortcut.js';
-
-  const sc = shortcut();
-  sc.scanElements();
-  sc.setActions();
-
-  const cookie = getCookie('flash');
-  const toastWrapper = sc.templateStore().createClone('toast');
-
-  if (toastWrapper && cookie) {
-    const p = toastWrapper.querySelector('p');
-    p.innerText = cookie.value;
-    document.body.appendChild(toastWrapper);
-    deleteAllCookies();
-  }
+  import './assets/dist/register.js';
 </script>
 </body>
 </html>

@@ -2,6 +2,7 @@ package auth
 
 import (
 	"context"
+	"encoding/json"
 	"log"
 	"net/http"
 	"net/mail"
@@ -16,16 +17,13 @@ type Handler struct {
 	UserlistRepo contacts.Repository
 }
 
-func createMagicLink(ctx context.Context, email string, h *Handler) (*shared.User, string, error) {
-	u, err := h.UserRepo.GetUserByEmail(ctx, email)
-	if err != nil {
-		return nil, "", err
-	}
+func createMagicLink(ctx context.Context, email string, h *Handler) (string, error) {
 	code, err := h.Service.CreateMagicLink(ctx, email)
 	if err != nil {
-		return nil, "", err
+		return "", err
 	}
-	return u, code, nil
+
+	return code, nil
 }
 
 func (h *Handler) RegisterUser(w http.ResponseWriter, r *http.Request) {
@@ -136,28 +134,38 @@ func (h *Handler) SignIn(w http.ResponseWriter, r *http.Request) {
 
 // TODO add some security for this
 func (h *Handler) CreateMagicLinkCode(w http.ResponseWriter, r *http.Request) {
-	err := r.ParseForm()
+	var magicLink MagicLink
+
+	decoder := json.NewDecoder(r.Body)
+	decoder.DisallowUnknownFields()
+	err := decoder.Decode(&magicLink)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
-	email := r.Form.Get("email")
-	_, err = mail.ParseAddress(email)
+	_, err = mail.ParseAddress(magicLink.Email)
 	if err != nil {
 		http.Error(w, "Invalid email", http.StatusBadRequest)
 		return
 	}
 
-	_, magicCode, err := createMagicLink(r.Context(), email, h)
+	magicCode, err := createMagicLink(r.Context(), magicLink.Email, h)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
+	if magicCode == "" {
+		http.Error(w, "Could not create magic link", http.StatusInternalServerError)
+		return
+	}
 
-	if magicCode != "" {
-		// TODO Send email here
-		http.Redirect(w, r, "/?magicLinkCode="+magicCode, http.StatusSeeOther)
+	// TODO send email
+	m := map[string]string{}
+	m["magicLinkCode"] = magicCode
+	if err := json.NewEncoder(w).Encode(m); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
 	}
 }
 
