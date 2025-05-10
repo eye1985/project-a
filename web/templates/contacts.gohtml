@@ -1,15 +1,40 @@
 {{define "main-content"}}
   <div class="contact-layout">
     <div class="sidebar">
+      <form action="/contact" data-method="post" data-sc-id="inviteForm">
+        <label for="email">Email</label>
+        <input id="email" type="text" name="email" />
+        <button type="submit">Invite</button>
+      </form>
+      <div data-sc-id="contacts">
+        <div class="invitations">
+          <ul>
+              {{range $invite := .Invitations}}
+                <li>
+                  <div>
+                      {{if $invite.IsInviter}}
+                        You have invited:
+                      {{end}}
+
+                      {{$invite.Email}}
+
+                      {{if not $invite.IsInviter}}
+                        <form action="/invite" data-method="patch" data-sc-id="acceptInviteForm">
+                          <input type="hidden" name="uuid" value="{{$invite.InviteUuid}}" />
+                          <button type="submit">
+                            Accept
+                          </button>
+                        </form>
+                      {{end}}
+                  </div>
+                </li>
+              {{end}}
+          </ul>
+        </div>
+      </div>
         {{range $list, $contacts := .ContactLists}}
             {{if $list.Name}}
               <div>
-                <form action="/contact" data-method="post" data-sc-id="inviteForm">
-                  <label for="email">Email</label>
-                  <input id="email" type="text" name="email" />
-                  <button type="submit">Invite</button>
-                </form>
-
                 <h2>
                     {{$list.Name}}:
                 </h2>
@@ -39,44 +64,28 @@
     </div>
 
     <div class="main-content">
-      <div data-sc-id="contacts" data-sc-dtoggle="block:none">
-        <div class="invitations">
-          <ul>
-              {{range $invite := .Invitations}}
-                <li>
-                  <div>
-                      {{if $invite.IsInviter}}
-                        You have invited:
-                      {{end}}
-
-                      {{$invite.Email}}
-
-                      {{if not $invite.IsInviter}}
-                        <form action="/invite" data-method="patch" data-sc-id="acceptInviteForm">
-                          <input type="hidden" name="uuid" value="{{$invite.InviteUuid}}" />
-                          <button type="submit">
-                            Accept
-                          </button>
-                        </form>
-                      {{end}}
-                  </div>
-                </li>
-              {{end}}
-          </ul>
-        </div>
-      </div>
       <div class="chat-body" data-sc-id="chatBody">
       </div>
     </div>
   </div>
 
   <template data-sc-id="chatTemplate">
-    <div class="messages" data-sc-id="messages">
+    <div class="scroll-container">
+      <div class="messages" data-sc-id="messages">
+      </div>
     </div>
 
-    <input class="chat-input" type="text" placeholder="Type your message" data-sc-id="messageInput"
-           data-sc-handler="keyup:handleInput"
-    />
+    <div class="scroll-stable">
+      <input class="chat-input" type="text" placeholder="Type your message" data-sc-id="messageInput"
+             data-sc-handler="keyup:handleInput"
+      />
+    </div>
+  </template>
+
+  <template data-sc-id="messageTemplate">
+    <div class="message-date"></div>
+    <div class="message-from"></div>
+    <p class="message-text"></p>
   </template>
 {{end}}
 
@@ -85,6 +94,7 @@
     import contacts from './assets/dist/contacts.js';
 
     const wsUrl = "{{.WsUrl}}";
-    contacts.connect(wsUrl);
+    const uuid = "{{.Uuid}}";
+    contacts.connect(wsUrl, uuid);
   </script>
 {{end}}

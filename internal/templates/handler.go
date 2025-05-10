@@ -3,7 +3,6 @@ package templates
 import (
 	"fmt"
 	"html/template"
-	"log"
 	"net/http"
 	"project-a/internal/contacts"
 	"project-a/internal/shared"
@@ -104,8 +103,6 @@ func (h *Handler) RenderContacts(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		log.Printf("listOfContact: %v", listOfContact)
-
 		listMap[ul] = listOfContact
 	}
 
@@ -136,6 +133,7 @@ func (h *Handler) RenderContacts(w http.ResponseWriter, r *http.Request) {
 		w, &ContactListPage{
 			Title:        "My lists",
 			Username:     u.Username,
+			Uuid:         u.Uuid,
 			ContactLists: listMap,
 			Invitations:  invitationTemplates,
 			WsUrl:        h.wsUrl,

@@ -28,6 +28,7 @@ type ContactListPage struct {
 	Title        string
 	Css          string
 	Username     string
+	Uuid         uuid.UUID
 	ContactLists map[*contacts.List][]*contacts.Contact
 	Invitations  []*InvitationTemplate
 	WsUrl        string

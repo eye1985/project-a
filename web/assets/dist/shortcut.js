@@ -236,6 +236,9 @@ export const deleteAllFromTarget = (target) => {
         store.elements.delete(id);
     });
 };
+export const isTemplate = (el) => {
+    return el instanceof HTMLTemplateElement;
+};
 export const getElement = (id) => {
     const elm = store.elements.get(id);
     if (elm) {

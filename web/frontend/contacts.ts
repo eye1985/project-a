@@ -1,4 +1,4 @@
-import { addFromTarget, addHandler, CustomElement, getElement, state } from './shortcut.js';
+import { addFromTarget, addHandler, CustomElement, getElement, isTemplate, state } from './shortcut.js';
 import { initSocket, SocketMessage } from './websocket.js';
 
 const { get, set } = state;
@@ -27,7 +27,22 @@ addHandler('openChat', (e, currentCustomElement, store) => {
   template.insertTemplateInto(chatBody, {
     clearBeforeInsert: true
   });
-  set('toUuid', currentCustomElement.id.split('_')[1]);
+
+  const toUuid = currentCustomElement.id.split('_')[1];
+  set('toUuid', toUuid);
+  if (!toUuid) {
+    throw new Error('toUuid not found');
+  }
+  const history = sessionStorage.getItem(toUuid);
+  if (history) {
+    const messages = getElement('messages');
+    if (!messages) {
+      throw new Error('messages not found');
+    }
+    JSON.parse(history).forEach((data: SocketMessage) => {
+      insertMessage(data, messages.ref);
+    });
+  }
 });
 
 addHandler('handleInput', (e) => {
@@ -44,8 +59,38 @@ addHandler('handleInput', (e) => {
   }
 });
 
+const insertMessage = (data: SocketMessage, target: Element) => {
+  const message = getElement('messageTemplate');
+  if (!message) {
+    throw new Error('messageTemplate not found');
+  }
+
+  if (isTemplate(message.ref)) {
+    const date = message.ref.content.querySelector('.message-date') as HTMLDivElement;
+    const from = message.ref.content.querySelector('.message-from') as HTMLDivElement;
+    const text = message.ref.content.querySelector('.message-text') as HTMLDivElement;
+
+    date.innerText = `${new Date(data.createdAt).toLocaleString('en-US', {
+      month: 'short',
+      day: 'numeric',
+      hour: 'numeric',
+      minute: 'numeric',
+      second: 'numeric',
+      hour12: false
+    })}`;
+
+    from.innerText = `${data.username}`;
+    text.innerText = `${data.message}`;
+  }
+
+  message.insertTemplateInto(target, {
+    clearBeforeInsert: false,
+    className: 'message'
+  });
+};
+
 export default {
-  connect(wsUrl: string) {
+  connect(wsUrl: string, myUuid: string) {
     socket.connect(wsUrl, {
       onOpen(evt) {
         console.log(evt, 'event onopen');
@@ -80,40 +125,30 @@ export default {
                 break;
               case 'message':
                 const messages = getElement('messages');
+                const isToCurrentUuid = data.uuid === get('toUuid');
+                const isMyMessage = data.uuid === myUuid;
+
+                // if (data.username !== 'System' && !isToCurrentUuid && !isMyMessage) {
+                //   const history = sessionStorage.getItem(data.uuid);
+                //   if (!history) {
+                //     sessionStorage.setItem(data.uuid, JSON.stringify([data]));
+                //   } else {
+                //     sessionStorage.setItem(data.uuid, JSON.stringify([...JSON.parse(history), data]));
+                //   }
+                // }
+
                 if (!messages) {
+                  console.warn('cant find messages');
                   return;
                 }
 
-                // TODO Use template or something
-                const container = document.createElement('div');
-                container.classList.add('message');
-                const date = document.createElement('div');
-                date.classList.add('message-date');
-                const from = document.createElement('div');
-                from.classList.add('message-from');
-                const p = document.createElement('p');
-                p.classList.add('message-text');
-                from.innerText = `${data.username}`;
-                p.innerText = `${data.message}`;
-                date.innerText = `${new Date(data.createdAt).toLocaleString('en-US', {
-                  month: 'short',
-                  day: 'numeric',
-                  hour: 'numeric',
-                  minute: 'numeric',
-                  second: 'numeric',
-                  hour12: false
-                })}`;
-
-                container.appendChild(from);
-                container.appendChild(p);
-                container.appendChild(date);
-
-                messages.ref.appendChild(container);
-
-                messages.ref.scrollTo({
-                  top: messages.ref.scrollHeight,
-                  behavior: 'smooth'
-                });
+                if (isToCurrentUuid || isMyMessage) {
+                  insertMessage(data, messages.ref);
+                  messages.ref.scrollTo({
+                    top: messages.ref.scrollHeight,
+                    behavior: 'smooth'
+                  });
+                }
                 break;
             }
           }

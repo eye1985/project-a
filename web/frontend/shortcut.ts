@@ -87,11 +87,11 @@ export class CustomElement {
   handleEvent: string | null = null;
   isHandleApplied = false;
   isTemplate = false;
-  ref: Element;
+  ref: Element | HTMLTemplateElement;
   templateWrapperRef: Element | null = null;
   handlers: EventListenerOrEventListenerObject[];
 
-  constructor(el: Element) {
+  constructor(el: Element | HTMLTemplateElement) {
     const id = el.getAttribute(createDataName(ID));
     if (!id) {
       throw new Error(`${CustomElement.name}: id is required`);
@@ -278,6 +278,10 @@ export const deleteAllFromTarget = (target: Element) => {
 
     store.elements.delete(id);
   });
+};
+
+export const isTemplate = (el: Element | HTMLTemplateElement): el is HTMLTemplateElement => {
+  return el instanceof HTMLTemplateElement;
 };
 
 export const getElement = (id: string) => {
