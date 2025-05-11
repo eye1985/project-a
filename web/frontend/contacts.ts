@@ -1,4 +1,12 @@
-import { addFromTarget, addHandler, CustomElement, getElement, isTemplate, state } from './shortcut.js';
+import {
+  addFormMethod,
+  addFromTarget,
+  addHandler,
+  CustomElement,
+  getElement,
+  isTemplate,
+  state,
+} from './shortcut.js';
 import { initSocket, SocketMessage } from './websocket.js';
 
 const { get, set } = state;
@@ -7,11 +15,11 @@ addFromTarget(document.body);
 
 addHandler('openChat', (e, currentCustomElement, store) => {
   const buttons = store.getByType('chat-button');
-  buttons.forEach(button => {
+  buttons.forEach((button) => {
     button.ref.classList.remove('active');
   });
 
-  const currentButton = (e.currentTarget as HTMLButtonElement);
+  const currentButton = e.currentTarget as HTMLButtonElement;
   currentButton.classList.add('active');
 
   const chatBody = store.elements.get('chatBody');
@@ -25,7 +33,7 @@ addHandler('openChat', (e, currentCustomElement, store) => {
   }
 
   template.insertTemplateInto(chatBody, {
-    clearBeforeInsert: true
+    clearBeforeInsert: true,
   });
 
   const toUuid = currentCustomElement.id.split('_')[1];
@@ -56,24 +64,44 @@ addHandler('handleInput', (e) => {
   }
 
   if (event.key === 'Enter' && toUuid && inputElm.value.trim().length > 0) {
-    socket.send(JSON.stringify({
-      toUuid,
-      msg: inputElm.value
-    }));
+    socket.send(
+      JSON.stringify({
+        toUuid,
+        msg: inputElm.value.trim(),
+      }),
+    );
     inputElm.value = '';
   }
 });
 
-const insertMessage = (data: SocketMessage, target: Element, isCurrentUser: boolean) => {
+addFormMethod('inviteOnError', (errorMsg: string) => {
+  (getElement('inviteError')?.ref as HTMLDivElement).innerText = errorMsg;
+});
+
+addFormMethod('inviteOnSuccess', () => {
+  location.reload();
+});
+
+const insertMessage = (
+  data: SocketMessage,
+  target: Element,
+  isCurrentUser: boolean,
+) => {
   const message = getElement('messageTemplate');
   if (!message) {
     throw new Error('messageTemplate not found');
   }
 
   if (isTemplate(message.ref)) {
-    const date = message.ref.content.querySelector('.message-date') as HTMLDivElement;
-    const from = message.ref.content.querySelector('.message-from') as HTMLDivElement;
-    const text = message.ref.content.querySelector('.message-text') as HTMLDivElement;
+    const date = message.ref.content.querySelector(
+      '.message-date',
+    ) as HTMLDivElement;
+    const from = message.ref.content.querySelector(
+      '.message-from',
+    ) as HTMLDivElement;
+    const text = message.ref.content.querySelector(
+      '.message-text',
+    ) as HTMLDivElement;
 
     date.innerText = `${new Date(data.createdAt).toLocaleString('en-US', {
       month: 'short',
@@ -81,7 +109,7 @@ const insertMessage = (data: SocketMessage, target: Element, isCurrentUser: bool
       hour: 'numeric',
       minute: 'numeric',
       second: 'numeric',
-      hour12: false
+      hour12: false,
     })}`;
 
     from.innerText = `${data.username}`;
@@ -91,7 +119,7 @@ const insertMessage = (data: SocketMessage, target: Element, isCurrentUser: bool
   const classNames = isCurrentUser ? ['message', 'me'] : ['message'];
   message.insertTemplateInto(target, {
     clearBeforeInsert: false,
-    classNames
+    classNames,
   });
 };
 
@@ -100,7 +128,10 @@ const insertChatHistory = (toUuid: string, data: SocketMessage) => {
   if (!history) {
     sessionStorage.setItem(toUuid, JSON.stringify([data]));
   } else {
-    sessionStorage.setItem(toUuid, JSON.stringify([...JSON.parse(history), data]));
+    sessionStorage.setItem(
+      toUuid,
+      JSON.stringify([...JSON.parse(history), data]),
+    );
   }
 };
 export default {
@@ -117,61 +148,61 @@ export default {
         const parsedSocketData: SocketMessage[] = JSON.parse(event.data);
         let element: CustomElement | null;
 
-        parsedSocketData.forEach(
-          (data: SocketMessage) => {
-            switch (data.event) {
-              case 'isOnline':
-                const online = JSON.parse(data.message);
-                for (const uuid of online) {
-                  element = getElement(`isOnline_${uuid}`);
-                  if (element) {
-                    element.ref.textContent = 'Online';
-                  }
-                }
-                break;
-              case 'join':
-                element = getElement(`isOnline_${data.fromUuid}`);
+        parsedSocketData.forEach((data: SocketMessage) => {
+          switch (data.event) {
+            case 'isOnline':
+              const online = JSON.parse(data.message);
+              for (const uuid of online) {
+                element = getElement(`isOnline_${uuid}`);
                 if (element) {
                   element.ref.textContent = 'Online';
                 }
-                break;
-              case 'quit':
-                element = getElement(`isOnline_${data.fromUuid}`);
-                if (element) {
-                  element.ref.textContent = 'Offline';
-                }
-                break;
-              case 'message':
-                const toUuid = get('toUuid');
-                const messages = getElement('messages');
-                const isMyMessage = data.fromUuid === myUuid;
-                const isSystemMsgToMe = data.username === 'System' && data.fromUuid === myUuid;
+              }
+              break;
+            case 'join':
+              element = getElement(`isOnline_${data.fromUuid}`);
+              if (element) {
+                element.ref.textContent = 'Online';
+              }
+              break;
+            case 'quit':
+              element = getElement(`isOnline_${data.fromUuid}`);
+              if (element) {
+                element.ref.textContent = 'Offline';
+              }
+              break;
+            case 'message':
+              const toUuid = get('toUuid');
+              const messages = getElement('messages');
+              const isMyMessage = data.fromUuid === myUuid;
+              const isSystemMsgToMe =
+                data.username === 'System' && data.fromUuid === myUuid;
 
-                const isMessageToThisUser = data.fromUuid === toUuid || data.toUuid === toUuid;
-                if (data.username !== 'System' && isMessageToThisUser) {
-                  insertChatHistory(toUuid, data);
-                }
+              const isMessageToThisUser =
+                data.fromUuid === toUuid || data.toUuid === toUuid;
+              if (data.username !== 'System' && isMessageToThisUser) {
+                insertChatHistory(toUuid, data);
+              }
 
-                if (!messages) {
-                  insertChatHistory(data.fromUuid, data);
-                  console.warn('cant find messages');
-                  return;
-                }
+              if (!messages) {
+                insertChatHistory(data.fromUuid, data);
+                console.warn('cant find messages');
+                return;
+              }
 
-                if (isMessageToThisUser || isSystemMsgToMe) {
-                  insertMessage(data, messages.ref, isMyMessage);
-                }
-                break;
-            }
+              if (isMessageToThisUser || isSystemMsgToMe) {
+                insertMessage(data, messages.ref, isMyMessage);
+              }
+              break;
           }
-        );
+        });
 
         const messages = getElement('messages');
         if (messages) {
           requestAnimationFrame(() => {
             messages.ref.parentElement?.scrollTo({
               top: messages.ref.parentElement?.scrollHeight,
-              behavior: 'smooth'
+              behavior: 'smooth',
             });
           });
         }
@@ -188,7 +219,9 @@ export default {
           throw new Error('toast not found');
         }
 
-        const p = (template.ref as HTMLTemplateElement).content.querySelector('p');
+        const p = (template.ref as HTMLTemplateElement).content.querySelector(
+          'p',
+        );
         if (!p) {
           throw new Error('toast p not found');
         }
@@ -198,7 +231,7 @@ export default {
         setTimeout(() => {
           template.remove();
         }, 2000);
-      }
+      },
     });
-  }
+  },
 };

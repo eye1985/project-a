@@ -14,11 +14,11 @@ const store = {
     state: new Map(),
     getByType(type) {
         const result = [];
-        this.elements.forEach(elm => {
+        this.elements.forEach((elm) => {
             elm.type === type && result.push(elm);
         });
         return result;
-    }
+    },
 };
 const createDataName = (action) => {
     return `data-${PREFIX}-${action}`;
@@ -38,7 +38,7 @@ const addToInternalState = (el) => {
 };
 const syncHandle = () => {
     for (const key of store.handlers.keys()) {
-        store.elements.forEach(elm => {
+        store.elements.forEach((elm) => {
             if (elm.handleName === key && !elm.isHandleApplied && elm.handleEvent) {
                 const handle = store.handlers.get(key);
                 if (!handle) {
@@ -60,7 +60,7 @@ export const state = {
     },
     set(id, value) {
         store.state.set(id, value);
-    }
+    },
 };
 export class CustomElement {
     id;
@@ -139,8 +139,8 @@ export class CustomElement {
                     body: JSON.stringify(body),
                     credentials: 'include',
                     headers: {
-                        'Content-Type': 'application/json'
-                    }
+                        'Content-Type': 'application/json',
+                    },
                 });
                 if (!res.ok) {
                     const message = await res.text();
@@ -156,7 +156,10 @@ export class CustomElement {
                     return;
                 }
                 if (formOnSuccess) {
-                    const json = await res.json();
+                    const isJson = res.headers
+                        .get('content-type')
+                        ?.includes('application/json');
+                    const json = isJson ? await res.json() : null;
                     const successFn = store.formMethods.get(formOnSuccess);
                     if (!successFn) {
                         throw new Error(`${this.overrideSubmit.name}: success handler ${formOnSuccess} not found`);
@@ -186,7 +189,7 @@ export class CustomElement {
         wrapper.appendChild(clone);
         wrapper.setAttribute(createDataName(TEMPLATE_ID), this.id);
         if (options && options.classNames) {
-            options.classNames.forEach(className => {
+            options.classNames.forEach((className) => {
                 wrapper.classList.add(className);
             });
         }
@@ -203,7 +206,7 @@ export class CustomElement {
     remove() {
         const ref = this.isTemplate ? this.templateWrapperRef : this.ref;
         if (ref) {
-            this.handlers.forEach(handle => {
+            this.handlers.forEach((handle) => {
                 if (this.handleEvent) {
                     ref.removeEventListener(this.handleEvent, handle);
                 }
@@ -215,20 +218,20 @@ export class CustomElement {
 }
 export const addFromTarget = (target) => {
     const elements = scanElements(target);
-    elements.forEach(element => {
+    elements.forEach((element) => {
         addToInternalState(element);
     });
 };
 export const deleteAllFromTarget = (target) => {
     const elements = scanElements(target);
-    elements.forEach(element => {
+    elements.forEach((element) => {
         const id = element.getAttribute(createDataName(ID));
         if (!id) {
             throw new Error(`${deleteAllFromTarget.name}: id is not found, you somehow added a non custom element into the store`);
         }
         const elm = store.elements.get(id);
         if (elm) {
-            elm.handlers.forEach(handle => {
+            elm.handlers.forEach((handle) => {
                 if (elm.handleEvent) {
                     elm.ref.removeEventListener(elm.handleEvent, handle);
                 }
@@ -266,13 +269,13 @@ export const addFormMethod = (methodName, method) => {
 export const getCookie = (name) => {
     const cookie = document.cookie
         .split(';')
-        .map(cookie => cookie.trim())
-        .find(cookie => cookie.startsWith(name + '='))
+        .map((cookie) => cookie.trim())
+        .find((cookie) => cookie.startsWith(name + '='))
         ?.split('=');
     if (cookie && cookie.length > 1) {
         return {
             key: cookie[0],
-            value: cookie[1]
+            value: cookie[1],
         };
     }
     return null;

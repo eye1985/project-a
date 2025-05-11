@@ -47,7 +47,6 @@ var getInvitationsSql string
 type Repository interface {
 	GetContactLists(ctx context.Context, userId int64) ([]*List, error)
 	GetContactList(ctx context.Context, contactListId int64) (*List, error)
-	//GetContactListBySession(ctx context.Context, sessionId string) (*List, error)
 	GetContacts(ctx context.Context, userId int64) ([]*Contact, error)
 	CreateContactList(ctx context.Context, name string, userId int64) error
 	CreateContact(ctx context.Context, inviterId int64, inviteeId int64) (*InsertedContact, error)
@@ -143,23 +142,6 @@ func (ulr *contactsRepo) GetContactList(ctx context.Context, contactListId int64
 	return &userList, nil
 }
 
-//func (ulr *contactsRepo) GetContactListBySession(ctx context.Context, sessionId string) (*List, error) {
-//	row := ulr.pool.QueryRow(ctx, getContactListSql, sessionId)
-//	var userList List
-//	err := row.Scan(
-//		&userList.Id,
-//		&userList.Name,
-//		&userList.CreatedAt,
-//		&userList.UpdatedAt,
-//		&userList.UserId,
-//	)
-//	if err != nil {
-//		return nil, err
-//	}
-//
-//	return &userList, nil
-//}
-
 func (ulr *contactsRepo) GetContacts(ctx context.Context, userId int64) ([]*Contact, error) {
 	rows, err := ulr.pool.Query(ctx, getContactSql, userId)
 	if err != nil {
@@ -168,7 +150,7 @@ func (ulr *contactsRepo) GetContacts(ctx context.Context, userId int64) ([]*Cont
 
 	defer rows.Close()
 
-	var records []*Contact
+	records := []*Contact{}
 	for rows.Next() {
 		var record Contact
 
@@ -250,7 +232,7 @@ func (ulr *contactsRepo) GetInvitations(ctx context.Context, userId int64) ([]*I
 
 	defer rows.Close()
 
-	var invitations []*Invitation
+	invitations := []*Invitation{}
 	for rows.Next() {
 		var invitation Invitation
 		err := rows.Scan(

@@ -33,7 +33,7 @@ func (h *Handler) CreateInvitation(w http.ResponseWriter, r *http.Request) {
 	session := r.Context().Value(shared.SessionCtxKey).([]byte)
 	inviter, err := h.UserRepo.GetUserFromSessionId(r.Context(), string(session))
 	if err != nil {
-		http.Error(w, "no user", http.StatusInternalServerError)
+		http.Error(w, "No user", http.StatusInternalServerError)
 		return
 	}
 
@@ -47,7 +47,12 @@ func (h *Handler) CreateInvitation(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if body.Email == "" {
-		http.Error(w, "missing required fields", http.StatusBadRequest)
+		http.Error(w, "Missing required fields", http.StatusBadRequest)
+		return
+	}
+
+	if inviter.Email == body.Email {
+		http.Error(w, "Cannot invite yourself", http.StatusBadRequest)
 		return
 	}
 
@@ -57,10 +62,25 @@ func (h *Handler) CreateInvitation(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	contacts, err := h.Repo.GetContacts(r.Context(), inviter.Id)
+	if err != nil {
+		log.Printf("get contacts error: %s", err.Error())
+		http.Error(w, "Could not get contacts", http.StatusInternalServerError)
+		return
+	}
+
+	// Check if user already in your contact list
+	for _, c := range contacts {
+		if c.UserId == invitee.Id {
+			http.Error(w, "Invitee already in your contacts", http.StatusBadRequest)
+			return
+		}
+	}
+
 	err = h.Repo.InviteUser(r.Context(), inviter.Id, invitee.Id)
 	if err != nil {
 		log.Printf("create contact error in CreateInvitation: %s", err.Error())
-		http.Error(w, "Could not create contact", http.StatusInternalServerError)
+		http.Error(w, "Invitation already exists", http.StatusInternalServerError)
 		return
 	}
 }

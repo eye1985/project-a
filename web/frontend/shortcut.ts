@@ -9,15 +9,19 @@ const FORM_ON_ERROR = 'form-onerror';
 const FORM_ON_SUCCESS = 'form-onsuccess';
 const HANDLER = 'handler';
 
-type Handle = (e: Event, currentCustomElement: CustomElement, is: InternalState) => void;
+type Handle = (
+  e: Event,
+  currentCustomElement: CustomElement,
+  is: InternalState,
+) => void;
 type FormMethod = (data: any) => void;
 type InternalState = {
-  formMethods: Map<string, FormMethod>,
+  formMethods: Map<string, FormMethod>;
   elements: Map<string, CustomElement>;
   handlers: Map<string, Handle>;
   state: Map<string, any>;
   getByType(type: string): CustomElement[];
-}
+};
 const store: InternalState = {
   formMethods: new Map(),
   elements: new Map(),
@@ -25,12 +29,12 @@ const store: InternalState = {
   state: new Map(),
   getByType(type: string): CustomElement[] {
     const result: CustomElement[] = [];
-    this.elements.forEach(elm => {
+    this.elements.forEach((elm) => {
       elm.type === type && result.push(elm);
     });
 
     return result;
-  }
+  },
 };
 
 const createDataName = (action: string) => {
@@ -54,7 +58,7 @@ const addToInternalState = (el: Element) => {
 
 const syncHandle = () => {
   for (const key of store.handlers.keys()) {
-    store.elements.forEach(elm => {
+    store.elements.forEach((elm) => {
       if (elm.handleName === key && !elm.isHandleApplied && elm.handleEvent) {
         const handle = store.handlers.get(key);
         if (!handle) {
@@ -77,7 +81,7 @@ export const state = {
   },
   set(id: string, value: any) {
     store.state.set(id, value);
-  }
+  },
 };
 
 export class CustomElement {
@@ -115,7 +119,8 @@ export class CustomElement {
       }
     }
 
-    const hasAllAttrs = this.ref.getAttribute(`${createDataName(METHOD)}`) &&
+    const hasAllAttrs =
+      this.ref.getAttribute(`${createDataName(METHOD)}`) &&
       this.ref.getAttribute('action');
 
     if (this.ref instanceof HTMLFormElement && hasAllAttrs) {
@@ -131,18 +136,24 @@ export class CustomElement {
 
       const action = el.getAttribute('action');
       const method = el.getAttribute(`${createDataName(METHOD)}`);
-      const formOnSuccess = el.getAttribute(`${createDataName(FORM_ON_SUCCESS)}`);
+      const formOnSuccess = el.getAttribute(
+        `${createDataName(FORM_ON_SUCCESS)}`,
+      );
       const formOnError = el.getAttribute(`${createDataName(FORM_ON_ERROR)}`);
 
       if (!method || !action) {
-        console.warn(`${this.overrideSubmit.name}: action or method is missing, skipping`);
+        console.warn(
+          `${this.overrideSubmit.name}: action or method is missing, skipping`,
+        );
         return;
       }
 
       const methods = ['POST', 'PUT', 'DELETE', 'PATCH'];
       const upperCasedMethod = method.toUpperCase();
       if (!methods.includes(upperCasedMethod)) {
-        console.warn(`${this.overrideSubmit.name}: method ${method} is not supported, skipping`);
+        console.warn(
+          `${this.overrideSubmit.name}: method ${method} is not supported, skipping`,
+        );
         return;
       }
 
@@ -169,8 +180,8 @@ export class CustomElement {
           body: JSON.stringify(body),
           credentials: 'include',
           headers: {
-            'Content-Type': 'application/json'
-          }
+            'Content-Type': 'application/json',
+          },
         });
 
         if (!res.ok) {
@@ -189,10 +200,15 @@ export class CustomElement {
         }
 
         if (formOnSuccess) {
-          const json = await res.json();
+          const isJson = res.headers
+            .get('content-type')
+            ?.includes('application/json');
+          const json = isJson ? await res.json() : null;
           const successFn = store.formMethods.get(formOnSuccess);
           if (!successFn) {
-            throw new Error(`${this.overrideSubmit.name}: success handler ${formOnSuccess} not found`);
+            throw new Error(
+              `${this.overrideSubmit.name}: success handler ${formOnSuccess} not found`,
+            );
           }
           successFn(json);
         }
@@ -205,14 +221,19 @@ export class CustomElement {
     this.handlers.push(handler as unknown as EventListener);
   };
 
-  insertTemplateInto = (target: CustomElement | Element, options?: {
-    clearBeforeInsert?: boolean
-    classNames?: string[]
-  }) => {
+  insertTemplateInto = (
+    target: CustomElement | Element,
+    options?: {
+      clearBeforeInsert?: boolean;
+      classNames?: string[];
+    },
+  ) => {
     const intoTarget = target instanceof CustomElement ? target.ref : target;
 
     if (!this.isTemplate) {
-      throw new Error(`${this.insertTemplateInto.name}: element is not a template`);
+      throw new Error(
+        `${this.insertTemplateInto.name}: element is not a template`,
+      );
     }
     if (!intoTarget) {
       throw new Error(`${this.insertTemplateInto.name}: target is required`);
@@ -224,7 +245,7 @@ export class CustomElement {
     wrapper.appendChild(clone);
     wrapper.setAttribute(createDataName(TEMPLATE_ID), this.id);
     if (options && options.classNames) {
-      options.classNames.forEach(className => {
+      options.classNames.forEach((className) => {
         wrapper.classList.add(className);
       });
     }
@@ -243,7 +264,7 @@ export class CustomElement {
   remove() {
     const ref = this.isTemplate ? this.templateWrapperRef : this.ref;
     if (ref) {
-      this.handlers.forEach(handle => {
+      this.handlers.forEach((handle) => {
         if (this.handleEvent) {
           ref.removeEventListener(this.handleEvent, handle);
         }
@@ -256,21 +277,23 @@ export class CustomElement {
 
 export const addFromTarget = (target: Element) => {
   const elements = scanElements(target);
-  elements.forEach(element => {
+  elements.forEach((element) => {
     addToInternalState(element);
   });
 };
 
 export const deleteAllFromTarget = (target: Element) => {
   const elements = scanElements(target);
-  elements.forEach(element => {
+  elements.forEach((element) => {
     const id = element.getAttribute(createDataName(ID));
     if (!id) {
-      throw new Error(`${deleteAllFromTarget.name}: id is not found, you somehow added a non custom element into the store`);
+      throw new Error(
+        `${deleteAllFromTarget.name}: id is not found, you somehow added a non custom element into the store`,
+      );
     }
     const elm = store.elements.get(id);
     if (elm) {
-      elm.handlers.forEach(handle => {
+      elm.handlers.forEach((handle) => {
         if (elm.handleEvent) {
           elm.ref.removeEventListener(elm.handleEvent, handle);
         }
@@ -282,7 +305,9 @@ export const deleteAllFromTarget = (target: Element) => {
   });
 };
 
-export const isTemplate = (el: Element | HTMLTemplateElement): el is HTMLTemplateElement => {
+export const isTemplate = (
+  el: Element | HTMLTemplateElement,
+): el is HTMLTemplateElement => {
   return el instanceof HTMLTemplateElement;
 };
 
@@ -298,7 +323,9 @@ export const getElement = (id: string) => {
 export const addHandler = (handlerName: string, handle: Handle) => {
   const getHandle = store.handlers.get(handlerName);
   if (getHandle) {
-    throw new Error(`${addHandler.name}: handler ${handlerName} already exists`);
+    throw new Error(
+      `${addHandler.name}: handler ${handlerName} already exists`,
+    );
   }
   store.handlers.set(handlerName, handle);
   syncHandle();
@@ -307,7 +334,9 @@ export const addHandler = (handlerName: string, handle: Handle) => {
 export const addFormMethod = (methodName: string, method: FormMethod) => {
   const getMethod = store.formMethods.get(methodName);
   if (getMethod) {
-    throw new Error(`${addFormMethod.name}: method ${methodName} already exists`);
+    throw new Error(
+      `${addFormMethod.name}: method ${methodName} already exists`,
+    );
   }
   store.formMethods.set(methodName, method);
 };
@@ -315,14 +344,14 @@ export const addFormMethod = (methodName: string, method: FormMethod) => {
 export const getCookie = (name: string) => {
   const cookie = document.cookie
     .split(';')
-    .map(cookie => cookie.trim())
-    .find(cookie => cookie.startsWith(name + '='))
+    .map((cookie) => cookie.trim())
+    .find((cookie) => cookie.startsWith(name + '='))
     ?.split('=');
 
   if (cookie && cookie.length > 1) {
     return {
       key: cookie[0],
-      value: cookie[1]
+      value: cookie[1],
     };
   }
 

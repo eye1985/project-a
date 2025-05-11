@@ -55,6 +55,12 @@ CREATE TABLE invites
     CHECK (inviter_id IS DISTINCT FROM invitee_id)
 );
 
+CREATE UNIQUE INDEX unique_invite_pair
+    on invites (
+                LEAST(inviter_id, invitee_id),
+                GREATEST(inviter_id, invitee_id)
+        );
+
 
 CREATE TABLE user_sessions
 (

@@ -7,6 +7,6 @@ FROM contact_list_link cll
                              WHEN c.user_1 = cl.user_id THEN c.user_2
                              ELSE c.user_1
                              END
-WHERE cl.id = $1
+WHERE cl.user_id = $1
   AND c.removed_at IS NULL
 ORDER BY u.username

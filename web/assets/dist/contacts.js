@@ -1,11 +1,11 @@
-import { addFromTarget, addHandler, getElement, isTemplate, state } from './shortcut.js';
+import { addFormMethod, addFromTarget, addHandler, getElement, isTemplate, state, } from './shortcut.js';
 import { initSocket } from './websocket.js';
 const { get, set } = state;
 const socket = initSocket();
 addFromTarget(document.body);
 addHandler('openChat', (e, currentCustomElement, store) => {
     const buttons = store.getByType('chat-button');
-    buttons.forEach(button => {
+    buttons.forEach((button) => {
         button.ref.classList.remove('active');
     });
     const currentButton = e.currentTarget;
@@ -19,7 +19,7 @@ addHandler('openChat', (e, currentCustomElement, store) => {
         throw new Error('chatTemplate not found');
     }
     template.insertTemplateInto(chatBody, {
-        clearBeforeInsert: true
+        clearBeforeInsert: true,
     });
     const toUuid = currentCustomElement.id.split('_')[1];
     set('toUuid', toUuid);
@@ -43,16 +43,21 @@ addHandler('handleInput', (e) => {
     const toUuid = get('toUuid');
     const inputElm = event.currentTarget;
     if (event.key === 'Enter' && event.shiftKey) {
-        console.log('??????');
         return;
     }
     if (event.key === 'Enter' && toUuid && inputElm.value.trim().length > 0) {
         socket.send(JSON.stringify({
             toUuid,
-            msg: inputElm.value
+            msg: inputElm.value.trim(),
         }));
         inputElm.value = '';
     }
+});
+addFormMethod('inviteOnError', (errorMsg) => {
+    (getElement('inviteError')?.ref).innerText = errorMsg;
+});
+addFormMethod('inviteOnSuccess', () => {
+    location.reload();
 });
 const insertMessage = (data, target, isCurrentUser) => {
     const message = getElement('messageTemplate');
@@ -69,7 +74,7 @@ const insertMessage = (data, target, isCurrentUser) => {
             hour: 'numeric',
             minute: 'numeric',
             second: 'numeric',
-            hour12: false
+            hour12: false,
         })}`;
         from.innerText = `${data.username}`;
         text.innerText = `${data.message}`;
@@ -77,7 +82,7 @@ const insertMessage = (data, target, isCurrentUser) => {
     const classNames = isCurrentUser ? ['message', 'me'] : ['message'];
     message.insertTemplateInto(target, {
         clearBeforeInsert: false,
-        classNames
+        classNames,
     });
 };
 const insertChatHistory = (toUuid, data) => {
@@ -150,7 +155,7 @@ export default {
                     requestAnimationFrame(() => {
                         messages.ref.parentElement?.scrollTo({
                             top: messages.ref.parentElement?.scrollHeight,
-                            behavior: 'smooth'
+                            behavior: 'smooth',
                         });
                     });
                 }
@@ -173,7 +178,7 @@ export default {
                 setTimeout(() => {
                     template.remove();
                 }, 2000);
-            }
+            },
         });
-    }
+    },
 };

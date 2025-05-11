@@ -1,13 +1,26 @@
 {{define "main-content"}}
   <div class="contact-layout">
     <div class="sidebar">
-      <form action="/contact" data-method="post" data-sc-id="inviteForm">
-        <label for="email">Email</label>
-        <input id="email" type="text" name="email" />
-        <button type="submit">Invite</button>
-      </form>
-      <div data-sc-id="contacts">
+      <div class="sidebar-layout">
+        <form action="/contact"
+              class="invitation-form"
+              data-sc-method="post"
+              data-sc-id="inviteForm"
+              data-sc-form-onsuccess="inviteOnSuccess"
+              data-sc-form-onerror="inviteOnError">
+          <div class="form-row">
+            <label for="email">Email</label>
+            <input id="email" type="text" name="email" placeholder="friend@mail.com" />
+            <div class="form-error" data-sc-id="inviteError"></div>
+          </div>
+          <button class="form-submit" type="submit">Invite</button>
+        </form>
         <div class="invitations">
+            {{if gt (len .Invitations) 0}}
+              <h2 class="contact-header">
+                Invitations
+              </h2>
+            {{end}}
           <ul>
               {{range $invite := .Invitations}}
                 <li>
@@ -19,7 +32,7 @@
                       {{$invite.Email}}
 
                       {{if not $invite.IsInviter}}
-                        <form action="/invite" data-method="patch" data-sc-id="acceptInviteForm">
+                        <form action="/invite" data-sc-method="patch" data-sc-id="acceptInviteForm_{{$invite.InviteUuid}}">
                           <input type="hidden" name="uuid" value="{{$invite.InviteUuid}}" />
                           <button type="submit">
                             Accept
@@ -31,38 +44,37 @@
               {{end}}
           </ul>
         </div>
+          {{range $list, $contacts := .ContactLists}}
+              {{if and $list.Name (gt (len $contacts) 0)}}
+                <div class="contacts-layout">
+                  <h2 class="contact-header">
+                      {{$list.Name}}
+                  </h2>
+                  <ul class="contact-list">
+                      {{range $contact := $contacts}}
+                        <li class="contact-list__item">
+                          <button class="contact-list__button" type="button"
+                                  data-sc-id="chat_{{$contact.UserUuid}}"
+                                  data-sc-type="chat-button"
+                                  data-sc-handler="click:openChat">
+                            <div class="contact-list__username">
+                                {{$contact.Username}}
+                            </div>
+                            <div class="contact-list__email">
+                                {{$contact.Email}}
+                            </div>
+                            <div data-sc-id="isOnline_{{$contact.UserUuid}}">
+                              Offline
+                            </div>
+                          </button>
+                        </li>
+                      {{end}}
+                  </ul>
+                </div>
+              {{end}}
+          {{end}}
       </div>
-        {{range $list, $contacts := .ContactLists}}
-            {{if $list.Name}}
-              <div>
-                <h2>
-                    {{$list.Name}}:
-                </h2>
-                <ul class="contact-list">
-                    {{range $contact := $contacts}}
-                      <li class="contact-list__item">
-                        <button class="contact-list__button" type="button"
-                                data-sc-id="chat_{{$contact.UserUuid}}"
-                                data-sc-type="chat-button"
-                                data-sc-handler="click:openChat">
-                          <div class="contact-list__username">
-                              {{$contact.Username}}
-                          </div>
-                          <div class="contact-list__email">
-                              {{$contact.Email}}
-                          </div>
-                          <div data-sc-id="isOnline_{{$contact.UserUuid}}">
-                            Offline
-                          </div>
-                        </button>
-                      </li>
-                    {{end}}
-                </ul>
-              </div>
-            {{end}}
-        {{end}}
     </div>
-
     <div class="main-content">
       <div class="chat-body" data-sc-id="chatBody">
       </div>

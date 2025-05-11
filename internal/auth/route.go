@@ -11,6 +11,7 @@ func RegisterRoutes(m *middleware.Middleware, h *Handler, as shared.AuthService)
 		h.CreateMagicLinkCode,
 		middleware.AllowOnlyPost,
 		middleware.AllowOnlyApplicationJson,
+		middleware.SetApplicationJson, // TODO remove this later after implementing send email
 	)
 	m.HandleFunc(
 		"POST /logout", h.Logout,

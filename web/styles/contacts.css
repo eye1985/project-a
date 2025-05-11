@@ -1,3 +1,5 @@
+@import "./form.css";
+
 .contact-layout {
   display: grid;
   grid-template-columns: 1fr;
@@ -9,17 +11,26 @@
 }
 
 .sidebar {
-  max-width: 300px;
+  width: 300px;
   height: auto;
   background: var(--sidebar-bg);
   padding: 20px;
   box-shadow: 0 0 1px #251405;
 }
 
+.sidebar-layout {
+  display: grid;
+  grid-template-columns: 1fr;
+  grid-template-rows: repeat(3, fit-content(100%));
+  gap: 40px;
+  height: 100%;
+}
+
 .scroll-stable {
   overflow-y: scroll;
   scrollbar-gutter: stable;
 }
+
 .scroll-container {
   overflow-y: scroll;
   scrollbar-gutter: stable;
@@ -112,12 +123,24 @@
   }
 }
 
+.contacts-layout {
+  display: grid;
+  grid-template-rows: auto auto;
+  gap: 10px;
+  height: 100%;
+}
+
+.contact-header {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: bold;
+}
+
 .contact-list {
   display: grid;
   grid-template-columns: 1fr;
   gap: 10px;
   list-style: none;
-  padding: 0;
 }
 
 .contact-list__button {
@@ -133,15 +156,16 @@
   gap: 10px;
 
   &:hover {
-    background: #ddddfd;
+    background: #fcda54;
     cursor: pointer;
   }
 
   &.active {
-    background: var(--chat-bubble2-bg);
-    color: #fff;
+    background: #fbca0b;
+    color: var(--chat-bubble2-text);
   }
 }
+
 
 .contact-list__email {
   text-align: left;
