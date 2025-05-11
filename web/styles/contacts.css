@@ -2,17 +2,18 @@
   display: grid;
   grid-template-columns: 1fr;
   height: 100%;
+  background: var(--chat-bg-color);
   @media (width >= 768px) {
     grid-template-columns: auto 1fr;
   }
 }
-
 
 .sidebar {
   max-width: 300px;
   height: auto;
   background: var(--sidebar-bg);
   padding: 20px;
+  box-shadow: 0 0 1px #251405;
 }
 
 .scroll-stable {
@@ -22,18 +23,16 @@
 .scroll-container {
   overflow-y: scroll;
   scrollbar-gutter: stable;
-  height: calc(100vh - 200px);
+  height: calc(100vh - 190px);
   display: flex;
   flex-direction: column;
 }
 
-.scroll-spacer{
+.scroll-spacer {
   margin-top: auto;
 }
 
 .messages {
-  background: #fff;
-  border-radius: 8px;
   contain: content;
   display: flex;
   flex-direction: column;
@@ -71,8 +70,8 @@
   background-color: var(--chat-bubble-bg);
   padding: 10px;
   width: fit-content;
-  margin-bottom:6px;
-  margin-top:0;
+  margin-bottom: 6px;
+  margin-top: 0;
 }
 
 .message.me {
@@ -86,7 +85,7 @@
   }
 
   & .message-text {
-    color: #fff;
+    color: var(--chat-bubble2-text);
     background-color: var(--chat-bubble2-bg);
     margin-left: auto;
   }
@@ -102,6 +101,9 @@
   border-radius: 8px;
   border: 1px solid #ccc;
   font-size: 18px;
+  color: var(--chat-bubble2-text);
+  field-sizing: content;
+  min-height: 4rem;
 
   @media (width >= 768px) {
     max-width: 768px;
@@ -119,10 +121,10 @@
 }
 
 .contact-list__button {
-  background: transparent;
+  background: #fef6d7;
   width: 100%;
   height: 100%;
-  border: 1px solid #ccc;
+  border: 1px solid #fcd230;
   padding: 20px 10px;
   border-radius: 8px;
 
@@ -131,12 +133,13 @@
   gap: 10px;
 
   &:hover {
-    background: #eee;
+    background: #ddddfd;
     cursor: pointer;
   }
 
   &.active {
-    background: #eee;
+    background: var(--chat-bubble2-bg);
+    color: #fff;
   }
 }
 

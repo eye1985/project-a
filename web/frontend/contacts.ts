@@ -49,9 +49,13 @@ addHandler('openChat', (e, currentCustomElement, store) => {
 addHandler('handleInput', (e) => {
   const event = e as KeyboardEvent;
   const toUuid = get('toUuid');
+  const inputElm = event.currentTarget as HTMLInputElement;
 
-  if (event.key === 'Enter' && toUuid) {
-    const inputElm = event.currentTarget as HTMLInputElement;
+  if (event.key === 'Enter' && event.shiftKey) {
+    return;
+  }
+
+  if (event.key === 'Enter' && toUuid && inputElm.value.trim().length > 0) {
     socket.send(JSON.stringify({
       toUuid,
       msg: inputElm.value
