@@ -148,8 +148,10 @@
       }
     }
   </style>
-    {{if .Css}}
-      <link rel="stylesheet" href="styles/{{.Css}}" />
+    {{if and .Css (gt (len .Css) 0)}}
+        {{range $style := .Css}}
+          <link rel="stylesheet" href="{{$style}}" />
+        {{end}}
     {{end}}
 </head>
 <body>

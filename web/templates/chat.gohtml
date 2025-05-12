@@ -107,7 +107,7 @@
 
 {{define "inline-js"}}
   <script type="module">
-    import contacts from './assets/dist/contacts.js';
+    import contacts from './{{.Js}}';
 
     const wsUrl = "{{.WsUrl}}";
     const uuid = "{{.Uuid}}";

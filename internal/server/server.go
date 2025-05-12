@@ -34,6 +34,13 @@ func Serve(pool *pgxpool.Pool) error {
 		log.Fatalf("ORIGIN environment variable not set")
 	}
 
+	isDev, _ := os.LookupEnv("IS_DEV")
+	dev := false
+
+	if isDev == "true" {
+		dev = true
+	}
+
 	midWare := middleware.NewMux()
 	midWare.Add(middleware.Logger)
 	midWare.Add(middleware.BodyCloser)
@@ -55,11 +62,10 @@ func Serve(pool *pgxpool.Pool) error {
 	userHandler := user.NewUserHandler(userRepo, hub)
 	contactsHandler := contacts.NewHandler(contactsRepo, userRepo)
 	authHandler := auth.NewHandler(authService, authRepo, userRepo, contactsRepo)
-	templateHandler := templates.NewHandler(userRepo, contactsRepo, authService, wsUrl)
+	templateHandler := templates.NewHandler(userRepo, contactsRepo, authService, wsUrl, dev)
 
 	// routes
 	midWare.Handle("GET /assets/", http.StripPrefix("/assets/", http.FileServer(http.Dir("web/assets"))))
-	midWare.Handle("GET /styles/", http.StripPrefix("/styles/", http.FileServer(http.Dir("web/styles"))))
 	midWare.HandleFunc(
 		"GET /favicon.ico", func(w http.ResponseWriter, r *http.Request) {
 			w.WriteHeader(http.StatusNoContent)

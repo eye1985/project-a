@@ -10,10 +10,15 @@ import (
 
 const (
 	path         = "web/templates"
+	manifestPath = "web/assets/dist/manifest.json"
+	prodPath     = "assets/dist/"
+	devJsPath    = "assets/js/"
+	devCssPath   = "assets/css/"
 	baseLayout   = "base-layout.gohtml"
 	register     = "register.gohtml"
 	profile      = "profile.gohtml"
 	userContacts = "contacts.gohtml"
+	chat         = "chat.gohtml"
 )
 
 type Handler struct {
@@ -21,6 +26,7 @@ type Handler struct {
 	userListRepo contacts.Repository
 	authService  shared.AuthService
 	wsUrl        string
+	isDev        bool
 }
 
 func (h *Handler) RenderRegisterUser(w http.ResponseWriter, r *http.Request) {
@@ -42,7 +48,11 @@ func (h *Handler) RenderRegisterUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := tmpl.Execute(w, nil); err != nil {
+	if err := tmpl.Execute(
+		w, &PageData{
+			Title: "Profile",
+		},
+	); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
@@ -75,10 +85,10 @@ func (h *Handler) RenderProfile(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func (h *Handler) RenderContacts(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) RenderChat(w http.ResponseWriter, r *http.Request) {
 	tmpl, err := template.ParseFiles(
 		fmt.Sprintf("%s/%s", path, baseLayout),
-		fmt.Sprintf("%s/%s", path, userContacts),
+		fmt.Sprintf("%s/%s", path, chat),
 	)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -129,15 +139,25 @@ func (h *Handler) RenderContacts(w http.ResponseWriter, r *http.Request) {
 		invitationTemplates = append(invitationTemplates, &invitationTemplate)
 	}
 
+	var js string
+	var cssList []string
+
+	err = setJsCssPathsFromManifest(&js, &cssList, h.isDev)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
 	if err := tmpl.Execute(
-		w, &ContactListPage{
-			Title:        "My lists",
+		w, &ChatPage{
+			Title:        "Chat",
 			Username:     u.Username,
 			Uuid:         u.Uuid,
 			ContactLists: listMap,
 			Invitations:  invitationTemplates,
 			WsUrl:        h.wsUrl,
-			Css:          "contacts.css",
+			Js:           js,
+			Css:          cssList,
 		},
 	); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -150,11 +170,13 @@ func NewHandler(
 	userlistRepo contacts.Repository,
 	authService shared.AuthService,
 	wsUrl string,
+	isDev bool,
 ) *Handler {
 	return &Handler{
 		userRepo:     userRepo,
 		userListRepo: userlistRepo,
 		authService:  authService,
 		wsUrl:        wsUrl,
+		isDev:        isDev,
 	}
 }

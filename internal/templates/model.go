@@ -15,7 +15,8 @@ type PageData struct {
 	WsUrl    string
 	Username string
 	Title    string
-	Css      string
+	Css      []string
+	Js       string
 }
 
 type InvitationTemplate struct {
@@ -24,9 +25,10 @@ type InvitationTemplate struct {
 	Email      string    `json:"email"`
 }
 
-type ContactListPage struct {
+type ChatPage struct {
 	Title        string
-	Css          string
+	Css          []string
+	Js           string
 	Username     string
 	Uuid         uuid.UUID
 	ContactLists map[*contacts.List][]*contacts.Contact
