@@ -116,6 +116,64 @@ func (h *Handler) RenderChat(w http.ResponseWriter, r *http.Request) {
 		listMap[ul] = listOfContact
 	}
 
+	var js string
+	var cssList []string
+
+	err = setJsCssPathsFromManifest("chat", &js, &cssList, h.isDev)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	if err := tmpl.Execute(
+		w, &ChatPage{
+			PageData: PageData{
+				Title:    "Chat",
+				Username: u.Username,
+				Uuid:     u.Uuid,
+				Js:       js,
+				Css:      cssList,
+				WsUrl:    h.wsUrl,
+			},
+			ContactLists: listMap,
+		},
+	); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+}
+
+func (h *Handler) RenderContacts(w http.ResponseWriter, r *http.Request) {
+	tmpl, err := template.ParseFiles(
+		fmt.Sprintf("%s/%s", path, baseLayout),
+		fmt.Sprintf("%s/%s", path, userContacts),
+	)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	sessionID := r.Context().Value(shared.SessionCtxKey).([]byte)
+	u, _ := h.userRepo.GetUserFromSessionId(r.Context(), string(sessionID))
+
+	contactList, err := h.userListRepo.GetContactLists(r.Context(), u.Id)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	listMap := make(map[*contacts.List][]*contacts.Contact)
+
+	for _, ul := range contactList {
+		listOfContact, err := h.userListRepo.GetContacts(r.Context(), ul.UserId)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		listMap[ul] = listOfContact
+	}
+
 	invitations, err := h.userListRepo.GetInvitations(r.Context(), u.Id)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -142,22 +200,24 @@ func (h *Handler) RenderChat(w http.ResponseWriter, r *http.Request) {
 	var js string
 	var cssList []string
 
-	err = setJsCssPathsFromManifest(&js, &cssList, h.isDev)
+	err = setJsCssPathsFromManifest("contacts", &js, &cssList, h.isDev)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
 	if err := tmpl.Execute(
-		w, &ChatPage{
-			Title:        "Chat",
-			Username:     u.Username,
-			Uuid:         u.Uuid,
+		w, &ContactPage{
+			PageData: PageData{
+				Title:    "Contacts",
+				Username: u.Username,
+				Uuid:     u.Uuid,
+				WsUrl:    h.wsUrl,
+				Js:       js,
+				Css:      cssList,
+			},
 			ContactLists: listMap,
 			Invitations:  invitationTemplates,
-			WsUrl:        h.wsUrl,
-			Js:           js,
-			Css:          cssList,
 		},
 	); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)

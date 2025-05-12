@@ -1,79 +1,9 @@
 {{define "main-content"}}
   <div class="contact-layout">
     <div class="sidebar">
-      <div class="sidebar-layout">
-        <form action="/contact"
-              class="invitation-form"
-              data-sc-method="post"
-              data-sc-id="inviteForm"
-              data-sc-form-onsuccess="inviteOnSuccess"
-              data-sc-form-onerror="inviteOnError">
-          <div class="form-row">
-            <label for="email">Email</label>
-            <input id="email" type="text" name="email" placeholder="friend@mail.com" />
-            <div class="form-error" data-sc-id="inviteError"></div>
-          </div>
-          <button class="form-submit" type="submit">Invite</button>
-        </form>
-        <div class="invitations">
-            {{if gt (len .Invitations) 0}}
-              <h2 class="contact-header">
-                Invitations
-              </h2>
-            {{end}}
-          <ul>
-              {{range $invite := .Invitations}}
-                <li>
-                  <div>
-                      {{if $invite.IsInviter}}
-                        You have invited:
-                      {{end}}
-
-                      {{$invite.Email}}
-
-                      {{if not $invite.IsInviter}}
-                        <form action="/invite" data-sc-method="patch" data-sc-id="acceptInviteForm_{{$invite.InviteUuid}}">
-                          <input type="hidden" name="uuid" value="{{$invite.InviteUuid}}" />
-                          <button type="submit">
-                            Accept
-                          </button>
-                        </form>
-                      {{end}}
-                  </div>
-                </li>
-              {{end}}
-          </ul>
-        </div>
-          {{range $list, $contacts := .ContactLists}}
-              {{if and $list.Name (gt (len $contacts) 0)}}
-                <div class="contacts-layout">
-                  <h2 class="contact-header">
-                      {{$list.Name}}
-                  </h2>
-                  <ul class="contact-list">
-                      {{range $contact := $contacts}}
-                        <li class="contact-list__item">
-                          <button class="contact-list__button" type="button"
-                                  data-sc-id="chat_{{$contact.UserUuid}}"
-                                  data-sc-type="chat-button"
-                                  data-sc-handler="click:openChat">
-                            <div class="contact-list__username">
-                                {{$contact.Username}}
-                            </div>
-                            <div class="contact-list__email">
-                                {{$contact.Email}}
-                            </div>
-                            <div data-sc-id="isOnline_{{$contact.UserUuid}}">
-                              Offline
-                            </div>
-                          </button>
-                        </li>
-                      {{end}}
-                  </ul>
-                </div>
-              {{end}}
-          {{end}}
-      </div>
+      <button type="button">
+        Talk to
+      </button>
     </div>
     <div class="main-content">
       <div class="chat-body" data-sc-id="chatBody">
@@ -107,10 +37,10 @@
 
 {{define "inline-js"}}
   <script type="module">
-    import contacts from './{{.Js}}';
+    import chat from './{{.Js}}';
 
     const wsUrl = "{{.WsUrl}}";
     const uuid = "{{.Uuid}}";
-    contacts.connect(wsUrl, uuid);
+    chat.connect(wsUrl, uuid);
   </script>
 {{end}}

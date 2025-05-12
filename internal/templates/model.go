@@ -14,26 +14,26 @@ type Person struct {
 type PageData struct {
 	WsUrl    string
 	Username string
+	Uuid     uuid.UUID
 	Title    string
 	Css      []string
 	Js       string
+}
+type ChatPage struct {
+	PageData
+	ContactLists map[*contacts.List][]*contacts.Contact
+}
+
+type ContactPage struct {
+	PageData
+	ContactLists map[*contacts.List][]*contacts.Contact
+	Invitations  []*InvitationTemplate
 }
 
 type InvitationTemplate struct {
 	InviteUuid uuid.UUID `json:"invite_uuid"`
 	IsInviter  bool      `json:"isInviter"`
 	Email      string    `json:"email"`
-}
-
-type ChatPage struct {
-	Title        string
-	Css          []string
-	Js           string
-	Username     string
-	Uuid         uuid.UUID
-	ContactLists map[*contacts.List][]*contacts.Contact
-	Invitations  []*InvitationTemplate
-	WsUrl        string
 }
 
 type RenderChatArgs struct {

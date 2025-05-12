@@ -6,7 +6,7 @@ import (
 	"strings"
 )
 
-func setJsCssPathsFromManifest(js *string, cssList *[]string, isDev bool) error {
+func setJsCssPathsFromManifest(pageName string, js *string, cssList *[]string, isDev bool) error {
 	m, err := os.ReadFile(manifestPath)
 	if err != nil {
 		return err
@@ -19,25 +19,25 @@ func setJsCssPathsFromManifest(js *string, cssList *[]string, isDev bool) error 
 
 	if isDev {
 		for k, _ := range manifest {
-			isChat := strings.HasPrefix(k, "chat")
+			isPage := strings.HasPrefix(k, pageName)
 			hasJS := strings.HasSuffix(k, ".js")
 			hasCSS := strings.HasSuffix(k, ".css")
 
-			if isChat && hasJS {
+			if isPage && hasJS {
 				*js = devJsPath + k
-			} else if isChat && hasCSS {
+			} else if isPage && hasCSS {
 				*cssList = append(*cssList, devCssPath+k)
 			}
 		}
 	} else {
 		for k, v := range manifest {
-			isChat := strings.HasPrefix(k, "chat")
+			isPage := strings.HasPrefix(k, pageName)
 			hasJS := strings.HasSuffix(k, ".js")
 			hasCSS := strings.HasSuffix(k, ".css")
 
-			if isChat && hasJS {
+			if isPage && hasJS {
 				*js = prodPath + v
-			} else if isChat && hasCSS {
+			} else if isPage && hasCSS {
 				*cssList = append(*cssList, prodPath+v)
 			}
 		}
