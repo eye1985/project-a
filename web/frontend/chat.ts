@@ -246,8 +246,13 @@ export default {
               }
 
               if (!messages) {
-                insertChatHistory(data.fromUuid, data);
-                updateMessageCounter(`unread_${data.fromUuid}`, data.fromUuid);
+                if (data.username !== 'System') {
+                  insertChatHistory(data.fromUuid, data);
+                  updateMessageCounter(
+                    `unread_${data.fromUuid}`,
+                    data.fromUuid,
+                  );
+                }
                 return;
               }
 

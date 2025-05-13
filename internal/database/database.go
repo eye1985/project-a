@@ -2,6 +2,7 @@ package database
 
 import (
 	"context"
+	"errors"
 	"github.com/golang-migrate/migrate/v4"
 	_ "github.com/golang-migrate/migrate/v4/database/postgres"
 	_ "github.com/golang-migrate/migrate/v4/source/file"
@@ -10,15 +11,6 @@ import (
 	"os"
 	"path/filepath"
 )
-
-func postgresUrl() string {
-	pgUrl, ok := os.LookupEnv("POSTGRES_URL")
-	if !ok {
-		log.Fatalf("POSTGRES_URL environment variable not set")
-	}
-
-	return pgUrl
-}
 
 func migrationPath() string {
 	dir, err := os.Getwd()
@@ -29,14 +21,14 @@ func migrationPath() string {
 	return "file://" + filepath.Join(dir, "migrations")
 }
 
-func Migrate() {
-	m, err := migrate.New(migrationPath(), postgresUrl()+"?sslmode=disable")
+func Migrate(pgUrl string) {
+	m, err := migrate.New(migrationPath(), pgUrl+"?sslmode=disable")
 	if err != nil {
 		log.Fatalf("Error running migration: %v", err)
 	}
 
 	if err := m.Up(); err != nil {
-		if err != migrate.ErrNoChange {
+		if !errors.Is(err, migrate.ErrNoChange) {
 			log.Fatalf("Error running migration: %v", err)
 		}
 
@@ -47,7 +39,7 @@ func Migrate() {
 	log.Println("Migrations applied")
 }
 
-func Pool() (*pgxpool.Pool, error) {
+func Pool(pgUrl string) (*pgxpool.Pool, error) {
 	// TODO change ParseConfig
-	return pgxpool.New(context.Background(), postgresUrl())
+	return pgxpool.New(context.Background(), pgUrl)
 }

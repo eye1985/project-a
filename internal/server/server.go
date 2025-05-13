@@ -2,7 +2,6 @@ package server
 
 import (
 	"github.com/jackc/pgx/v5/pgxpool"
-	"log"
 	"net/http"
 	"os"
 	"project-a/internal/auth"
@@ -16,23 +15,18 @@ import (
 
 const PORT = ":3000"
 
-func Serve(pool *pgxpool.Pool) error {
-	wsUrl, ok := os.LookupEnv("WS_URL")
-	if !ok {
-		log.Fatalf("WS_URL environment variable not set")
-	}
-	hashKey, ok := os.LookupEnv("HASH_KEY")
-	if !ok {
-		log.Fatalf("HASH_KEY environment variable not set")
-	}
-	blockKey, ok := os.LookupEnv("BLOCK_KEY")
-	if !ok {
-		log.Fatalf("BLOCK_KEY environment variable not set")
-	}
-	origin, ok := os.LookupEnv("ORIGIN")
-	if !ok {
-		log.Fatalf("ORIGIN environment variable not set")
-	}
+type ServeArgs struct {
+	HashKey  string
+	BlockKey string
+	WsUrl    string
+	Origin   string
+}
+
+func Serve(pool *pgxpool.Pool, args *ServeArgs) error {
+	hashKey := args.HashKey
+	blockKey := args.BlockKey
+	wsUrl := args.WsUrl
+	origin := args.Origin
 
 	isDev, _ := os.LookupEnv("IS_DEV")
 	dev := false

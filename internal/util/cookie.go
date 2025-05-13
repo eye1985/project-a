@@ -1,4 +1,4 @@
-package cookieutil
+package util
 
 import (
 	"net/http"

@@ -3,8 +3,8 @@ package middleware
 import (
 	"context"
 	"net/http"
-	"project-a/internal/cookieutil"
 	"project-a/internal/shared"
+	"project-a/internal/util"
 )
 
 func Authenticated(session shared.AuthService) func(handlerFunc http.HandlerFunc) http.HandlerFunc {
@@ -13,8 +13,8 @@ func Authenticated(session shared.AuthService) func(handlerFunc http.HandlerFunc
 			cookie, err := r.Cookie(string(shared.SessionCtxKey))
 
 			if err != nil {
-				cookieutil.SetFlashCookie(
-					w, &cookieutil.FlashCookieArgs{
+				util.SetFlashCookie(
+					w, &util.FlashCookieArgs{
 						Name:  "flash",
 						Value: "unauthorized",
 						Path:  "/",
@@ -26,8 +26,8 @@ func Authenticated(session shared.AuthService) func(handlerFunc http.HandlerFunc
 
 			cookieValue, err := session.VerifyCookie(cookie)
 			if err != nil {
-				cookieutil.SetFlashCookie(
-					w, &cookieutil.FlashCookieArgs{
+				util.SetFlashCookie(
+					w, &util.FlashCookieArgs{
 						Name:  "flash",
 						Value: "unauthorized",
 						Path:  "/",
@@ -38,8 +38,8 @@ func Authenticated(session shared.AuthService) func(handlerFunc http.HandlerFunc
 			}
 
 			if !session.IsSessionActive(r.Context(), string(cookieValue)) {
-				cookieutil.SetFlashCookie(
-					w, &cookieutil.FlashCookieArgs{
+				util.SetFlashCookie(
+					w, &util.FlashCookieArgs{
 						Name:  "flash",
 						Value: "unauthorized",
 						Path:  "/",
