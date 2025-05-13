@@ -1,9 +1,40 @@
 {{define "main-content"}}
-  <div class="contact-layout">
-    <div class="sidebar">
-      <button type="button">
-        Talk to
-      </button>
+  <div class="page-layout">
+    <div class="sidebar" data-sc-id="sidebar">
+      <div class="sidebar-scroll">
+        <div class="direct-messages" data-sc-id="directMessages"></div>
+          {{range $list, $contacts := .ContactLists}}
+              {{if and $list.Name (gt (len $contacts) 0)}}
+                <div class="contacts-layout">
+                  <h2 class="contact-header">
+                      {{$list.Name}}
+                  </h2>
+                  <ul class="contact-list">
+                      {{range $contact := $contacts}}
+                        <li class="contact-list__item">
+                          <button class="contact-list__button" type="button"
+                                  data-sc-id="chat_{{$contact.UserUuid}}"
+                                  data-sc-type="chat-button"
+                                  data-sc-handler="click:openChat">
+                            <div class="contact-list__username">
+                                {{$contact.Username}}
+                            </div>
+                            <div class="contact-list__unread" data-sc-id="unread_{{$contact.UserUuid}}">
+                            </div>
+                            <div class="contact-list__email">
+                                {{$contact.Email}}
+                            </div>
+                            <div data-sc-id="isOnline_{{$contact.UserUuid}}">
+                              Offline
+                            </div>
+                          </button>
+                        </li>
+                      {{end}}
+                  </ul>
+                </div>
+              {{end}}
+          {{end}}
+      </div>
     </div>
     <div class="main-content">
       <div class="chat-body" data-sc-id="chatBody">

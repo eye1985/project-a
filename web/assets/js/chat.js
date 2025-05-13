@@ -1,10 +1,10 @@
-import { addFormMethod, addFromTarget, addHandler, getElement, isTemplate, state, } from './shortcut.js';
+import { addFromTarget, addHandler, getElement, getElementsByType, isTemplate, state, } from './shortcut.js';
 import { initSocket } from './websocket.js';
 const { get, set } = state;
 const socket = initSocket();
 addFromTarget(document.body);
 addHandler('openChat', (e, currentCustomElement, store) => {
-    const buttons = store.getByType('chat-button');
+    const buttons = getElementsByType('chat-button');
     buttons.forEach((button) => {
         button.ref.classList.remove('active');
     });
@@ -26,17 +26,8 @@ addHandler('openChat', (e, currentCustomElement, store) => {
     if (!toUuid) {
         throw new Error('toUuid not found');
     }
-    const history = sessionStorage.getItem(toUuid);
-    if (history) {
-        const messages = getElement('messages');
-        if (!messages) {
-            throw new Error('messages not found');
-        }
-        JSON.parse(history).forEach((data) => {
-            const isMyMessage = data.fromUuid === get('myUuid');
-            insertMessage(data, messages.ref, isMyMessage);
-        });
-    }
+    readChatHistory(toUuid);
+    scrollDown();
 });
 addHandler('handleInput', (e) => {
     const event = e;
@@ -52,12 +43,6 @@ addHandler('handleInput', (e) => {
         }));
         inputElm.value = '';
     }
-});
-addFormMethod('inviteOnError', (errorMsg) => {
-    (getElement('inviteError')?.ref).innerText = errorMsg;
-});
-addFormMethod('inviteOnSuccess', () => {
-    location.reload();
 });
 const insertMessage = (data, target, isCurrentUser) => {
     const message = getElement('messageTemplate');
@@ -85,15 +70,72 @@ const insertMessage = (data, target, isCurrentUser) => {
         classNames,
     });
 };
-const insertChatHistory = (toUuid, data) => {
+const insertChatHistory = (toUuid, data, isRead = false) => {
     const history = sessionStorage.getItem(toUuid);
+    const readSocketMsg = data;
+    readSocketMsg.isRead = isRead;
+    readSocketMsg.id = crypto.randomUUID();
     if (!history) {
-        sessionStorage.setItem(toUuid, JSON.stringify([data]));
+        sessionStorage.setItem(toUuid, JSON.stringify([readSocketMsg]));
     }
     else {
-        sessionStorage.setItem(toUuid, JSON.stringify([...JSON.parse(history), data]));
+        sessionStorage.setItem(toUuid, JSON.stringify([...JSON.parse(history), readSocketMsg]));
     }
 };
+const updateChatHistory = (uuid, msgId, read) => {
+    const history = sessionStorage.getItem(uuid);
+    if (!history) {
+        throw new Error('history not found');
+    }
+    const updatedData = JSON.parse(history).map((data) => {
+        if (data.id === msgId) {
+            data.isRead = read;
+        }
+        return data;
+    });
+    sessionStorage.setItem(uuid, JSON.stringify(updatedData));
+};
+const readChatHistory = (uuid) => {
+    const history = sessionStorage.getItem(uuid);
+    if (history) {
+        const messages = getElement('messages');
+        if (!messages) {
+            throw new Error('messages not found');
+        }
+        JSON.parse(history).forEach((data) => {
+            const isMyMessage = data.fromUuid === get('myUuid');
+            insertMessage(data, messages.ref, isMyMessage);
+            updateChatHistory(uuid, data.id, true);
+        });
+        updateMessageCounter(`unread_${uuid}`, uuid);
+    }
+};
+const updateMessageCounter = (elementId, uuid) => {
+    const counter = getElement(elementId);
+    if (!counter) {
+        throw new Error('messages not found');
+    }
+    const history = sessionStorage.getItem(uuid);
+    if (history) {
+        const count = JSON.parse(history).filter((data) => !data.isRead).length;
+        counter.ref.textContent = count > 0 ? count.toString() : '';
+    }
+};
+const scrollDown = () => {
+    const messages = getElement('messages');
+    if (messages) {
+        requestAnimationFrame(() => {
+            messages.ref.parentElement?.scrollTo({
+                top: messages.ref.parentElement?.scrollHeight,
+                behavior: 'smooth',
+            });
+        });
+    }
+};
+getElementsByType('chat-button').forEach((button) => {
+    const uuId = button.id.split('_')[1];
+    updateMessageCounter(`unread_${uuId}`, uuId);
+});
 export default {
     connect(wsUrl, myUuid) {
         if (!myUuid) {
@@ -137,11 +179,11 @@ export default {
                             const isSystemMsgToMe = data.username === 'System' && data.fromUuid === myUuid;
                             const isMessageToThisUser = data.fromUuid === toUuid || data.toUuid === toUuid;
                             if (data.username !== 'System' && isMessageToThisUser) {
-                                insertChatHistory(toUuid, data);
+                                insertChatHistory(toUuid, data, true);
                             }
                             if (!messages) {
                                 insertChatHistory(data.fromUuid, data);
-                                console.warn('cant find messages');
+                                updateMessageCounter(`unread_${data.fromUuid}`, data.fromUuid);
                                 return;
                             }
                             if (isMessageToThisUser || isSystemMsgToMe) {
@@ -150,15 +192,7 @@ export default {
                             break;
                     }
                 });
-                const messages = getElement('messages');
-                if (messages) {
-                    requestAnimationFrame(() => {
-                        messages.ref.parentElement?.scrollTo({
-                            top: messages.ref.parentElement?.scrollHeight,
-                            behavior: 'smooth',
-                        });
-                    });
-                }
+                scrollDown();
             },
             onClose(evt) {
                 console.log(evt, 'on close');

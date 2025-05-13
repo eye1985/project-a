@@ -7,18 +7,18 @@ const METHOD = 'method';
 const FORM_ON_ERROR = 'form-onerror';
 const FORM_ON_SUCCESS = 'form-onsuccess';
 const HANDLER = 'handler';
-const store = {
+export const store = {
     formMethods: new Map(),
     elements: new Map(),
     handlers: new Map(),
     state: new Map(),
-    getByType(type) {
-        const result = [];
-        this.elements.forEach((elm) => {
-            elm.type === type && result.push(elm);
-        });
-        return result;
-    },
+};
+export const getElementsByType = (type) => {
+    const result = [];
+    store.elements.forEach((elm) => {
+        elm.type === type && result.push(elm);
+    });
+    return result;
 };
 const createDataName = (action) => {
     return `data-${PREFIX}-${action}`;
@@ -36,7 +36,7 @@ const addToInternalState = (el) => {
     }
     store.elements.set(id, new CustomElement(el));
 };
-const syncHandle = () => {
+export const syncHandle = () => {
     for (const key of store.handlers.keys()) {
         store.elements.forEach((elm) => {
             if (elm.handleName === key && !elm.isHandleApplied && elm.handleEvent) {
@@ -265,6 +265,11 @@ export const addFormMethod = (methodName, method) => {
         throw new Error(`${addFormMethod.name}: method ${methodName} already exists`);
     }
     store.formMethods.set(methodName, method);
+};
+export const quickCreateNode = (html) => {
+    const node = document.createElement('div');
+    node.insertAdjacentHTML('beforeend', html);
+    return node;
 };
 export const getCookie = (name) => {
     const cookie = document.cookie

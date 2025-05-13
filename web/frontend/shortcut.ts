@@ -20,21 +20,21 @@ type InternalState = {
   elements: Map<string, CustomElement>;
   handlers: Map<string, Handle>;
   state: Map<string, any>;
-  getByType(type: string): CustomElement[];
 };
-const store: InternalState = {
+export const store: InternalState = {
   formMethods: new Map(),
   elements: new Map(),
   handlers: new Map(),
   state: new Map(),
-  getByType(type: string): CustomElement[] {
-    const result: CustomElement[] = [];
-    this.elements.forEach((elm) => {
-      elm.type === type && result.push(elm);
-    });
+};
 
-    return result;
-  },
+export const getElementsByType = (type: string) => {
+  const result: CustomElement[] = [];
+  store.elements.forEach((elm) => {
+    elm.type === type && result.push(elm);
+  });
+
+  return result;
 };
 
 const createDataName = (action: string) => {
@@ -56,7 +56,7 @@ const addToInternalState = (el: Element) => {
   store.elements.set(id, new CustomElement(el));
 };
 
-const syncHandle = () => {
+export const syncHandle = () => {
   for (const key of store.handlers.keys()) {
     store.elements.forEach((elm) => {
       if (elm.handleName === key && !elm.isHandleApplied && elm.handleEvent) {
@@ -339,6 +339,12 @@ export const addFormMethod = (methodName: string, method: FormMethod) => {
     );
   }
   store.formMethods.set(methodName, method);
+};
+
+export const quickCreateNode = (html: string) => {
+  const node = document.createElement('div');
+  node.insertAdjacentHTML('beforeend', html);
+  return node;
 };
 
 export const getCookie = (name: string) => {

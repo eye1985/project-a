@@ -1,6 +1,6 @@
 @import "./form.css";
 
-.contact-layout {
+.page-layout {
   display: grid;
   grid-template-columns: 1fr;
   height: 100%;
@@ -16,6 +16,11 @@
   background: var(--sidebar-bg);
   padding: 20px;
   box-shadow: 0 0 1px #251405;
+  overflow-y: auto;
+}
+
+.sidebar-scroll{
+  height: calc(100vh - 190px);
 }
 
 .sidebar-layout {
@@ -125,9 +130,8 @@
 
 .contacts-layout {
   display: grid;
-  grid-template-rows: auto auto;
+  grid-template-columns: 1fr;
   gap: 10px;
-  height: 100%;
 }
 
 .contact-header {
@@ -152,7 +156,7 @@
   border-radius: 8px;
 
   display: grid;
-  grid-template-columns: 1fr 1fr auto;
+  grid-template-columns: 1fr auto;
   gap: 10px;
 
   &:hover {
@@ -164,6 +168,21 @@
     background: #fbca0b;
     color: var(--chat-bubble2-text);
   }
+}
+
+.contact-list__unread:not(:empty) {
+  border-radius: 100%;
+  background: red;
+  height: 1.3rem;
+  width: 1.3rem;
+  font-size: .8rem;
+  border: 1px solid #fff;
+  outline: 1px solid red;
+  color: #fff;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-family: system-ui, sans-serif;
 }
 
 
