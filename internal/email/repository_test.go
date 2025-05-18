@@ -76,7 +76,7 @@ func TestWithPostgresSQL(t *testing.T) {
 			)
 
 			repo := NewRepo(pool)
-			err := repo.AddSentEmail(ctx, "test@test.com", net.ParseIP("127.0.0.1").To4())
+			err := repo.AddSentEmail(ctx, "test@test.com", net.ParseIP("127.0.0.1").To4(), true)
 			require.NoError(t, err)
 
 			emails, err := repo.GetSentEmails(ctx)

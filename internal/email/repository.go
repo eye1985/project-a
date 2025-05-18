@@ -50,6 +50,7 @@ func (e *emailRepository) GetSentEmails(ctx context.Context) ([]*SentEmail, erro
 			&sentEmail.CreatedAt,
 			&sentEmail.Email,
 			&sentEmail.Ip,
+			&sentEmail.IsSignUp,
 		)
 
 		if err != nil {
