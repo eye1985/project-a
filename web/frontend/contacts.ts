@@ -1,11 +1,6 @@
-import {
-  addFormMethod,
-  addFromTarget,
-  addHandler,
-  getElement,
-} from './shortcut.js';
+import { addFormMethod, scanFrom, addHandler, getElement } from './shortcut.js';
 
-addFromTarget(document.body);
+scanFrom(document.body);
 addFormMethod('inviteOnError', (errorMsg: string) => {
   (getElement('inviteError')?.ref as HTMLDivElement).innerText = errorMsg;
 });

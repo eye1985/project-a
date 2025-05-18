@@ -6,6 +6,7 @@ import (
 	"os"
 	"project-a/internal/auth"
 	"project-a/internal/contacts"
+	"project-a/internal/email"
 	"project-a/internal/health"
 	"project-a/internal/middleware"
 	"project-a/internal/socket"
@@ -47,6 +48,7 @@ func Serve(pool *pgxpool.Pool, args *ServeArgs) error {
 	authRepo := auth.NewRepo(pool)
 	userRepo := user.NewUserRepo(pool)
 	contactsRepo := contacts.NewRepo(pool)
+	emailRepo := email.NewRepo(pool)
 
 	// services
 	authService := auth.NewService(authRepo, hashKey, blockKey)
@@ -55,7 +57,7 @@ func Serve(pool *pgxpool.Pool, args *ServeArgs) error {
 	healthHandler := health.NewHandler(pool)
 	userHandler := user.NewUserHandler(userRepo, hub)
 	contactsHandler := contacts.NewHandler(contactsRepo, userRepo)
-	authHandler := auth.NewHandler(authService, authRepo, userRepo, contactsRepo)
+	authHandler := auth.NewHandler(authService, authRepo, userRepo, contactsRepo, emailRepo)
 	templateHandler := templates.NewHandler(userRepo, contactsRepo, authService, wsUrl, dev)
 
 	// routes

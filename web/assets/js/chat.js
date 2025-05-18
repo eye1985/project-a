@@ -1,8 +1,8 @@
-import { addFromTarget, addHandler, getElement, getElementsByType, isTemplate, state, } from './shortcut.js';
+import { scanFrom, addHandler, getElement, getElementsByType, isTemplate, state, } from './shortcut.js';
 import { initSocket } from './websocket.js';
 const { get, set } = state;
 const socket = initSocket();
-addFromTarget(document.body);
+scanFrom(document.body);
 addHandler('openChat', (e, currentCustomElement, store) => {
     const buttons = getElementsByType('chat-button');
     buttons.forEach((button) => {

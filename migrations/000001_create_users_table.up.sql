@@ -1,11 +1,12 @@
 CREATE TABLE users
 (
-    id         SERIAL PRIMARY KEY,
-    uuid       UUID        NOT NULL UNIQUE DEFAULT gen_random_uuid(),
-    username   TEXT        NOT NULL,
-    email      TEXT UNIQUE NOT NULL,
-    created_at TIMESTAMPTZ                 DEFAULT NOW(),
-    updated_at timestamptz
+    id             SERIAL PRIMARY KEY,
+    uuid           UUID        NOT NULL UNIQUE DEFAULT gen_random_uuid(),
+    username       TEXT        NOT NULL,
+    email          TEXT UNIQUE NOT NULL,
+    created_at     TIMESTAMPTZ                 DEFAULT NOW(),
+    updated_at     timestamptz,
+    is_super_admin BOOL                        DEFAULT FALSE
 );
 
 CREATE TABLE contact_lists
@@ -81,6 +82,16 @@ CREATE TABLE magic_links
     is_activated BOOL        DEFAULT false
 );
 
+CREATE TABLE sent_email
+(
+    id         SERIAL PRIMARY KEY,
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    email      TEXT NOT NULL,
+    ip         inet NOT NULL,
+    is_signup  bool        DEFAULT false
+);
+
+-- Triggers and functions
 CREATE OR REPLACE FUNCTION set_updated_at()
     RETURNS TRIGGER AS
 $$

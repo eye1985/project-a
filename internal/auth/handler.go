@@ -7,7 +7,9 @@ import (
 	"net/http"
 	"net/mail"
 	"project-a/internal/contacts"
+	"project-a/internal/email"
 	"project-a/internal/shared"
+	"project-a/internal/util"
 )
 
 type Handler struct {
@@ -15,6 +17,7 @@ type Handler struct {
 	Service      shared.AuthService
 	UserRepo     shared.UserRepository
 	UserlistRepo contacts.Repository
+	EmailRepo    email.Repository
 }
 
 func createMagicLink(ctx context.Context, email string, h *Handler) (string, error) {
@@ -159,6 +162,19 @@ func (h *Handler) CreateMagicLinkCode(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Could not create magic link", http.StatusInternalServerError)
 		return
 	}
+	ip, err := util.ReadUserIP(r)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	u, _ := h.UserRepo.GetUserByEmail(r.Context(), magicLink.Email)
+	isSignUp := u == nil
+	err = h.EmailRepo.AddSentEmail(r.Context(), magicLink.Email, ip, isSignUp)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
 
 	// TODO send email
 	m := map[string]string{}
@@ -181,11 +197,13 @@ func NewHandler(
 	repo Repository,
 	ur shared.UserRepository,
 	ulr contacts.Repository,
+	er email.Repository,
 ) *Handler {
 	return &Handler{
 		Repo:         repo,
 		Service:      as,
 		UserRepo:     ur,
 		UserlistRepo: ulr,
+		EmailRepo:    er,
 	}
 }

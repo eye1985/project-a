@@ -1,4 +1,4 @@
-import { addFormMethod, addFromTarget, getCookie, getElement } from './shortcut.js';
+import { addFormMethod, scanFrom, getCookie, getElement } from './shortcut.js';
 const createToast = (text, timeout) => {
     const template = getElement('toast');
     if (template) {
@@ -15,7 +15,7 @@ const createToast = (text, timeout) => {
         }
     }
 };
-addFromTarget(document.body);
+scanFrom(document.body);
 addFormMethod('onerror', (error) => {
     createToast(error, 2000);
 });
@@ -29,7 +29,7 @@ addFormMethod('onsuccess', (success) => {
     if (template) {
         template.insertTemplateInto(layout, {
             clearBeforeInsert: true,
-            classNames: ['layout-item']
+            classNames: ['layout-item'],
         });
     }
 });

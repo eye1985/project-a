@@ -34,7 +34,7 @@ const addToInternalState = (el) => {
     if (store.elements.get(id)) {
         throw new Error(`${addToInternalState.name}: id ${id} already exists`);
     }
-    store.elements.set(id, new CustomElement(el));
+    store.elements.set(id, new SCElement(el));
 };
 export const syncHandle = () => {
     for (const key of store.handlers.keys()) {
@@ -62,7 +62,11 @@ export const state = {
         store.state.set(id, value);
     },
 };
-export class CustomElement {
+// export class SCTemplate {
+//   id: string;
+//   ref: HTMLTemplateElement;
+// }
+export class SCElement {
     id;
     type = null;
     handleName = null;
@@ -75,7 +79,7 @@ export class CustomElement {
     constructor(el) {
         const id = el.getAttribute(createDataName(ID));
         if (!id) {
-            throw new Error(`${CustomElement.name}: id is required`);
+            throw new Error(`${SCElement.name}: id is required`);
         }
         const type = el.getAttribute(createDataName(TYPE));
         if (type) {
@@ -176,7 +180,7 @@ export class CustomElement {
         this.handlers.push(handler);
     };
     insertTemplateInto = (target, options) => {
-        const intoTarget = target instanceof CustomElement ? target.ref : target;
+        const intoTarget = target instanceof SCElement ? target.ref : target;
         if (!this.isTemplate) {
             throw new Error(`${this.insertTemplateInto.name}: element is not a template`);
         }
@@ -200,7 +204,7 @@ export class CustomElement {
             intoTarget.innerHTML = '';
         }
         intoTarget.appendChild(wrapper);
-        addFromTarget(wrapper);
+        scanFrom(wrapper);
         syncHandle();
     };
     remove() {
@@ -216,7 +220,7 @@ export class CustomElement {
         }
     }
 }
-export const addFromTarget = (target) => {
+export const scanFrom = (target) => {
     const elements = scanElements(target);
     elements.forEach((element) => {
         addToInternalState(element);

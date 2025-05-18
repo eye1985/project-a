@@ -1,7 +1,7 @@
 import {
-  addFromTarget,
+  scanFrom,
   addHandler,
-  CustomElement,
+  SCElement,
   getElement,
   getElementsByType,
   isTemplate,
@@ -15,7 +15,7 @@ type ReadSocketMessage = SocketMessage & {
 };
 const { get, set } = state;
 const socket = initSocket();
-addFromTarget(document.body);
+scanFrom(document.body);
 
 addHandler('openChat', (e, currentCustomElement, store) => {
   const buttons = getElementsByType('chat-button');
@@ -207,7 +207,7 @@ export default {
       },
       onMessage(event) {
         const parsedSocketData: SocketMessage[] = JSON.parse(event.data);
-        let element: CustomElement | null;
+        let element: SCElement | null;
 
         parsedSocketData.forEach((data: SocketMessage) => {
           switch (data.event) {

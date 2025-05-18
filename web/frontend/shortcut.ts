@@ -11,13 +11,13 @@ const HANDLER = 'handler';
 
 type Handle = (
   e: Event,
-  currentCustomElement: CustomElement,
+  currentCustomElement: SCElement,
   is: InternalState,
 ) => void;
 type FormMethod = (data: any) => void;
 type InternalState = {
   formMethods: Map<string, FormMethod>;
-  elements: Map<string, CustomElement>;
+  elements: Map<string, SCElement>;
   handlers: Map<string, Handle>;
   state: Map<string, any>;
 };
@@ -29,7 +29,7 @@ export const store: InternalState = {
 };
 
 export const getElementsByType = (type: string) => {
-  const result: CustomElement[] = [];
+  const result: SCElement[] = [];
   store.elements.forEach((elm) => {
     elm.type === type && result.push(elm);
   });
@@ -53,7 +53,7 @@ const addToInternalState = (el: Element) => {
   if (store.elements.get(id)) {
     throw new Error(`${addToInternalState.name}: id ${id} already exists`);
   }
-  store.elements.set(id, new CustomElement(el));
+  store.elements.set(id, new SCElement(el));
 };
 
 export const syncHandle = () => {
@@ -84,21 +84,26 @@ export const state = {
   },
 };
 
-export class CustomElement {
+// export class SCTemplate {
+//   id: string;
+//   ref: HTMLTemplateElement;
+// }
+
+export class SCElement {
   id: string;
   type: string | null = null;
   handleName: string | null = null;
   handleEvent: string | null = null;
   isHandleApplied = false;
   isTemplate = false;
-  ref: Element | HTMLTemplateElement;
+  ref: Element;
   templateWrapperRef: Element | null = null;
   handlers: EventListenerOrEventListenerObject[];
 
   constructor(el: Element | HTMLTemplateElement) {
     const id = el.getAttribute(createDataName(ID));
     if (!id) {
-      throw new Error(`${CustomElement.name}: id is required`);
+      throw new Error(`${SCElement.name}: id is required`);
     }
 
     const type = el.getAttribute(createDataName(TYPE));
@@ -222,13 +227,13 @@ export class CustomElement {
   };
 
   insertTemplateInto = (
-    target: CustomElement | Element,
+    target: SCElement | Element,
     options?: {
       clearBeforeInsert?: boolean;
       classNames?: string[];
     },
   ) => {
-    const intoTarget = target instanceof CustomElement ? target.ref : target;
+    const intoTarget = target instanceof SCElement ? target.ref : target;
 
     if (!this.isTemplate) {
       throw new Error(
@@ -257,7 +262,7 @@ export class CustomElement {
       intoTarget.innerHTML = '';
     }
     intoTarget.appendChild(wrapper);
-    addFromTarget(wrapper);
+    scanFrom(wrapper);
     syncHandle();
   };
 
@@ -275,7 +280,7 @@ export class CustomElement {
   }
 }
 
-export const addFromTarget = (target: Element) => {
+export const scanFrom = (target: Element) => {
   const elements = scanElements(target);
   elements.forEach((element) => {
     addToInternalState(element);
