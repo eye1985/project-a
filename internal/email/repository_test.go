@@ -2,17 +2,22 @@ package email
 
 import (
 	"context"
+	"github.com/joho/godotenv"
 	"github.com/stretchr/testify/require"
 	"github.com/testcontainers/testcontainers-go"
 	"github.com/testcontainers/testcontainers-go/modules/postgres"
 	"log"
 	"net"
+	"os"
 	"project-a/internal/database"
-	"project-a/migrations"
 	"testing"
 )
 
 func TestWithPostgresSQL(t *testing.T) {
+	if err := godotenv.Load("../../.env"); err != nil {
+		log.Println("No .env file found")
+	}
+
 	ctx := context.Background()
 
 	dbName := "testing"
@@ -41,29 +46,17 @@ func TestWithPostgresSQL(t *testing.T) {
 		return
 	}
 
-	// Run any migrations on the database
-	_, _, err = postgresContainer.Exec(
-		ctx,
-		[]string{
-			"psql",
-			"-U",
-			dbUser,
-			"-d",
-			dbName,
-			"-c",
-			migrations.InitMigrationCreate,
-		},
-	)
-	require.NoError(t, err)
-
-	err = postgresContainer.Snapshot(ctx, postgres.WithSnapshotName("sentEmail-snapshot"))
-	require.NoError(t, err)
-
 	connStr, err := postgresContainer.ConnectionString(ctx, "sslmode=disable")
+	require.NoError(t, err)
+	root := os.Getenv("PROJECT_ROOT")
+
+	database.Migrate(connStr, root)
+	err = postgresContainer.Snapshot(ctx, postgres.WithSnapshotName("sentEmail-snapshot"))
 	require.NoError(t, err)
 
 	pool, err := database.Pool(connStr)
 	require.NoError(t, err)
+	defer pool.Close()
 
 	t.Run(
 		"Should add one email row", func(t *testing.T) {

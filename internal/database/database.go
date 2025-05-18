@@ -8,24 +8,21 @@ import (
 	_ "github.com/golang-migrate/migrate/v4/source/file"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"log"
-	"os"
 	"path/filepath"
 )
 
-func migrationPath() string {
-	dir, err := os.Getwd()
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	return "file://" + filepath.Join(dir, "migrations")
-}
-
-func Migrate(pgUrl string) {
-	m, err := migrate.New(migrationPath(), pgUrl+"?sslmode=disable")
+func Migrate(pgUrl string, rootDir string) {
+	mPath := "file://" + filepath.Join(rootDir, "migrations")
+	m, err := migrate.New(mPath, pgUrl)
 	if err != nil {
 		log.Fatalf("Error running migration: %v", err)
 	}
+
+	defer func() {
+		if sErr, dErr := m.Close(); sErr != nil || dErr != nil {
+			log.Fatalf("Error closing migration: %v %v", sErr, dErr)
+		}
+	}()
 
 	if err := m.Up(); err != nil {
 		if !errors.Is(err, migrate.ErrNoChange) {

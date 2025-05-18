@@ -23,6 +23,8 @@ func main() {
 			"HASH_KEY",
 			"BLOCK_KEY",
 			"ORIGIN",
+			"PROJECT_ROOT",
+			"MAIL_SEND_TOKEN",
 		},
 	)
 
@@ -35,14 +37,15 @@ func main() {
 	blockKey := envs["BLOCK_KEY"]
 	origin := envs["ORIGIN"]
 	pgUrl := envs["POSTGRES_URL"]
+	rootDir := envs["PROJECT_ROOT"]
 
+	database.Migrate(pgUrl, rootDir)
 	pool, dbErr := database.Pool(pgUrl)
 	if dbErr != nil {
 		fmt.Printf("Error connecting to pool: %v", dbErr)
 		os.Exit(1)
 	}
 	defer pool.Close()
-	database.Migrate(pgUrl)
 
 	log.Printf("Connected to PostgreSQL")
 	log.Printf("Starting server at port: %v \n", server.PORT)
