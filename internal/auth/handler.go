@@ -213,9 +213,17 @@ func (h *Handler) CreateMagicLinkCode(w http.ResponseWriter, r *http.Request) {
 
 func (h *Handler) Logout(w http.ResponseWriter, r *http.Request) {
 	sessionID := r.Context().Value(shared.SessionCtxKey).([]byte)
-
 	_ = h.Repo.DeleteSession(r.Context(), string(sessionID))
 
+	http.SetCookie(
+		w, &http.Cookie{
+			Name:     string(shared.SessionCtxKey),
+			MaxAge:   -1,
+			Secure:   true,
+			HttpOnly: true,
+			SameSite: http.SameSiteStrictMode,
+		},
+	)
 	http.Redirect(w, r, "/", http.StatusSeeOther)
 }
 
