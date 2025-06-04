@@ -5,13 +5,18 @@ import (
 	"project-a/internal/shared"
 )
 
-func RegisterRoutes(m *middleware.Middleware, h *Handler, as shared.AuthService) {
+func RegisterRoutes(
+	m *middleware.Middleware,
+	h *Handler,
+	as shared.AuthService,
+	csrf middleware.CSRFHandler,
+) {
 	m.HandleFunc(
 		"POST /createMagicLink",
 		h.CreateMagicLinkCode,
 		middleware.AllowOnlyPost,
 		middleware.AllowOnlyApplicationJson,
-		middleware.SetApplicationJson, // TODO remove this later after implementing send email
+		middleware.CSRF(csrf),
 	)
 	m.HandleFunc(
 		"POST /logout", h.Logout,

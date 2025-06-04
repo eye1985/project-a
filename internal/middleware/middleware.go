@@ -21,6 +21,7 @@ func compose(fns ...Handler) Handler {
 }
 
 type Handler func(next http.HandlerFunc) http.HandlerFunc
+type CSRFHandler func(http.Handler) http.Handler
 type Middleware struct {
 	middlewares    []Handler
 	composedHandle Handler

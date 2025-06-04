@@ -1,6 +1,7 @@
 package server
 
 import (
+	"github.com/gorilla/csrf"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"net/http"
 	"os"
@@ -12,6 +13,7 @@ import (
 	"project-a/internal/socket"
 	"project-a/internal/templates"
 	"project-a/internal/user"
+	"project-a/internal/util"
 )
 
 const PORT = ":3000"
@@ -36,6 +38,24 @@ func Serve(pool *pgxpool.Pool, args *ServeArgs) error {
 
 	if isDev == "true" {
 		dev = true
+	}
+
+	var csrfHandler func(http.Handler) http.Handler
+	if dev {
+		csrfHandler = csrf.Protect(
+			util.GetCSRFKey(),
+			csrf.SameSite(csrf.SameSiteStrictMode),
+			csrf.Secure(false),
+			csrf.TrustedOrigins([]string{"localhost:3000"}),
+			csrf.Path("/"),
+		)
+	} else {
+		csrfHandler = csrf.Protect(
+			util.GetCSRFKey(),
+			csrf.SameSite(csrf.SameSiteStrictMode),
+			csrf.Secure(false),
+			csrf.Path("/"),
+		)
 	}
 
 	midWare := middleware.NewMux()
@@ -74,18 +94,40 @@ func Serve(pool *pgxpool.Pool, args *ServeArgs) error {
 
 	// routes
 	midWare.Handle("GET /assets/", http.StripPrefix("/assets/", http.FileServer(http.Dir("web/assets"))))
-	midWare.HandleFunc(
-		"GET /favicon.ico", func(w http.ResponseWriter, r *http.Request) {
-			w.WriteHeader(http.StatusNoContent)
-		},
-	)
+	midWare.HandleFunc("GET /favicon.ico", http.NotFound)
+	midWare.HandleFunc("GET /.well-known/", http.NotFound)
 
 	health.RegisterRoutes(midWare, healthHandler)
-	auth.RegisterRoutes(midWare, authHandler, authService)
-	user.RegisterRoutes(midWare, userHandler, authService)
-	contacts.RegisterRoutes(midWare, contactsHandler, authService)
-	socket.RegisterRoutes(midWare, hub, authService, userRepo, contactsRepo, origin)
-	templates.RegisterRoutes(midWare, templateHandler, authService)
+	auth.RegisterRoutes(
+		midWare,
+		authHandler,
+		authService,
+		csrfHandler,
+	)
+	user.RegisterRoutes(
+		midWare,
+		userHandler,
+		authService,
+	)
+	contacts.RegisterRoutes(
+		midWare,
+		contactsHandler,
+		authService,
+	)
+	socket.RegisterRoutes(
+		midWare,
+		hub,
+		authService,
+		userRepo,
+		contactsRepo,
+		origin,
+	)
+	templates.RegisterRoutes(
+		midWare,
+		templateHandler,
+		authService,
+		csrfHandler,
+	)
 
 	return http.ListenAndServe(PORT, midWare.Mux)
 }

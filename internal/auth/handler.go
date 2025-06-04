@@ -146,7 +146,7 @@ func (h *Handler) CreateMagicLinkCode(w http.ResponseWriter, r *http.Request) {
 	decoder.DisallowUnknownFields()
 	err := decoder.Decode(&magicLink)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
+		http.Error(w, "Missing body", http.StatusBadRequest)
 		return
 	}
 
@@ -193,6 +193,7 @@ func (h *Handler) CreateMagicLinkCode(w http.ResponseWriter, r *http.Request) {
 			Name:     name,
 			IsSignUp: isSignUp,
 			Code:     magicCode,
+			Origin:   h.Origin,
 		},
 	)
 

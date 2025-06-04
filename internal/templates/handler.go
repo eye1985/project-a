@@ -2,6 +2,7 @@ package templates
 
 import (
 	"fmt"
+	"github.com/gorilla/csrf"
 	"html/template"
 	"net/http"
 	"project-a/internal/contacts"
@@ -49,8 +50,11 @@ func (h *Handler) RenderRegisterUser(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err := tmpl.Execute(
-		w, &PageData{
-			Title: "Register / Login",
+		w, &CreateMagicLinkPage{
+			PageData: PageData{
+				Title: "Register / Login",
+			},
+			CSRF: csrf.Token(r),
 		},
 	); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)

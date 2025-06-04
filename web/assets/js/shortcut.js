@@ -7,6 +7,7 @@ const METHOD = 'method';
 const FORM_ON_ERROR = 'form-onerror';
 const FORM_ON_SUCCESS = 'form-onsuccess';
 const HANDLER = 'handler';
+const FORM_HEADER = 'form-header';
 export const store = {
     formMethods: new Map(),
     elements: new Map(),
@@ -123,8 +124,14 @@ export class SCElement {
                 return;
             }
             let body = {};
+            let headers = {};
             for (const elm of el.querySelectorAll('[name]')) {
                 if (elm instanceof HTMLInputElement) {
+                    const headerAttr = elm.getAttribute(`${createDataName(FORM_HEADER)}`);
+                    if (headerAttr) {
+                        headers[headerAttr] = elm.value;
+                        continue;
+                    }
                     const isNumber = !isNaN(Number(elm.value));
                     if (isNumber) {
                         if (Number.isInteger(elm.value)) {
@@ -143,6 +150,7 @@ export class SCElement {
                     body: JSON.stringify(body),
                     credentials: 'include',
                     headers: {
+                        ...headers,
                         'Content-Type': 'application/json',
                     },
                 });

@@ -66,6 +66,7 @@
       <label class="d-none" for="email">
         Email:
       </label>
+      <input type="hidden" value="{{.CSRF}}" name="csrf" data-sc-form-header="X-CSRF-Token" />
       <input id="email" class="input" type="text" name="email" placeholder="example@host.com">
     </div>
   </form>

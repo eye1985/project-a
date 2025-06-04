@@ -19,6 +19,11 @@ type PageData struct {
 	Css      []string
 	Js       string
 }
+
+type CreateMagicLinkPage struct {
+	PageData
+	CSRF string
+}
 type ChatPage struct {
 	PageData
 	ContactLists map[*contacts.List][]*contacts.Contact

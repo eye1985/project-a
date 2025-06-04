@@ -25,6 +25,7 @@ func main() {
 			"ORIGIN",
 			"PROJECT_ROOT",
 			"MAIL_SEND_TOKEN",
+			"CSRF_AUTH_KEY",
 		},
 	)
 

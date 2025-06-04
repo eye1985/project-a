@@ -8,6 +8,7 @@ const METHOD = 'method';
 const FORM_ON_ERROR = 'form-onerror';
 const FORM_ON_SUCCESS = 'form-onsuccess';
 const HANDLER = 'handler';
+const FORM_HEADER = 'form-header';
 
 type Handle = (
   e: Event,
@@ -163,8 +164,15 @@ export class SCElement {
       }
 
       let body: Record<string, any> = {};
+      let headers: Record<string, string> = {};
       for (const elm of el.querySelectorAll('[name]')) {
         if (elm instanceof HTMLInputElement) {
+          const headerAttr = elm.getAttribute(`${createDataName(FORM_HEADER)}`);
+          if (headerAttr) {
+            headers[headerAttr] = elm.value;
+            continue;
+          }
+
           const isNumber = !isNaN(Number(elm.value));
 
           if (isNumber) {
@@ -185,6 +193,7 @@ export class SCElement {
           body: JSON.stringify(body),
           credentials: 'include',
           headers: {
+            ...headers,
             'Content-Type': 'application/json',
           },
         });
