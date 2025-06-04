@@ -50,7 +50,7 @@ func (h *Handler) RenderRegisterUser(w http.ResponseWriter, r *http.Request) {
 
 	if err := tmpl.Execute(
 		w, &PageData{
-			Title: "Profile",
+			Title: "Register / Login",
 		},
 	); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)

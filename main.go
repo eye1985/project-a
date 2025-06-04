@@ -38,6 +38,7 @@ func main() {
 	origin := envs["ORIGIN"]
 	pgUrl := envs["POSTGRES_URL"]
 	rootDir := envs["PROJECT_ROOT"]
+	mailSendApiToken := envs["MAIL_SEND_TOKEN"]
 
 	database.Migrate(pgUrl, rootDir)
 	pool, dbErr := database.Pool(pgUrl)
@@ -52,10 +53,11 @@ func main() {
 	log.Fatal(
 		server.Serve(
 			pool, &server.ServeArgs{
-				HashKey:  hashKey,
-				BlockKey: blockKey,
-				WsUrl:    wsUrl,
-				Origin:   origin,
+				HashKey:       hashKey,
+				BlockKey:      blockKey,
+				WsUrl:         wsUrl,
+				Origin:        origin,
+				MailSendToken: mailSendApiToken,
 			},
 		),
 	)

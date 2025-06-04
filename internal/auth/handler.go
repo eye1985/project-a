@@ -10,14 +10,17 @@ import (
 	"project-a/internal/email"
 	"project-a/internal/shared"
 	"project-a/internal/util"
+	"strings"
 )
 
 type Handler struct {
-	Repo         Repository
-	Service      shared.AuthService
-	UserRepo     shared.UserRepository
-	UserlistRepo contacts.Repository
-	EmailRepo    email.Repository
+	Repo          Repository
+	Service       shared.AuthService
+	UserRepo      shared.UserRepository
+	UserlistRepo  contacts.Repository
+	EmailRepo     email.Repository
+	MailSendToken string
+	Origin        string
 }
 
 func createMagicLink(ctx context.Context, email string, h *Handler) (string, error) {
@@ -176,34 +179,63 @@ func (h *Handler) CreateMagicLinkCode(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// TODO send email
-	m := map[string]string{}
-	m["magicLinkCode"] = magicCode
-	if err := json.NewEncoder(w).Encode(m); err != nil {
+	var name string
+	if u != nil {
+		name = u.Username
+	} else {
+		name = strings.Split(magicLink.Email, "@")[0]
+	}
+
+	err = email.SendEmailFromMailSend(
+		h.MailSendToken,
+		&email.SendEmailFromMailSendArgs{
+			Email:    magicLink.Email,
+			Name:     name,
+			IsSignUp: isSignUp,
+			Code:     magicCode,
+		},
+	)
+
+	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
+
+	// For debugging
+	//m := map[string]string{}
+	//m["magicLinkCode"] = magicCode
+	//if err := json.NewEncoder(w).Encode(m); err != nil {
+	//	http.Error(w, err.Error(), http.StatusInternalServerError)
+	//	return
+	//}
 }
 
 func (h *Handler) Logout(w http.ResponseWriter, r *http.Request) {
 	sessionID := r.Context().Value(shared.SessionCtxKey).([]byte)
+
 	_ = h.Repo.DeleteSession(r.Context(), string(sessionID))
 
 	http.Redirect(w, r, "/", http.StatusSeeOther)
 }
 
-func NewHandler(
-	as shared.AuthService,
-	repo Repository,
-	ur shared.UserRepository,
-	ulr contacts.Repository,
-	er email.Repository,
-) *Handler {
+type NewHandlerArgs struct {
+	AuthService   shared.AuthService
+	Repo          Repository
+	UserRepo      shared.UserRepository
+	ContactsRepo  contacts.Repository
+	EmailRepo     email.Repository
+	MailSendToken string
+	Origin        string
+}
+
+func NewHandler(args *NewHandlerArgs) *Handler {
 	return &Handler{
-		Repo:         repo,
-		Service:      as,
-		UserRepo:     ur,
-		UserlistRepo: ulr,
-		EmailRepo:    er,
+		Repo:          args.Repo,
+		Service:       args.AuthService,
+		UserRepo:      args.UserRepo,
+		UserlistRepo:  args.ContactsRepo,
+		EmailRepo:     args.EmailRepo,
+		MailSendToken: args.MailSendToken,
+		Origin:        args.Origin,
 	}
 }

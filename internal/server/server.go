@@ -17,10 +17,11 @@ import (
 const PORT = ":3000"
 
 type ServeArgs struct {
-	HashKey  string
-	BlockKey string
-	WsUrl    string
-	Origin   string
+	HashKey       string
+	BlockKey      string
+	WsUrl         string
+	Origin        string
+	MailSendToken string
 }
 
 func Serve(pool *pgxpool.Pool, args *ServeArgs) error {
@@ -28,6 +29,7 @@ func Serve(pool *pgxpool.Pool, args *ServeArgs) error {
 	blockKey := args.BlockKey
 	wsUrl := args.WsUrl
 	origin := args.Origin
+	mailSendToken := args.MailSendToken
 
 	isDev, _ := os.LookupEnv("IS_DEV")
 	dev := false
@@ -57,7 +59,17 @@ func Serve(pool *pgxpool.Pool, args *ServeArgs) error {
 	healthHandler := health.NewHandler(pool)
 	userHandler := user.NewUserHandler(userRepo, hub)
 	contactsHandler := contacts.NewHandler(contactsRepo, userRepo)
-	authHandler := auth.NewHandler(authService, authRepo, userRepo, contactsRepo, emailRepo)
+	authHandler := auth.NewHandler(
+		&auth.NewHandlerArgs{
+			AuthService:   authService,
+			Repo:          authRepo,
+			UserRepo:      userRepo,
+			ContactsRepo:  contactsRepo,
+			EmailRepo:     emailRepo,
+			MailSendToken: mailSendToken,
+			Origin:        origin,
+		},
+	)
 	templateHandler := templates.NewHandler(userRepo, contactsRepo, authService, wsUrl, dev)
 
 	// routes
