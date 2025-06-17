@@ -6,8 +6,9 @@ import (
 	"log"
 	"net/http"
 	"net/mail"
-	"project-a/internal/contacts"
+	"project-a/internal/consts"
 	"project-a/internal/email"
+	"project-a/internal/interfaces"
 	"project-a/internal/shared"
 	"project-a/internal/util"
 	"strings"
@@ -17,7 +18,7 @@ type Handler struct {
 	Repo          Repository
 	Service       shared.AuthService
 	UserRepo      shared.UserRepository
-	UserlistRepo  contacts.Repository
+	UserlistRepo  interfaces.ContactsRepository
 	EmailRepo     email.Repository
 	MailSendToken string
 	Origin        string
@@ -89,7 +90,7 @@ func (h *Handler) RegisterUser(w http.ResponseWriter, r *http.Request) {
 		},
 	)
 
-	http.Redirect(w, r, shared.HomeRoute, http.StatusSeeOther)
+	http.Redirect(w, r, consts.HomeRoute, http.StatusSeeOther)
 }
 
 func (h *Handler) SignIn(w http.ResponseWriter, r *http.Request) {
@@ -135,7 +136,7 @@ func (h *Handler) SignIn(w http.ResponseWriter, r *http.Request) {
 		},
 	)
 
-	http.Redirect(w, r, shared.HomeRoute, http.StatusSeeOther)
+	http.Redirect(w, r, consts.HomeRoute, http.StatusSeeOther)
 }
 
 // TODO add some security for this
@@ -231,7 +232,7 @@ type NewHandlerArgs struct {
 	AuthService   shared.AuthService
 	Repo          Repository
 	UserRepo      shared.UserRepository
-	ContactsRepo  contacts.Repository
+	ContactsRepo  interfaces.ContactsRepository
 	EmailRepo     email.Repository
 	MailSendToken string
 	Origin        string

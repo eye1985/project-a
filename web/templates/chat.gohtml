@@ -37,6 +37,15 @@
     </div>
     <div class="main-content">
       <div class="chat-body" data-sc-id="chatBody">
+          {{range $list, $contacts := .ContactLists}}
+              {{if and $list.Name (eq (len $contacts) 0)}}
+                <div class="chat-body__center-text">
+                  <p>
+                    No one on the list? Try inviting someone under contacts
+                  </p>
+                </div>
+              {{end}}
+          {{end}}
       </div>
     </div>
   </div>

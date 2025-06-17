@@ -6,7 +6,7 @@ import (
 	"github.com/gorilla/websocket"
 	"log"
 	"net/http"
-	"project-a/internal/contacts"
+	"project-a/internal/interfaces"
 	"project-a/internal/shared"
 	"time"
 )
@@ -21,7 +21,7 @@ func ServeWs(
 	cf ClientFactory,
 	as shared.AuthService,
 	ur shared.UserRepository,
-	cr contacts.Repository,
+	cr interfaces.ContactsRepository,
 	origin string,
 ) func(
 	http.ResponseWriter,

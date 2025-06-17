@@ -19,7 +19,7 @@
   overflow-y: auto;
 }
 
-.sidebar-scroll{
+.sidebar-scroll {
   height: calc(100vh - 190px);
 }
 
@@ -170,6 +170,19 @@
   }
 }
 
+.chat-body__center-text {
+  text-align: center;
+  font-size: 2rem;
+  min-height: calc(100vh - var(--header-height));
+  display: flex;
+  justify-content: center;
+  align-items: center;
+
+  p{
+    margin:0;
+  }
+}
+
 .contact-list__unread:not(:empty) {
   border-radius: 100%;
   background: red;
@@ -184,7 +197,6 @@
   align-items: center;
   font-family: system-ui, sans-serif;
 }
-
 
 .contact-list__email {
   text-align: left;

@@ -5,7 +5,9 @@ import (
 	"github.com/gorilla/csrf"
 	"html/template"
 	"net/http"
-	"project-a/internal/contacts"
+	"project-a/internal/consts"
+	"project-a/internal/interfaces"
+	"project-a/internal/models"
 	"project-a/internal/shared"
 )
 
@@ -24,7 +26,7 @@ const (
 
 type Handler struct {
 	userRepo     shared.UserRepository
-	userListRepo contacts.Repository
+	userListRepo interfaces.ContactsRepository
 	authService  shared.AuthService
 	wsUrl        string
 	isDev        bool
@@ -35,7 +37,7 @@ func (h *Handler) RenderRegisterUser(w http.ResponseWriter, r *http.Request) {
 	if err == nil {
 		cookieValue, _ := h.authService.VerifyCookie(cookie)
 		if h.authService.IsSessionActive(r.Context(), string(cookieValue)) {
-			http.Redirect(w, r, shared.HomeRoute, http.StatusSeeOther)
+			http.Redirect(w, r, consts.HomeRoute, http.StatusSeeOther)
 			return
 		}
 	}
@@ -108,7 +110,7 @@ func (h *Handler) RenderChat(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	listMap := make(map[*contacts.List][]*contacts.Contact)
+	listMap := make(map[*models.List][]*models.Contact)
 
 	for _, ul := range contactList {
 		listOfContact, err := h.userListRepo.GetContacts(r.Context(), ul.UserId)
@@ -166,7 +168,7 @@ func (h *Handler) RenderContacts(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	listMap := make(map[*contacts.List][]*contacts.Contact)
+	listMap := make(map[*models.List][]*models.Contact)
 
 	for _, ul := range contactList {
 		listOfContact, err := h.userListRepo.GetContacts(r.Context(), ul.UserId)
@@ -231,7 +233,7 @@ func (h *Handler) RenderContacts(w http.ResponseWriter, r *http.Request) {
 
 func NewHandler(
 	userRepo shared.UserRepository,
-	userlistRepo contacts.Repository,
+	userlistRepo interfaces.ContactsRepository,
 	authService shared.AuthService,
 	wsUrl string,
 	isDev bool,

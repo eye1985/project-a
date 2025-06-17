@@ -4,11 +4,12 @@ import (
 	"encoding/json"
 	"log"
 	"net/http"
+	"project-a/internal/interfaces"
 	"project-a/internal/shared"
 )
 
 type Handler struct {
-	Repo     Repository
+	Repo     interfaces.ContactsRepository
 	UserRepo shared.UserRepository
 }
 
@@ -152,7 +153,7 @@ func (h *Handler) AcceptInvite(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func NewHandler(repo Repository, userRepo shared.UserRepository) *Handler {
+func NewHandler(repo interfaces.ContactsRepository, userRepo shared.UserRepository) *Handler {
 	return &Handler{
 		Repo:     repo,
 		UserRepo: userRepo,

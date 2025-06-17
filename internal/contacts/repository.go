@@ -5,6 +5,8 @@ import (
 	_ "embed"
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgxpool"
+	"project-a/internal/interfaces"
+	"project-a/internal/models"
 )
 
 type contactsRepo struct {
@@ -44,19 +46,19 @@ var acceptInviteSql string
 //go:embed sql/get_invitations.sql
 var getInvitationsSql string
 
-type Repository interface {
-	GetContactLists(ctx context.Context, userId int64) ([]*List, error)
-	GetContactList(ctx context.Context, contactListId int64) (*List, error)
-	GetContacts(ctx context.Context, userId int64) ([]*Contact, error)
-	CreateContactList(ctx context.Context, name string, userId int64) error
-	CreateContact(ctx context.Context, inviterId int64, inviteeId int64) (*InsertedContact, error)
-	CreateContactLink(ctx context.Context, contactId int64, contactListId int64) error
-	UpdateContactList(ctx context.Context, name string, contactListId int64) error
-	DeleteContactList(ctx context.Context, contactListId int64) error
-	GetInvitations(ctx context.Context, userId int64) ([]*Invitation, error)
-	InviteUser(ctx context.Context, inviterId int64, inviteeId int64) error
-	AcceptInvite(ctx context.Context, uuid uuid.UUID, inviteeId int64) (*AcceptedInvite, error)
-}
+//type Repository interface {
+//	GetContactLists(ctx context.Context, userId int64) ([]*List, error)
+//	GetContactList(ctx context.Context, contactListId int64) (*List, error)
+//	GetContacts(ctx context.Context, userId int64) ([]*Contact, error)
+//	CreateContactList(ctx context.Context, name string, userId int64) error
+//	CreateContact(ctx context.Context, inviterId int64, inviteeId int64) (*InsertedContact, error)
+//	CreateContactLink(ctx context.Context, contactId int64, contactListId int64) error
+//	UpdateContactList(ctx context.Context, name string, contactListId int64) error
+//	DeleteContactList(ctx context.Context, contactListId int64) error
+//	GetInvitations(ctx context.Context, userId int64) ([]*Invitation, error)
+//	InviteUser(ctx context.Context, inviterId int64, inviteeId int64) error
+//	AcceptInvite(ctx context.Context, uuid uuid.UUID, inviteeId int64) (*AcceptedInvite, error)
+//}
 
 func (ulr *contactsRepo) CreateContactList(ctx context.Context, name string, userId int64) error {
 	conn, err := ulr.pool.Exec(ctx, insertContactListSql, name, userId)
@@ -97,7 +99,7 @@ func (ulr *contactsRepo) DeleteContactList(ctx context.Context, contactListId in
 	return nil
 }
 
-func (ulr *contactsRepo) GetContactLists(ctx context.Context, userId int64) ([]*List, error) {
+func (ulr *contactsRepo) GetContactLists(ctx context.Context, userId int64) ([]*models.List, error) {
 	rows, err := ulr.pool.Query(ctx, getAllContactListsSql, userId)
 	if err != nil {
 		return nil, err
@@ -105,9 +107,9 @@ func (ulr *contactsRepo) GetContactLists(ctx context.Context, userId int64) ([]*
 
 	defer rows.Close()
 
-	var userLists []*List
+	var userLists []*models.List
 	for rows.Next() {
-		var userList List
+		var userList models.List
 		err = rows.Scan(
 			&userList.Id,
 			&userList.Uuid,
@@ -125,9 +127,9 @@ func (ulr *contactsRepo) GetContactLists(ctx context.Context, userId int64) ([]*
 	return userLists, nil
 }
 
-func (ulr *contactsRepo) GetContactList(ctx context.Context, contactListId int64) (*List, error) {
+func (ulr *contactsRepo) GetContactList(ctx context.Context, contactListId int64) (*models.List, error) {
 	row := ulr.pool.QueryRow(ctx, getContactListSql, contactListId)
-	var userList List
+	var userList models.List
 	err := row.Scan(
 		&userList.Id,
 		&userList.Name,
@@ -142,7 +144,7 @@ func (ulr *contactsRepo) GetContactList(ctx context.Context, contactListId int64
 	return &userList, nil
 }
 
-func (ulr *contactsRepo) GetContacts(ctx context.Context, userId int64) ([]*Contact, error) {
+func (ulr *contactsRepo) GetContacts(ctx context.Context, userId int64) ([]*models.Contact, error) {
 	rows, err := ulr.pool.Query(ctx, getContactSql, userId)
 	if err != nil {
 		return nil, err
@@ -150,9 +152,9 @@ func (ulr *contactsRepo) GetContacts(ctx context.Context, userId int64) ([]*Cont
 
 	defer rows.Close()
 
-	records := []*Contact{}
+	records := []*models.Contact{}
 	for rows.Next() {
-		var record Contact
+		var record models.Contact
 
 		err := rows.Scan(
 			&record.UserId,
@@ -174,10 +176,10 @@ func (ulr *contactsRepo) CreateContact(
 	ctx context.Context,
 	inviterId int64,
 	inviteeId int64,
-) (*InsertedContact, error) {
+) (*models.InsertedContact, error) {
 	row := ulr.pool.QueryRow(ctx, insertContactSql, inviterId, inviteeId)
 
-	var inserted InsertedContact
+	var inserted models.InsertedContact
 	err := row.Scan(&inserted.Id, &inserted.User1Id, &inserted.User2Id)
 	if err != nil {
 		return nil, err
@@ -212,9 +214,12 @@ func (ulr *contactsRepo) InviteUser(ctx context.Context, inviterId int64, invite
 	return nil
 }
 
-func (ulr *contactsRepo) AcceptInvite(ctx context.Context, uuid uuid.UUID, inviteeId int64) (*AcceptedInvite, error) {
+func (ulr *contactsRepo) AcceptInvite(ctx context.Context, uuid uuid.UUID, inviteeId int64) (
+	*models.AcceptedInvite,
+	error,
+) {
 	row := ulr.pool.QueryRow(ctx, acceptInviteSql, uuid, inviteeId)
-	var acceptedInvite AcceptedInvite
+	var acceptedInvite models.AcceptedInvite
 
 	err := row.Scan(&acceptedInvite.Id, &acceptedInvite.InviterId, &acceptedInvite.InviteeId)
 	if err != nil {
@@ -224,7 +229,7 @@ func (ulr *contactsRepo) AcceptInvite(ctx context.Context, uuid uuid.UUID, invit
 	return &acceptedInvite, nil
 }
 
-func (ulr *contactsRepo) GetInvitations(ctx context.Context, userId int64) ([]*Invitation, error) {
+func (ulr *contactsRepo) GetInvitations(ctx context.Context, userId int64) ([]*models.Invitation, error) {
 	rows, err := ulr.pool.Query(ctx, getInvitationsSql, userId)
 	if err != nil {
 		return nil, err
@@ -232,9 +237,9 @@ func (ulr *contactsRepo) GetInvitations(ctx context.Context, userId int64) ([]*I
 
 	defer rows.Close()
 
-	invitations := []*Invitation{}
+	invitations := []*models.Invitation{}
 	for rows.Next() {
-		var invitation Invitation
+		var invitation models.Invitation
 		err := rows.Scan(
 			&invitation.Id,
 			&invitation.Uuid,
@@ -255,7 +260,7 @@ func (ulr *contactsRepo) GetInvitations(ctx context.Context, userId int64) ([]*I
 	return invitations, nil
 }
 
-func NewRepo(pool *pgxpool.Pool) Repository {
+func NewRepo(pool *pgxpool.Pool) interfaces.ContactsRepository {
 	return &contactsRepo{
 		pool: pool,
 	}

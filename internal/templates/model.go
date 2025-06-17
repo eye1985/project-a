@@ -2,7 +2,7 @@ package templates
 
 import (
 	"github.com/google/uuid"
-	"project-a/internal/contacts"
+	"project-a/internal/models"
 	"project-a/internal/shared"
 )
 
@@ -26,12 +26,12 @@ type CreateMagicLinkPage struct {
 }
 type ChatPage struct {
 	PageData
-	ContactLists map[*contacts.List][]*contacts.Contact
+	ContactLists map[*models.List][]*models.Contact
 }
 
 type ContactPage struct {
 	PageData
-	ContactLists map[*contacts.List][]*contacts.Contact
+	ContactLists map[*models.List][]*models.Contact
 	Invitations  []*InvitationTemplate
 }
 
