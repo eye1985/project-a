@@ -2,8 +2,8 @@ package templates
 
 import (
 	"github.com/google/uuid"
-	"project-a/internal/models"
-	"project-a/internal/shared"
+	"project-a/internal/interfaces"
+	"project-a/internal/model"
 )
 
 type Person struct {
@@ -26,12 +26,12 @@ type CreateMagicLinkPage struct {
 }
 type ChatPage struct {
 	PageData
-	ContactLists map[*models.List][]*models.Contact
+	ContactLists map[*model.List][]*model.Contact
 }
 
 type ContactPage struct {
 	PageData
-	ContactLists map[*models.List][]*models.Contact
+	ContactLists map[*model.List][]*model.Contact
 	Invitations  []*InvitationTemplate
 }
 
@@ -42,7 +42,7 @@ type InvitationTemplate struct {
 }
 
 type RenderChatArgs struct {
-	ur          shared.UserRepository
-	authService shared.Session
+	ur          interfaces.UserRepository
+	authService model.Session
 	wsUrl       string
 }

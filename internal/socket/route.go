@@ -3,14 +3,13 @@ package socket
 import (
 	"project-a/internal/interfaces"
 	"project-a/internal/middleware"
-	"project-a/internal/shared"
 )
 
 func RegisterRoutes(
 	m *middleware.Middleware,
 	h *Hub,
-	as shared.AuthService,
-	ur shared.UserRepository,
+	as interfaces.AuthService,
+	ur interfaces.UserRepository,
 	cr interfaces.ContactsRepository,
 	origin string,
 ) {

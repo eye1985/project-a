@@ -4,7 +4,7 @@ import (
 	"context"
 	_ "embed"
 	"github.com/jackc/pgx/v5/pgxpool"
-	"project-a/internal/shared"
+	"project-a/internal/model"
 	"time"
 )
 
@@ -31,8 +31,8 @@ type authRepository struct {
 }
 
 type Repository interface {
-	GetSession(ctx context.Context, id int64) (*shared.Session, error)
-	SetSession(ctx context.Context, args *SetSessionArgs) (*shared.Session, error)
+	GetSession(ctx context.Context, id int64) (*model.Session, error)
+	SetSession(ctx context.Context, args *SetSessionArgs) (*model.Session, error)
 	IsSessionActive(ctx context.Context, sessionId string) bool
 	CreateMagicLink(ctx context.Context, args *CreateMagicLinkArgs) error
 	ActivateNonExpiredMagicLink(ctx context.Context, code string) (*MagicLink, error)
@@ -45,14 +45,14 @@ type SetSessionArgs struct {
 	expiresAt time.Time
 }
 
-func (a *authRepository) SetSession(ctx context.Context, args *SetSessionArgs) (*shared.Session, error) {
+func (a *authRepository) SetSession(ctx context.Context, args *SetSessionArgs) (*model.Session, error) {
 	userID := args.userID
 	sessionID := args.sessionID
 	expiresAt := args.expiresAt
 
 	row := a.pool.QueryRow(ctx, insertSessionSql, userID, sessionID, expiresAt)
 
-	session := &shared.Session{}
+	session := &model.Session{}
 	err := row.Scan(&session.UserId, &session.SessionID, &session.ExpiresAt)
 	if err != nil {
 		return nil, err
@@ -61,13 +61,13 @@ func (a *authRepository) SetSession(ctx context.Context, args *SetSessionArgs) (
 	return session, nil
 }
 
-func (a *authRepository) GetSession(ctx context.Context, userId int64) (*shared.Session, error) {
+func (a *authRepository) GetSession(ctx context.Context, userId int64) (*model.Session, error) {
 	row := a.pool.QueryRow(ctx, getSessionByUserIdSql, userId)
 
-	session := &shared.Session{}
+	session := &model.Session{}
 	err := row.Scan(&session.UserId, &session.SessionID, &session.ExpiresAt)
 	if err != nil {
-		return &shared.Session{}, err
+		return &model.Session{}, err
 	}
 
 	return session, nil

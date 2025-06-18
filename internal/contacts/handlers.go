@@ -4,13 +4,13 @@ import (
 	"encoding/json"
 	"log"
 	"net/http"
+	"project-a/internal/consts"
 	"project-a/internal/interfaces"
-	"project-a/internal/shared"
 )
 
 type Handler struct {
 	Repo     interfaces.ContactsRepository
-	UserRepo shared.UserRepository
+	UserRepo interfaces.UserRepository
 }
 
 func (h *Handler) CreateUserList(w http.ResponseWriter, r *http.Request) {
@@ -31,7 +31,7 @@ func (h *Handler) CreateUserList(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) CreateInvitation(w http.ResponseWriter, r *http.Request) {
-	session := r.Context().Value(shared.SessionCtxKey).([]byte)
+	session := r.Context().Value(consts.SessionCtxKey).([]byte)
 	inviter, err := h.UserRepo.GetUserFromSessionId(r.Context(), string(session))
 	if err != nil {
 		http.Error(w, "No user", http.StatusInternalServerError)
@@ -87,7 +87,7 @@ func (h *Handler) CreateInvitation(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) AcceptInvite(w http.ResponseWriter, r *http.Request) {
-	session := r.Context().Value(shared.SessionCtxKey).([]byte)
+	session := r.Context().Value(consts.SessionCtxKey).([]byte)
 	invitee, err := h.UserRepo.GetUserFromSessionId(r.Context(), string(session))
 	if err != nil {
 		http.Error(w, "no user", http.StatusInternalServerError)
@@ -153,7 +153,10 @@ func (h *Handler) AcceptInvite(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func NewHandler(repo interfaces.ContactsRepository, userRepo shared.UserRepository) *Handler {
+func NewHandler(
+	repo interfaces.ContactsRepository,
+	userRepo interfaces.UserRepository,
+) *Handler {
 	return &Handler{
 		Repo:     repo,
 		UserRepo: userRepo,

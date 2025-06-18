@@ -1,11 +1,11 @@
 package user
 
 import (
+	"project-a/internal/interfaces"
 	"project-a/internal/middleware"
-	"project-a/internal/shared"
 )
 
-func RegisterRoutes(m *middleware.Middleware, h *Handler, as shared.AuthService) {
+func RegisterRoutes(m *middleware.Middleware, h *Handler, as interfaces.AuthService) {
 	m.HandleFunc("GET /users", h.GetUsers)
 	//m.HandleFunc("POST /users", h.RegisterUser,
 	//	middleware.AllowOnlyPost,

@@ -11,31 +11,25 @@ import (
 )
 
 func TestWithPostgresSQL(t *testing.T) {
-	ctx := context.Background()
-
-	pgContainer, pool, err := testutil.SetupTestContainer(ctx, "sentEmail-snapshot")
-	testcontainers.CleanupContainer(t, pgContainer)
-	require.NoError(t, err)
-	defer pool.Close()
-
-	defer func() {
-		if err := testcontainers.TerminateContainer(pgContainer); err != nil {
-			log.Fatalf("failed to terminate container: %s", err)
-		}
-	}()
-
 	t.Run(
 		"Should add one email row", func(t *testing.T) {
+			ctx := context.Background()
+
+			pgContainer, pool, err := testutil.SetupTestContainer(ctx)
+			testcontainers.CleanupContainer(t, pgContainer)
+			require.NoError(t, err)
+			defer pool.Close()
+
 			t.Cleanup(
 				func() {
-					// Restore the database to the snapshot state
-					err := pgContainer.Restore(ctx)
-					require.NoError(t, err)
+					if err := testcontainers.TerminateContainer(pgContainer); err != nil {
+						log.Fatalf("failed to terminate container: %s", err)
+					}
 				},
 			)
 
 			repo := NewRepo(pool)
-			err := repo.AddSentEmail(ctx, "test@test.com", net.ParseIP("127.0.0.1").To4(), true)
+			err = repo.AddSentEmail(ctx, "test@test.com", net.ParseIP("127.0.0.1").To4(), true)
 			require.NoError(t, err)
 
 			emails, err := repo.GetSentEmails(ctx)

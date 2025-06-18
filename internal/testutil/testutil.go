@@ -9,7 +9,6 @@ import (
 
 func SetupTestContainer(
 	ctx context.Context,
-	snapShotName string,
 ) (*postgres.PostgresContainer, *pgxpool.Pool, error) {
 	dbName := "testing"
 	dbUser := "user"
@@ -33,10 +32,10 @@ func SetupTestContainer(
 		return nil, nil, err
 	}
 	database.Migrate(connStr, "../..")
-	err = postgresContainer.Snapshot(ctx, postgres.WithSnapshotName(snapShotName))
-	if err != nil {
-		return nil, nil, err
-	}
+	//err = postgresContainer.Snapshot(ctx, postgres.WithSnapshotName(snapShotName))
+	//if err != nil {
+	//	return nil, nil, err
+	//}
 
 	pool, err := database.Pool(connStr)
 	if err != nil {

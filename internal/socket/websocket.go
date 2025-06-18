@@ -6,8 +6,8 @@ import (
 	"github.com/gorilla/websocket"
 	"log"
 	"net/http"
+	"project-a/internal/consts"
 	"project-a/internal/interfaces"
-	"project-a/internal/shared"
 	"time"
 )
 
@@ -19,8 +19,8 @@ const (
 func ServeWs(
 	hub *Hub,
 	cf ClientFactory,
-	as shared.AuthService,
-	ur shared.UserRepository,
+	as interfaces.AuthService,
+	ur interfaces.UserRepository,
 	cr interfaces.ContactsRepository,
 	origin string,
 ) func(
@@ -45,7 +45,7 @@ func ServeWs(
 			return
 		}
 
-		cookie, err := r.Cookie(string(shared.SessionCtxKey))
+		cookie, err := r.Cookie(string(consts.SessionCtxKey))
 		if err != nil {
 			_ = conn.WriteControl(
 				websocket.CloseMessage,

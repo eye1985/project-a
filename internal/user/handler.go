@@ -4,12 +4,14 @@ import (
 	"encoding/json"
 	"log"
 	"net/http"
-	"project-a/internal/shared"
+	"project-a/internal/consts"
+	"project-a/internal/interfaces"
+	"project-a/internal/model"
 	"project-a/internal/socket"
 )
 
 type Handler struct {
-	Repo shared.UserRepository
+	Repo interfaces.UserRepository
 	Hub  *socket.Hub
 }
 
@@ -29,7 +31,7 @@ func (h *Handler) GetUsers(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) RegisterUser(w http.ResponseWriter, r *http.Request) {
-	user := &shared.User{}
+	user := &model.User{}
 	decoder := json.NewDecoder(r.Body)
 	decoder.DisallowUnknownFields()
 	err := decoder.Decode(&user)
@@ -62,14 +64,14 @@ func (h *Handler) RegisterUser(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) UpdateUserName(w http.ResponseWriter, r *http.Request) {
-	sessionID := r.Context().Value(shared.SessionCtxKey).([]byte)
+	sessionID := r.Context().Value(consts.SessionCtxKey).([]byte)
 	u, err := h.Repo.GetUserFromSessionId(r.Context(), string(sessionID))
 	if err != nil {
 		http.Error(w, "no session", http.StatusInternalServerError)
 		return
 	}
 
-	var newUser shared.User
+	var newUser model.User
 	err = json.NewDecoder(r.Body).Decode(&newUser)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
@@ -93,7 +95,7 @@ func (h *Handler) UpdateUserName(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusNoContent)
 }
 
-func NewUserHandler(repo shared.UserRepository, hub *socket.Hub) *Handler {
+func NewUserHandler(repo interfaces.UserRepository, hub *socket.Hub) *Handler {
 	return &Handler{
 		Repo: repo,
 		Hub:  hub,

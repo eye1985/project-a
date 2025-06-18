@@ -1,14 +1,14 @@
 package auth
 
 import (
+	"project-a/internal/interfaces"
 	"project-a/internal/middleware"
-	"project-a/internal/shared"
 )
 
 func RegisterRoutes(
 	m *middleware.Middleware,
 	h *Handler,
-	as shared.AuthService,
+	as interfaces.AuthService,
 	csrf middleware.CSRFHandler,
 ) {
 	m.HandleFunc(

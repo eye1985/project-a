@@ -7,7 +7,8 @@ import (
 	"github.com/gorilla/securecookie"
 	"log"
 	"net/http"
-	"project-a/internal/shared"
+	"project-a/internal/interfaces"
+	"project-a/internal/model"
 	"time"
 )
 
@@ -16,7 +17,7 @@ type authService struct {
 	SecureCookie *securecookie.SecureCookie
 }
 
-func (a *authService) CreateOrGetSession(ctx context.Context, userId int64) (*shared.Session, error) {
+func (a *authService) CreateOrGetSession(ctx context.Context, userId int64) (*model.Session, error) {
 	s, err := a.Repository.GetSession(ctx, userId)
 
 	if err != nil {
@@ -27,11 +28,13 @@ func (a *authService) CreateOrGetSession(ctx context.Context, userId int64) (*sh
 		}
 		// No session, register a new session
 		const thirtyDays = 30 * 24 * time.Hour
-		ns, err := a.SetSession(ctx, &SetSessionArgs{
-			userID:    userId,
-			sessionID: sessionID,
-			expiresAt: time.Now().Add(thirtyDays),
-		})
+		ns, err := a.SetSession(
+			ctx, &SetSessionArgs{
+				userID:    userId,
+				sessionID: sessionID,
+				expiresAt: time.Now().Add(thirtyDays),
+			},
+		)
 
 		if err != nil {
 			return nil, err
@@ -73,11 +76,13 @@ func (a *authService) CreateMagicLink(ctx context.Context, email string) (string
 	encoding := base64.URLEncoding.WithPadding(base64.NoPadding)
 	encoded := encoding.EncodeToString(u[:])
 
-	err := a.Repository.CreateMagicLink(ctx, &CreateMagicLinkArgs{
-		code:     encoded,
-		expiryAt: tenMinFromNow,
-		email:    email,
-	})
+	err := a.Repository.CreateMagicLink(
+		ctx, &CreateMagicLinkArgs{
+			code:     encoded,
+			expiryAt: tenMinFromNow,
+			email:    email,
+		},
+	)
 
 	if err != nil {
 		return "", err
@@ -86,7 +91,7 @@ func (a *authService) CreateMagicLink(ctx context.Context, email string) (string
 	return encoded, nil
 }
 
-func NewService(repo Repository, hashKey string, blockKey string) shared.AuthService {
+func NewService(repo Repository, hashKey string, blockKey string) interfaces.AuthService {
 	hk, err := base64.StdEncoding.DecodeString(hashKey)
 	if err != nil {
 		log.Fatalf("Failed to decode hash key: %s", err)

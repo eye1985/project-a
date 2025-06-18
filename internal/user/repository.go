@@ -4,7 +4,8 @@ import (
 	"context"
 	_ "embed"
 	"github.com/jackc/pgx/v5/pgxpool"
-	"project-a/internal/shared"
+	"project-a/internal/interfaces"
+	"project-a/internal/model"
 )
 
 type userRepository struct {
@@ -29,8 +30,8 @@ var deleteUserByEmailSql string
 //go:embed sql/update_username.sql
 var updateUsernameSql string
 
-func (r *userRepository) GetUserByEmail(ctx context.Context, email string) (*shared.User, error) {
-	user := &shared.User{}
+func (r *userRepository) GetUserByEmail(ctx context.Context, email string) (*model.User, error) {
+	user := &model.User{}
 
 	row := r.pool.QueryRow(ctx, getUserByEmailSql, email)
 	err := row.Scan(&user.Id, &user.Username, &user.Email, &user.CreatedAt)
@@ -41,8 +42,8 @@ func (r *userRepository) GetUserByEmail(ctx context.Context, email string) (*sha
 	return user, nil
 }
 
-func (r *userRepository) GetUserFromSessionId(ctx context.Context, sessionId string) (*shared.User, error) {
-	user := &shared.User{}
+func (r *userRepository) GetUserFromSessionId(ctx context.Context, sessionId string) (*model.User, error) {
+	user := &model.User{}
 	row := r.pool.QueryRow(ctx, getUserBySessionIdSql, sessionId)
 	err := row.Scan(&user.Id, &user.Uuid, &user.Username, &user.Email, &user.CreatedAt)
 	if err != nil {
@@ -52,16 +53,16 @@ func (r *userRepository) GetUserFromSessionId(ctx context.Context, sessionId str
 	return user, nil
 }
 
-func (r *userRepository) GetUsers(ctx context.Context) ([]*shared.User, error) {
+func (r *userRepository) GetUsers(ctx context.Context) ([]*model.User, error) {
 	rows, err := r.pool.Query(ctx, getAllUsersSql)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
 
-	var users []*shared.User
+	var users []*model.User
 	for rows.Next() {
-		var user shared.User
+		var user model.User
 		err = rows.Scan(&user.Id, &user.Uuid, &user.Username, &user.Email, &user.CreatedAt)
 		if err != nil {
 			return nil, err
@@ -72,13 +73,13 @@ func (r *userRepository) GetUsers(ctx context.Context) ([]*shared.User, error) {
 	return users, nil
 }
 
-func (r *userRepository) InsertUser(ctx context.Context, username string, email string) (*shared.User, error) {
+func (r *userRepository) InsertUser(ctx context.Context, username string, email string) (*model.User, error) {
 	row := r.pool.QueryRow(ctx, insertUserSql, username, email)
 
-	u := &shared.User{}
+	u := &model.User{}
 	err := row.Scan(&u.Id, &u.Email, &u.Username, &u.CreatedAt)
 	if err != nil {
-		return &shared.User{}, err
+		return &model.User{}, err
 	}
 
 	return u, nil
@@ -110,6 +111,6 @@ func (r *userRepository) UpdateUserName(ctx context.Context, newUsername string,
 	return nil
 }
 
-func NewUserRepo(pool *pgxpool.Pool) shared.UserRepository {
+func NewUserRepo(pool *pgxpool.Pool) interfaces.UserRepository {
 	return &userRepository{pool}
 }

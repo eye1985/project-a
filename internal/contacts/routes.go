@@ -1,11 +1,11 @@
 package contacts
 
 import (
+	"project-a/internal/interfaces"
 	"project-a/internal/middleware"
-	"project-a/internal/shared"
 )
 
-func RegisterRoutes(m *middleware.Middleware, h *Handler, authService shared.AuthService) {
+func RegisterRoutes(m *middleware.Middleware, h *Handler, authService interfaces.AuthService) {
 	m.HandleFunc("POST /contactlist", h.CreateUserList, middleware.Authenticated(authService))
 	m.HandleFunc(
 		"POST /contact",

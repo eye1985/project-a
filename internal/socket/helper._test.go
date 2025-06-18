@@ -7,7 +7,7 @@ import (
 	"log"
 	"net/http"
 	"net/http/httptest"
-	"project-a/internal/shared"
+	"project-a/internal/model"
 	"time"
 )
 
@@ -35,23 +35,23 @@ func (h *HubAndTestServer) wsUrl(username string, channel string) string {
 }
 
 type MockUserRepo struct {
-	user *shared.User
+	user *model.User
 }
 
-func (r *MockUserRepo) GetUser(email string) (*shared.User, error) {
-	return &shared.User{}, nil
+func (r *MockUserRepo) GetUser(email string) (*model.User, error) {
+	return &model.User{}, nil
 }
 
-func (r *MockUserRepo) GetUserFromSessionId(sessionId string) (*shared.User, error) {
-	return &shared.User{}, nil
+func (r *MockUserRepo) GetUserFromSessionId(sessionId string) (*model.User, error) {
+	return &model.User{}, nil
 }
 
-func (r *MockUserRepo) GetUsers() ([]*shared.User, error) {
-	return []*shared.User{}, nil
+func (r *MockUserRepo) GetUsers() ([]*model.User, error) {
+	return []*model.User{}, nil
 }
 
-func (r *MockUserRepo) InsertUser(username string, email string) (*shared.User, error) {
-	return &shared.User{}, nil
+func (r *MockUserRepo) InsertUser(username string, email string) (*model.User, error) {
+	return &model.User{}, nil
 }
 
 func (r *MockUserRepo) DeleteUser(email string) error {

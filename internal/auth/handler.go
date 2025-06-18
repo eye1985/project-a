@@ -9,15 +9,14 @@ import (
 	"project-a/internal/consts"
 	"project-a/internal/email"
 	"project-a/internal/interfaces"
-	"project-a/internal/shared"
 	"project-a/internal/util"
 	"strings"
 )
 
 type Handler struct {
 	Repo          Repository
-	Service       shared.AuthService
-	UserRepo      shared.UserRepository
+	Service       interfaces.AuthService
+	UserRepo      interfaces.UserRepository
 	UserlistRepo  interfaces.ContactsRepository
 	EmailRepo     email.Repository
 	MailSendToken string
@@ -72,7 +71,7 @@ func (h *Handler) RegisterUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	encoded, err := h.Service.SignCookie(string(shared.SessionCtxKey), []byte(session.SessionID))
+	encoded, err := h.Service.SignCookie(string(consts.SessionCtxKey), []byte(session.SessionID))
 	if err != nil {
 		http.Error(w, "Session error", http.StatusInternalServerError)
 		return
@@ -80,7 +79,7 @@ func (h *Handler) RegisterUser(w http.ResponseWriter, r *http.Request) {
 
 	http.SetCookie(
 		w, &http.Cookie{
-			Name:     string(shared.SessionCtxKey),
+			Name:     string(consts.SessionCtxKey),
 			Value:    encoded,
 			Path:     "/",
 			Expires:  session.ExpiresAt,
@@ -118,7 +117,7 @@ func (h *Handler) SignIn(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	encoded, err := h.Service.SignCookie(string(shared.SessionCtxKey), []byte(session.SessionID))
+	encoded, err := h.Service.SignCookie(string(consts.SessionCtxKey), []byte(session.SessionID))
 	if err != nil {
 		http.Error(w, "Session error", http.StatusInternalServerError)
 		return
@@ -126,7 +125,7 @@ func (h *Handler) SignIn(w http.ResponseWriter, r *http.Request) {
 
 	http.SetCookie(
 		w, &http.Cookie{
-			Name:     string(shared.SessionCtxKey),
+			Name:     string(consts.SessionCtxKey),
 			Value:    encoded,
 			Path:     "/",
 			Expires:  session.ExpiresAt,
@@ -213,12 +212,12 @@ func (h *Handler) CreateMagicLinkCode(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) Logout(w http.ResponseWriter, r *http.Request) {
-	sessionID := r.Context().Value(shared.SessionCtxKey).([]byte)
+	sessionID := r.Context().Value(consts.SessionCtxKey).([]byte)
 	_ = h.Repo.DeleteSession(r.Context(), string(sessionID))
 
 	http.SetCookie(
 		w, &http.Cookie{
-			Name:     string(shared.SessionCtxKey),
+			Name:     string(consts.SessionCtxKey),
 			MaxAge:   -1,
 			Secure:   true,
 			HttpOnly: true,
@@ -229,9 +228,9 @@ func (h *Handler) Logout(w http.ResponseWriter, r *http.Request) {
 }
 
 type NewHandlerArgs struct {
-	AuthService   shared.AuthService
+	AuthService   interfaces.AuthService
 	Repo          Repository
-	UserRepo      shared.UserRepository
+	UserRepo      interfaces.UserRepository
 	ContactsRepo  interfaces.ContactsRepository
 	EmailRepo     email.Repository
 	MailSendToken string

@@ -6,7 +6,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"project-a/internal/interfaces"
-	"project-a/internal/models"
+	"project-a/internal/model"
 )
 
 type contactsRepo struct {
@@ -99,7 +99,7 @@ func (ulr *contactsRepo) DeleteContactList(ctx context.Context, contactListId in
 	return nil
 }
 
-func (ulr *contactsRepo) GetContactLists(ctx context.Context, userId int64) ([]*models.List, error) {
+func (ulr *contactsRepo) GetContactLists(ctx context.Context, userId int64) ([]*model.List, error) {
 	rows, err := ulr.pool.Query(ctx, getAllContactListsSql, userId)
 	if err != nil {
 		return nil, err
@@ -107,9 +107,9 @@ func (ulr *contactsRepo) GetContactLists(ctx context.Context, userId int64) ([]*
 
 	defer rows.Close()
 
-	var userLists []*models.List
+	var userLists []*model.List
 	for rows.Next() {
-		var userList models.List
+		var userList model.List
 		err = rows.Scan(
 			&userList.Id,
 			&userList.Uuid,
@@ -127,9 +127,9 @@ func (ulr *contactsRepo) GetContactLists(ctx context.Context, userId int64) ([]*
 	return userLists, nil
 }
 
-func (ulr *contactsRepo) GetContactList(ctx context.Context, contactListId int64) (*models.List, error) {
+func (ulr *contactsRepo) GetContactList(ctx context.Context, contactListId int64) (*model.List, error) {
 	row := ulr.pool.QueryRow(ctx, getContactListSql, contactListId)
-	var userList models.List
+	var userList model.List
 	err := row.Scan(
 		&userList.Id,
 		&userList.Name,
@@ -144,7 +144,7 @@ func (ulr *contactsRepo) GetContactList(ctx context.Context, contactListId int64
 	return &userList, nil
 }
 
-func (ulr *contactsRepo) GetContacts(ctx context.Context, userId int64) ([]*models.Contact, error) {
+func (ulr *contactsRepo) GetContacts(ctx context.Context, userId int64) ([]*model.Contact, error) {
 	rows, err := ulr.pool.Query(ctx, getContactSql, userId)
 	if err != nil {
 		return nil, err
@@ -152,9 +152,9 @@ func (ulr *contactsRepo) GetContacts(ctx context.Context, userId int64) ([]*mode
 
 	defer rows.Close()
 
-	records := []*models.Contact{}
+	records := []*model.Contact{}
 	for rows.Next() {
-		var record models.Contact
+		var record model.Contact
 
 		err := rows.Scan(
 			&record.UserId,
@@ -176,10 +176,10 @@ func (ulr *contactsRepo) CreateContact(
 	ctx context.Context,
 	inviterId int64,
 	inviteeId int64,
-) (*models.InsertedContact, error) {
+) (*model.InsertedContact, error) {
 	row := ulr.pool.QueryRow(ctx, insertContactSql, inviterId, inviteeId)
 
-	var inserted models.InsertedContact
+	var inserted model.InsertedContact
 	err := row.Scan(&inserted.Id, &inserted.User1Id, &inserted.User2Id)
 	if err != nil {
 		return nil, err
@@ -214,12 +214,12 @@ func (ulr *contactsRepo) InviteUser(ctx context.Context, inviterId int64, invite
 	return nil
 }
 
-func (ulr *contactsRepo) AcceptInvite(ctx context.Context, uuid uuid.UUID, inviteeId int64) (
-	*models.AcceptedInvite,
+func (ulr *contactsRepo) AcceptInvite(ctx context.Context, invUUID uuid.UUID, inviteeId int64) (
+	*model.AcceptedInvite,
 	error,
 ) {
-	row := ulr.pool.QueryRow(ctx, acceptInviteSql, uuid, inviteeId)
-	var acceptedInvite models.AcceptedInvite
+	row := ulr.pool.QueryRow(ctx, acceptInviteSql, invUUID, inviteeId)
+	var acceptedInvite model.AcceptedInvite
 
 	err := row.Scan(&acceptedInvite.Id, &acceptedInvite.InviterId, &acceptedInvite.InviteeId)
 	if err != nil {
@@ -229,7 +229,7 @@ func (ulr *contactsRepo) AcceptInvite(ctx context.Context, uuid uuid.UUID, invit
 	return &acceptedInvite, nil
 }
 
-func (ulr *contactsRepo) GetInvitations(ctx context.Context, userId int64) ([]*models.Invitation, error) {
+func (ulr *contactsRepo) GetInvitations(ctx context.Context, userId int64) ([]*model.Invitation, error) {
 	rows, err := ulr.pool.Query(ctx, getInvitationsSql, userId)
 	if err != nil {
 		return nil, err
@@ -237,9 +237,9 @@ func (ulr *contactsRepo) GetInvitations(ctx context.Context, userId int64) ([]*m
 
 	defer rows.Close()
 
-	invitations := []*models.Invitation{}
+	invitations := []*model.Invitation{}
 	for rows.Next() {
-		var invitation models.Invitation
+		var invitation model.Invitation
 		err := rows.Scan(
 			&invitation.Id,
 			&invitation.Uuid,

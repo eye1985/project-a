@@ -7,8 +7,7 @@ import (
 	"net/http"
 	"project-a/internal/consts"
 	"project-a/internal/interfaces"
-	"project-a/internal/models"
-	"project-a/internal/shared"
+	"project-a/internal/model"
 )
 
 const (
@@ -25,15 +24,15 @@ const (
 )
 
 type Handler struct {
-	userRepo     shared.UserRepository
+	userRepo     interfaces.UserRepository
 	userListRepo interfaces.ContactsRepository
-	authService  shared.AuthService
+	authService  interfaces.AuthService
 	wsUrl        string
 	isDev        bool
 }
 
 func (h *Handler) RenderRegisterUser(w http.ResponseWriter, r *http.Request) {
-	cookie, err := r.Cookie(string(shared.SessionCtxKey))
+	cookie, err := r.Cookie(string(consts.SessionCtxKey))
 	if err == nil {
 		cookieValue, _ := h.authService.VerifyCookie(cookie)
 		if h.authService.IsSessionActive(r.Context(), string(cookieValue)) {
@@ -73,7 +72,7 @@ func (h *Handler) RenderProfile(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	sessionID := r.Context().Value(shared.SessionCtxKey).([]byte)
+	sessionID := r.Context().Value(consts.SessionCtxKey).([]byte)
 	u, err := h.userRepo.GetUserFromSessionId(r.Context(), string(sessionID))
 	if err != nil {
 		http.Error(w, "no session", http.StatusInternalServerError)
@@ -101,7 +100,7 @@ func (h *Handler) RenderChat(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	sessionID := r.Context().Value(shared.SessionCtxKey).([]byte)
+	sessionID := r.Context().Value(consts.SessionCtxKey).([]byte)
 	u, _ := h.userRepo.GetUserFromSessionId(r.Context(), string(sessionID))
 
 	contactList, err := h.userListRepo.GetContactLists(r.Context(), u.Id)
@@ -110,7 +109,7 @@ func (h *Handler) RenderChat(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	listMap := make(map[*models.List][]*models.Contact)
+	listMap := make(map[*model.List][]*model.Contact)
 
 	for _, ul := range contactList {
 		listOfContact, err := h.userListRepo.GetContacts(r.Context(), ul.UserId)
@@ -159,7 +158,7 @@ func (h *Handler) RenderContacts(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	sessionID := r.Context().Value(shared.SessionCtxKey).([]byte)
+	sessionID := r.Context().Value(consts.SessionCtxKey).([]byte)
 	u, _ := h.userRepo.GetUserFromSessionId(r.Context(), string(sessionID))
 
 	contactList, err := h.userListRepo.GetContactLists(r.Context(), u.Id)
@@ -168,7 +167,7 @@ func (h *Handler) RenderContacts(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	listMap := make(map[*models.List][]*models.Contact)
+	listMap := make(map[*model.List][]*model.Contact)
 
 	for _, ul := range contactList {
 		listOfContact, err := h.userListRepo.GetContacts(r.Context(), ul.UserId)
@@ -232,9 +231,9 @@ func (h *Handler) RenderContacts(w http.ResponseWriter, r *http.Request) {
 }
 
 func NewHandler(
-	userRepo shared.UserRepository,
+	userRepo interfaces.UserRepository,
 	userlistRepo interfaces.ContactsRepository,
-	authService shared.AuthService,
+	authService interfaces.AuthService,
 	wsUrl string,
 	isDev bool,
 ) *Handler {

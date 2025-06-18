@@ -3,14 +3,15 @@ package middleware
 import (
 	"context"
 	"net/http"
-	"project-a/internal/shared"
+	"project-a/internal/consts"
+	"project-a/internal/interfaces"
 	"project-a/internal/util"
 )
 
-func Authenticated(session shared.AuthService) func(handlerFunc http.HandlerFunc) http.HandlerFunc {
+func Authenticated(session interfaces.AuthService) func(handlerFunc http.HandlerFunc) http.HandlerFunc {
 	return func(next http.HandlerFunc) http.HandlerFunc {
 		return func(w http.ResponseWriter, r *http.Request) {
-			cookie, err := r.Cookie(string(shared.SessionCtxKey))
+			cookie, err := r.Cookie(string(consts.SessionCtxKey))
 
 			if err != nil {
 				util.SetFlashCookie(
@@ -49,7 +50,7 @@ func Authenticated(session shared.AuthService) func(handlerFunc http.HandlerFunc
 				return
 			}
 
-			r = r.WithContext(context.WithValue(r.Context(), shared.SessionCtxKey, cookieValue))
+			r = r.WithContext(context.WithValue(r.Context(), consts.SessionCtxKey, cookieValue))
 			next.ServeHTTP(w, r)
 		}
 	}

@@ -1,20 +1,21 @@
 package templates
 
 import (
+	"project-a/internal/interfaces"
 	"project-a/internal/middleware"
-	"project-a/internal/shared"
+	"project-a/internal/model"
 )
 
 type RegisterRoutesArgs struct {
 	Middleware *middleware.Middleware
 	WsUrl      string
-	Session    shared.Session
-	UserRepo   shared.UserRepository
+	Session    model.Session
+	UserRepo   interfaces.UserRepository
 }
 
 func RegisterRoutes(
 	m *middleware.Middleware,
-	h *Handler, authService shared.AuthService,
+	h *Handler, authService interfaces.AuthService,
 	csrf middleware.CSRFHandler,
 ) {
 	m.HandleFunc("GET /", h.RenderRegisterUser, middleware.CSRF(csrf))
