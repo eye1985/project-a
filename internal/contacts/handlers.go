@@ -23,7 +23,7 @@ func (h *Handler) CreateUserList(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = h.Repo.CreateContactList(r.Context(), body.Name, body.UserId)
+	_, err = h.Repo.CreateContactList(r.Context(), body.Name, body.UserId)
 	if err != nil {
 		http.Error(w, "Could not create userlist", http.StatusInternalServerError)
 		return

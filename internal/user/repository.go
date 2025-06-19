@@ -77,7 +77,13 @@ func (r *userRepository) InsertUser(ctx context.Context, username string, email 
 	row := r.pool.QueryRow(ctx, insertUserSql, username, email)
 
 	u := &model.User{}
-	err := row.Scan(&u.Id, &u.Email, &u.Username, &u.CreatedAt)
+	err := row.Scan(
+		&u.Id,
+		&u.Uuid,
+		&u.Email,
+		&u.Username,
+		&u.CreatedAt,
+	)
 	if err != nil {
 		return &model.User{}, err
 	}

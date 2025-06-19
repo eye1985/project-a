@@ -46,35 +46,29 @@ var acceptInviteSql string
 //go:embed sql/get_invitations.sql
 var getInvitationsSql string
 
-//type Repository interface {
-//	GetContactLists(ctx context.Context, userId int64) ([]*List, error)
-//	GetContactList(ctx context.Context, contactListId int64) (*List, error)
-//	GetContacts(ctx context.Context, userId int64) ([]*Contact, error)
-//	CreateContactList(ctx context.Context, name string, userId int64) error
-//	CreateContact(ctx context.Context, inviterId int64, inviteeId int64) (*InsertedContact, error)
-//	CreateContactLink(ctx context.Context, contactId int64, contactListId int64) error
-//	UpdateContactList(ctx context.Context, name string, contactListId int64) error
-//	DeleteContactList(ctx context.Context, contactListId int64) error
-//	GetInvitations(ctx context.Context, userId int64) ([]*Invitation, error)
-//	InviteUser(ctx context.Context, inviterId int64, inviteeId int64) error
-//	AcceptInvite(ctx context.Context, uuid uuid.UUID, inviteeId int64) (*AcceptedInvite, error)
-//}
+//go:embed sql/delete_contact.sql
+var deleteContactSql string
 
-func (ulr *contactsRepo) CreateContactList(ctx context.Context, name string, userId int64) error {
-	conn, err := ulr.pool.Exec(ctx, insertContactListSql, name, userId)
+func (cr *contactsRepo) CreateContactList(ctx context.Context, name string, userId int64) (*model.ContactList, error) {
+	row := cr.pool.QueryRow(ctx, insertContactListSql, name, userId)
+	var contactList model.ContactList
+	err := row.Scan(
+		&contactList.Id,
+		&contactList.Uuid,
+		&contactList.Name,
+		&contactList.CreatedAt,
+		&contactList.UpdatedAt,
+		&contactList.UserId,
+	)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	if conn.RowsAffected() != 1 {
-		return contactsNotCreated
-	}
-
-	return nil
+	return &contactList, nil
 }
 
-func (ulr *contactsRepo) UpdateContactList(ctx context.Context, name string, contactListId int64) error {
-	conn, err := ulr.pool.Exec(ctx, updateContactListSql, name, contactListId)
+func (cr *contactsRepo) UpdateContactList(ctx context.Context, name string, contactListId int64) error {
+	conn, err := cr.pool.Exec(ctx, updateContactListSql, name, contactListId)
 	if err != nil {
 		return err
 	}
@@ -86,8 +80,8 @@ func (ulr *contactsRepo) UpdateContactList(ctx context.Context, name string, con
 	return nil
 }
 
-func (ulr *contactsRepo) DeleteContactList(ctx context.Context, contactListId int64) error {
-	conn, err := ulr.pool.Exec(ctx, deleteContactListSql, contactListId)
+func (cr *contactsRepo) DeleteContactList(ctx context.Context, contactListId int64) error {
+	conn, err := cr.pool.Exec(ctx, deleteContactListSql, contactListId)
 	if err != nil {
 		return err
 	}
@@ -99,8 +93,8 @@ func (ulr *contactsRepo) DeleteContactList(ctx context.Context, contactListId in
 	return nil
 }
 
-func (ulr *contactsRepo) GetContactLists(ctx context.Context, userId int64) ([]*model.List, error) {
-	rows, err := ulr.pool.Query(ctx, getAllContactListsSql, userId)
+func (cr *contactsRepo) GetContactLists(ctx context.Context, userId int64) ([]*model.List, error) {
+	rows, err := cr.pool.Query(ctx, getAllContactListsSql, userId)
 	if err != nil {
 		return nil, err
 	}
@@ -127,8 +121,8 @@ func (ulr *contactsRepo) GetContactLists(ctx context.Context, userId int64) ([]*
 	return userLists, nil
 }
 
-func (ulr *contactsRepo) GetContactList(ctx context.Context, contactListId int64) (*model.List, error) {
-	row := ulr.pool.QueryRow(ctx, getContactListSql, contactListId)
+func (cr *contactsRepo) GetContactList(ctx context.Context, contactListId int64) (*model.List, error) {
+	row := cr.pool.QueryRow(ctx, getContactListSql, contactListId)
 	var userList model.List
 	err := row.Scan(
 		&userList.Id,
@@ -144,8 +138,8 @@ func (ulr *contactsRepo) GetContactList(ctx context.Context, contactListId int64
 	return &userList, nil
 }
 
-func (ulr *contactsRepo) GetContacts(ctx context.Context, userId int64) ([]*model.Contact, error) {
-	rows, err := ulr.pool.Query(ctx, getContactSql, userId)
+func (cr *contactsRepo) GetContacts(ctx context.Context, userId int64) ([]*model.Contact, error) {
+	rows, err := cr.pool.Query(ctx, getContactSql, userId)
 	if err != nil {
 		return nil, err
 	}
@@ -172,12 +166,12 @@ func (ulr *contactsRepo) GetContacts(ctx context.Context, userId int64) ([]*mode
 	return records, nil
 }
 
-func (ulr *contactsRepo) CreateContact(
+func (cr *contactsRepo) CreateContact(
 	ctx context.Context,
 	inviterId int64,
 	inviteeId int64,
 ) (*model.InsertedContact, error) {
-	row := ulr.pool.QueryRow(ctx, insertContactSql, inviterId, inviteeId)
+	row := cr.pool.QueryRow(ctx, insertContactSql, inviterId, inviteeId)
 
 	var inserted model.InsertedContact
 	err := row.Scan(&inserted.Id, &inserted.User1Id, &inserted.User2Id)
@@ -188,8 +182,21 @@ func (ulr *contactsRepo) CreateContact(
 	return &inserted, nil
 }
 
-func (ulr *contactsRepo) CreateContactLink(ctx context.Context, contactId int64, contactListId int64) error {
-	conn, err := ulr.pool.Exec(ctx, insertContactLinkSql, contactId, contactListId)
+func (cr *contactsRepo) DeleteContact(ctx context.Context, contactId int64) error {
+	conn, err := cr.pool.Exec(ctx, deleteContactSql, contactId)
+	if err != nil {
+		return err
+	}
+
+	if conn.RowsAffected() == 0 {
+		return contactNotDeleted
+	}
+
+	return nil
+}
+
+func (cr *contactsRepo) CreateContactLink(ctx context.Context, contactId int64, contactListId int64) error {
+	conn, err := cr.pool.Exec(ctx, insertContactLinkSql, contactId, contactListId)
 	if err != nil {
 		return err
 	}
@@ -201,8 +208,8 @@ func (ulr *contactsRepo) CreateContactLink(ctx context.Context, contactId int64,
 	return nil
 }
 
-func (ulr *contactsRepo) InviteUser(ctx context.Context, inviterId int64, inviteeId int64) error {
-	conn, err := ulr.pool.Exec(ctx, insertInvitesSql, inviterId, inviteeId)
+func (cr *contactsRepo) InviteUser(ctx context.Context, inviterId int64, inviteeId int64) error {
+	conn, err := cr.pool.Exec(ctx, insertInvitesSql, inviterId, inviteeId)
 	if err != nil {
 		return err
 	}
@@ -214,11 +221,11 @@ func (ulr *contactsRepo) InviteUser(ctx context.Context, inviterId int64, invite
 	return nil
 }
 
-func (ulr *contactsRepo) AcceptInvite(ctx context.Context, invUUID uuid.UUID, inviteeId int64) (
+func (cr *contactsRepo) AcceptInvite(ctx context.Context, invUUID uuid.UUID, inviteeId int64) (
 	*model.AcceptedInvite,
 	error,
 ) {
-	row := ulr.pool.QueryRow(ctx, acceptInviteSql, invUUID, inviteeId)
+	row := cr.pool.QueryRow(ctx, acceptInviteSql, invUUID, inviteeId)
 	var acceptedInvite model.AcceptedInvite
 
 	err := row.Scan(&acceptedInvite.Id, &acceptedInvite.InviterId, &acceptedInvite.InviteeId)
@@ -229,8 +236,8 @@ func (ulr *contactsRepo) AcceptInvite(ctx context.Context, invUUID uuid.UUID, in
 	return &acceptedInvite, nil
 }
 
-func (ulr *contactsRepo) GetInvitations(ctx context.Context, userId int64) ([]*model.Invitation, error) {
-	rows, err := ulr.pool.Query(ctx, getInvitationsSql, userId)
+func (cr *contactsRepo) GetInvitations(ctx context.Context, userId int64) ([]*model.Invitation, error) {
+	rows, err := cr.pool.Query(ctx, getInvitationsSql, userId)
 	if err != nil {
 		return nil, err
 	}

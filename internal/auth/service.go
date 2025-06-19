@@ -30,9 +30,9 @@ func (a *authService) CreateOrGetSession(ctx context.Context, userId int64) (*mo
 		const thirtyDays = 30 * 24 * time.Hour
 		ns, err := a.SetSession(
 			ctx, &SetSessionArgs{
-				userID:    userId,
-				sessionID: sessionID,
-				expiresAt: time.Now().Add(thirtyDays),
+				UserID:    userId,
+				SessionID: sessionID,
+				ExpiresAt: time.Now().Add(thirtyDays),
 			},
 		)
 

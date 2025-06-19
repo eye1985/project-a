@@ -58,7 +58,7 @@ func (h *Handler) RegisterUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = h.UserlistRepo.CreateContactList(r.Context(), "Contacts", u.Id)
+	_, err = h.UserlistRepo.CreateContactList(r.Context(), "Contacts", u.Id)
 	if err != nil {
 		log.Printf("failed to create userlist: %v", err)
 		http.Error(w, "Userlist creation failed", http.StatusInternalServerError)

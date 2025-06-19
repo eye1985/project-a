@@ -3,13 +3,18 @@ package testutil
 import (
 	"context"
 	"github.com/jackc/pgx/v5/pgxpool"
+	_ "github.com/jackc/pgx/v5/stdlib" // Need this for the pgx driver
+	"github.com/stretchr/testify/require"
+	"github.com/testcontainers/testcontainers-go"
 	"github.com/testcontainers/testcontainers-go/modules/postgres"
 	"project-a/internal/database"
+	"testing"
 )
 
 func SetupTestContainer(
 	ctx context.Context,
-) (*postgres.PostgresContainer, *pgxpool.Pool, error) {
+	t *testing.T,
+) (*postgres.PostgresContainer, string) {
 	dbName := "testing"
 	dbUser := "user"
 	dbPass := "password"
@@ -22,25 +27,37 @@ func SetupTestContainer(
 		postgres.WithSQLDriver("pgx"),
 		postgres.BasicWaitStrategies(),
 	)
-
-	if err != nil {
-		return nil, nil, err
-	}
+	require.NoError(t, err)
 
 	connStr, err := postgresContainer.ConnectionString(ctx, "sslmode=disable")
-	if err != nil {
-		return nil, nil, err
-	}
+	require.NoError(t, err)
+
 	database.Migrate(connStr, "../..")
-	//err = postgresContainer.Snapshot(ctx, postgres.WithSnapshotName(snapShotName))
-	//if err != nil {
-	//	return nil, nil, err
-	//}
 
+	testcontainers.CleanupContainer(t, postgresContainer)
+	require.NoError(t, err)
+	err = postgresContainer.Snapshot(ctx)
+	require.NoError(t, err)
+
+	return postgresContainer, connStr
+}
+
+func CreateTestPoolAndCleanUp(
+	t *testing.T,
+	ctx context.Context,
+	connStr string,
+	pgContainer *postgres.PostgresContainer,
+) *pgxpool.Pool {
 	pool, err := database.Pool(connStr)
-	if err != nil {
-		return nil, nil, err
-	}
+	require.NoError(t, err)
 
-	return postgresContainer, pool, nil
+	t.Cleanup(
+		func() {
+			pool.Close()
+			err := pgContainer.Restore(ctx)
+			require.NoError(t, err)
+		},
+	)
+
+	return pool
 }

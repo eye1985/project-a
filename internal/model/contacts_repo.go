@@ -1,17 +1,18 @@
 package model
 
 import (
+	"database/sql"
 	"github.com/google/uuid"
 	"time"
 )
 
 type List struct {
-	Id        int64      `json:"-"`
-	Uuid      uuid.UUID  `json:"uuid"`
-	Name      string     `json:"name"`
-	CreatedAt time.Time  `json:"created_at"`
-	UpdatedAt *time.Time `json:"updated_at"`
-	UserId    int64      `json:"user_id"`
+	Id        int64        `json:"-"`
+	Uuid      uuid.UUID    `json:"uuid"`
+	Name      string       `json:"name"`
+	CreatedAt time.Time    `json:"created_at"`
+	UpdatedAt sql.NullTime `json:"updated_at,omitzero"`
+	UserId    int64        `json:"user_id"`
 }
 
 type Contact struct {
@@ -20,6 +21,15 @@ type Contact struct {
 	Username string    `json:"username"`
 	Email    string    `json:"email"`
 	ListName string    `json:"list_name"`
+}
+
+type ContactList struct {
+	Id        int64        `json:"-"`
+	Uuid      uuid.UUID    `json:"uuid"`
+	Name      string       `json:"name"`
+	CreatedAt time.Time    `json:"createdAt"`
+	UpdatedAt sql.NullTime `json:"updatedAt,omitzero"`
+	UserId    int64        `json:"userId"`
 }
 
 type InsertedContact struct {

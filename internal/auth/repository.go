@@ -40,15 +40,15 @@ type Repository interface {
 }
 
 type SetSessionArgs struct {
-	userID    int64
-	sessionID string
-	expiresAt time.Time
+	UserID    int64
+	SessionID string
+	ExpiresAt time.Time
 }
 
 func (a *authRepository) SetSession(ctx context.Context, args *SetSessionArgs) (*model.Session, error) {
-	userID := args.userID
-	sessionID := args.sessionID
-	expiresAt := args.expiresAt
+	userID := args.UserID
+	sessionID := args.SessionID
+	expiresAt := args.ExpiresAt
 
 	row := a.pool.QueryRow(ctx, insertSessionSql, userID, sessionID, expiresAt)
 
